@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, RotateCcw, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PERIOD_LABELS, formatDate, gradeFor, periodRange, type PeriodKey } from "@/lib/hr";
+import {
+  STAGE_LABELS,
+  STAGE_STEP_LABELS,
+  canActOnStage,
+  stageBadgeVariant,
+  stepDone,
+  type ApprovalStage,
+} from "@/lib/evaluation-approval";
 
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({
@@ -29,8 +37,45 @@ export const Route = createFileRoute("/_authenticated/evaluations")({
 
 const WEIGHTS = { tasks: 0.5, attendance: 0.3, criteria: 0.2 };
 
+type ApprovalRow = {
+  id: string;
+  evaluation_id: string;
+  stage: string;
+  action: string;
+  note: string | null;
+  created_at: string;
+};
+
+function ApprovalTrack({ stage }: { stage: ApprovalStage }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      {STAGE_STEP_LABELS.map((s, i) => {
+        const done = stepDone(s.stage, stage);
+        const current = stage === s.stage;
+        return (
+          <span key={s.stage} className="flex items-center gap-2">
+            {i > 0 && <span className="text-muted-foreground">←</span>}
+            <span
+              className={
+                done
+                  ? "rounded-full bg-primary/10 px-2 py-1 font-medium text-primary"
+                  : current
+                    ? "rounded-full bg-accent px-2 py-1 font-medium text-accent-foreground"
+                    : "rounded-full bg-muted px-2 py-1 text-muted-foreground"
+              }
+            >
+              {done ? "✓ " : current ? "• " : ""}
+              {s.label}
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function EvaluationsPage() {
-  const { isManager, employee } = useAuth();
+  const { isManager, isHR, isDirector, employee } = useAuth();
   const qc = useQueryClient();
   const [employeeId, setEmployeeId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
@@ -47,17 +92,30 @@ function EvaluationsPage() {
   const { data } = useQuery({
     queryKey: ["evaluations-page"],
     queryFn: async () => {
-      const [employees, evaluations] = await Promise.all([
+      const [employees, evaluations, approvals] = await Promise.all([
         supabase.from("employees").select("id, full_name").order("full_name"),
         supabase.from("evaluations").select("*").order("created_at", { ascending: false }),
+        supabase
+          .from("evaluation_approvals")
+          .select("id, evaluation_id, stage, action, note, created_at")
+          .order("created_at", { ascending: true }),
       ]);
-      return { employees: employees.data ?? [], evaluations: evaluations.data ?? [] };
+      return {
+        employees: employees.data ?? [],
+        evaluations: evaluations.data ?? [],
+        approvals: approvals.data ?? [],
+      };
     },
   });
 
   const employees = data?.employees ?? [];
   const evaluations = data?.evaluations ?? [];
+  const trail = (data?.approvals ?? []).reduce<Record<string, ApprovalRow[]>>((acc, a) => {
+    (acc[a.evaluation_id] ??= []).push(a);
+    return acc;
+  }, {});
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
+
 
   const compute = useMutation({
     mutationFn: async () => {
@@ -136,17 +194,34 @@ function EvaluationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const approve = useMutation({
+  const submit = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("evaluations").update({ approved: true }).eq("id", id);
+      const { error } = await supabase.rpc("submit_evaluation", { _evaluation_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("تم اعتماد التقييم");
+      toast.success("تم إرسال التقييم إلى مسار الاعتماد");
       void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const decide = useMutation({
+    mutationFn: async (v: { id: string; action: "approved" | "returned"; note?: string }) => {
+      const { error } = await supabase.rpc("decide_evaluation", {
+        _evaluation_id: v.id,
+        _action: v.action,
+        _note: v.note ?? "",
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.action === "approved" ? "تم اعتماد المرحلة" : "تمت إعادة التقييم للتعديل");
+      void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   return (
     <div className="space-y-6">
@@ -242,34 +317,87 @@ function EvaluationsPage() {
           {evaluations.length === 0 && (
             <p className="text-sm text-muted-foreground">لا توجد تقييمات بعد.</p>
           )}
-          {evaluations.map((ev) => (
-            <div key={ev.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-              <div>
-                <p className="font-medium">{nameOf(ev.employee_id)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {PERIOD_LABELS[ev.period]} — {formatDate(ev.period_start)} إلى {formatDate(ev.period_end)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  مهام {ev.tasks_score} — دوام {ev.attendance_score} — معايير {ev.criteria_score}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{ev.grade ?? gradeFor(ev.total_score)}</Badge>
-                <span className="font-display text-xl font-bold text-primary">{ev.total_score}</span>
-                {ev.approved ? (
-                  <Badge>
-                    <CheckCircle2 className="ml-1 size-3" /> معتمد
-                  </Badge>
-                ) : (
-                  isManager && (
-                    <Button size="sm" variant="outline" onClick={() => approve.mutate(ev.id)}>
-                      اعتماد
+          {evaluations.map((ev) => {
+            const stage = ev.approval_stage as ApprovalStage;
+            const canAct = canActOnStage(stage, { isManager, isHR, isDirector });
+            return (
+              <div key={ev.id} className="space-y-3 rounded-lg border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{nameOf(ev.employee_id)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {PERIOD_LABELS[ev.period]} — {formatDate(ev.period_start)} إلى {formatDate(ev.period_end)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      مهام {ev.tasks_score} — دوام {ev.attendance_score} — معايير {ev.criteria_score}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{ev.grade ?? gradeFor(ev.total_score)}</Badge>
+                    <span className="font-display text-xl font-bold text-primary">{ev.total_score}</span>
+                    <Badge variant={stageBadgeVariant(stage)}>
+                      {stage === "approved" && <CheckCircle2 className="ml-1 size-3" />}
+                      {STAGE_LABELS[stage]}
+                    </Badge>
+                  </div>
+                </div>
+
+                <ApprovalTrack stage={stage} />
+
+                {ev.return_reason && (
+                  <p className="text-xs text-destructive">سبب الإعادة: {ev.return_reason}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {(stage === "draft" || stage === "returned") && isManager && (
+                    <Button size="sm" onClick={() => submit.mutate(ev.id)} disabled={submit.isPending}>
+                      <Send className="size-4" /> إرسال للاعتماد
                     </Button>
-                  )
+                  )}
+                  {canAct && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => decide.mutate({ id: ev.id, action: "approved" })}
+                        disabled={decide.isPending}
+                      >
+                        <CheckCircle2 className="size-4" /> اعتماد المرحلة
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const note = window.prompt("سبب الإعادة للتعديل:")?.trim();
+                          if (!note) return;
+                          decide.mutate({ id: ev.id, action: "returned", note });
+                        }}
+                        disabled={decide.isPending}
+                      >
+                        <RotateCcw className="size-4" /> إعادة للتعديل
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {(trail[ev.id]?.length ?? 0) > 0 && (
+                  <ul className="space-y-1 border-t pt-2 text-xs text-muted-foreground">
+                    {trail[ev.id]!.map((a) => (
+                      <li key={a.id}>
+                        {formatDate(a.created_at.slice(0, 10))} — {STAGE_LABELS[a.stage as ApprovalStage]}:{" "}
+                        {a.action === "submitted"
+                          ? "إرسال للاعتماد"
+                          : a.action === "approved"
+                            ? "اعتماد"
+                            : "إعادة للتعديل"}
+                        {a.note ? ` (${a.note})` : ""}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
+
         </CardContent>
       </Card>
     </div>

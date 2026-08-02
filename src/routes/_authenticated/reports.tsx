@@ -18,6 +18,7 @@ import {
   type PeriodKey,
 } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
+import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -45,6 +46,7 @@ function ReportsPage() {
   const [scope, setScope] = useState<Scope>("employee");
   const [targetId, setTargetId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
+  const [approvedOnly, setApprovedOnly] = useState(true);
 
 
   const { data: base } = useQuery({
@@ -129,7 +131,7 @@ function ReportsPage() {
           .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
           .map((e) => e.id);
 
-  const { data: evaluations = [], isFetching: loadingEvals } = useQuery({
+  const { data: allEvaluations = [], isFetching: loadingEvals } = useQuery({
     enabled: kind === "evaluation" && Boolean(targetId) && memberIds.length > 0,
     queryKey: ["report-evaluations", scope, targetId, period, range.start, range.end],
     queryFn: async () => {
@@ -144,6 +146,12 @@ function ReportsPage() {
     },
   });
 
+  const evaluations = approvedOnly
+    ? allEvaluations.filter((e) => e.approval_stage === "approved")
+    : allEvaluations;
+  const pendingCount = allEvaluations.filter((e) => e.approval_stage !== "approved").length;
+
+
   const avgTotal = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.total_score), 0) / evaluations.length)
     : 0;
@@ -156,7 +164,7 @@ function ReportsPage() {
   const avgCriteriaScore = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.criteria_score), 0) / evaluations.length)
     : 0;
-  const approvedCount = evaluations.filter((e) => e.approved).length;
+  const approvedCount = evaluations.filter((e) => e.approval_stage === "approved").length;
 
   const targetName = options.find((o) => o.id === targetId)?.name ?? "";
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
@@ -198,7 +206,7 @@ function ReportsPage() {
             `${Math.round(Number(e.criteria_score))}%`,
             `${Math.round(Number(e.total_score))}%`,
             e.grade ?? gradeFor(Number(e.total_score)),
-            e.approved ? "معتمد" : "غير معتمد",
+            STAGE_LABELS[e.approval_stage as ApprovalStage],
           ]),
         },
       },
@@ -383,7 +391,24 @@ function ReportsPage() {
 
       {targetId && kind === "evaluation" && (
         <>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={approvedOnly}
+                onChange={(e) => setApprovedOnly(e.target.checked)}
+              />
+              الاكتفاء بالتقييمات المعتمدة نهائياً (السجلات النهائية)
+            </label>
+            {pendingCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {pendingCount} تقييم ما زال ضمن مراحل الاعتماد (المدير المباشر ← الموارد البشرية ← المدير التنفيذي)
+              </span>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
             {[
               { label: "عدد التقييمات", value: evaluations.length },
               { label: "متوسط المهام", value: `${avgTasksScore}%` },
@@ -435,7 +460,9 @@ function ReportsPage() {
                         {Math.round(Number(e.total_score))}%
                       </td>
                       <td className="p-3">{e.grade ?? gradeFor(Number(e.total_score))}</td>
-                      <td className="p-3 text-xs">{e.approved ? "معتمد" : "غير معتمد"}</td>
+                      <td className="p-3 text-xs">
+                        {STAGE_LABELS[e.approval_stage as ApprovalStage]}
+                      </td>
                     </tr>
                   ))}
                   {evaluations.length === 0 && (

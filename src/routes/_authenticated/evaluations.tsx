@@ -136,17 +136,34 @@ function EvaluationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const approve = useMutation({
+  const submit = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("evaluations").update({ approved: true }).eq("id", id);
+      const { error } = await supabase.rpc("submit_evaluation", { _evaluation_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("تم اعتماد التقييم");
+      toast.success("تم إرسال التقييم إلى مسار الاعتماد");
       void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const decide = useMutation({
+    mutationFn: async (v: { id: string; action: "approved" | "returned"; note?: string }) => {
+      const { error } = await supabase.rpc("decide_evaluation", {
+        _evaluation_id: v.id,
+        _action: v.action,
+        _note: v.note ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.action === "approved" ? "تم اعتماد المرحلة" : "تمت إعادة التقييم للتعديل");
+      void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   return (
     <div className="space-y-6">

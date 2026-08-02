@@ -9,7 +9,11 @@ function db() {
   return supabaseAdmin;
 }
 
-const PENDING_STAGES = ["pending_manager", "pending_hr", "pending_director"] as const;
+const PENDING_STAGES: ("pending_manager" | "pending_hr" | "pending_director")[] = [
+  "pending_manager",
+  "pending_hr",
+  "pending_director",
+];
 
 type EmployeeInfo = {
   id: string;
@@ -66,7 +70,7 @@ export async function listPending(userId: string): Promise<PendingApproval[]> {
       .select(
         "id, employee_id, leave_type_id, kind, stage, days, hours, start_date, end_date, start_time, end_time, reason, submitted_at, created_at",
       )
-      .in("stage", PENDING_STAGES as unknown as string[]),
+      .in("stage", PENDING_STAGES),
     db().from("leave_types").select("id, name"),
   ]);
   const typeName = new Map((leaveTypes ?? []).map((t) => [t.id, t.name]));
@@ -100,9 +104,9 @@ export async function listPending(userId: string): Promise<PendingApproval[]> {
   const { data: evals } = await db()
     .from("evaluations")
     .select(
-      "id, employee_id, approval_stage, period_type, period_start, period_end, total_score, submitted_at, created_at",
+      "id, employee_id, approval_stage, period, period_start, period_end, total_score, submitted_at, created_at",
     )
-    .in("approval_stage", PENDING_STAGES as unknown as string[]);
+    .in("approval_stage", PENDING_STAGES);
   for (const e of evals ?? []) {
     if (!(await canDecide(actor, String(e.approval_stage), e.employee_id))) continue;
     items.push({

@@ -194,10 +194,12 @@ function EvaluationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const submitFn = useServerFn(submitEvaluation);
+  const decideFn = useServerFn(decideEvaluation);
+
   const submit = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc("submit_evaluation", { _evaluation_id: id });
-      if (error) throw error;
+      await submitFn({ data: { evaluationId: id } });
     },
     onSuccess: () => {
       toast.success("تم إرسال التقييم إلى مسار الاعتماد");
@@ -208,13 +210,11 @@ function EvaluationsPage() {
 
   const decide = useMutation({
     mutationFn: async (v: { id: string; action: "approved" | "returned"; note?: string }) => {
-      const { error } = await supabase.rpc("decide_evaluation", {
-        _evaluation_id: v.id,
-        _action: v.action,
-        _note: v.note ?? "",
+      await decideFn({
+        data: { evaluationId: v.id, action: v.action, ...(v.note ? { note: v.note } : {}) },
       });
-      if (error) throw error;
     },
+
     onSuccess: (_d, v) => {
       toast.success(v.action === "approved" ? "تم اعتماد المرحلة" : "تمت إعادة التقييم للتعديل");
       void qc.invalidateQueries({ queryKey: ["evaluations-page"] });

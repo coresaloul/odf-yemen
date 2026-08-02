@@ -153,7 +153,13 @@ function AttendancePage() {
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["attendance"] });
 
   const saveMut = useMutation({
-    mutationFn: (v: Parameters<typeof saveAttendanceRecord>[0]["data"]) => saveRecordFn({ data: v }),
+    mutationFn: (v: {
+      employee_id: string;
+      work_date: string;
+      check_in: string | null;
+      check_out: string | null;
+      status: "present" | "absent" | "leave" | "holiday" | "permission";
+    }) => saveRecordFn({ data: v }),
     onSuccess: () => {
       toast.success("تم حفظ سجل الدوام");
       invalidate();

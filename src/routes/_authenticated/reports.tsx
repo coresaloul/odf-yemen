@@ -407,7 +407,7 @@ function ReportsPage() {
               </span>
             )}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
 
             {[
               { label: "عدد التقييمات", value: evaluations.length },
@@ -481,7 +481,7 @@ function ReportsPage() {
 
       {targetId && kind === "achievement" && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
 
             {[
               { label: "إجمالي المهام", value: tasks.length },

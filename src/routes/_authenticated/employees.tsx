@@ -203,8 +203,8 @@ function EmployeesPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-56 flex-1 max-w-sm">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+        <div className="relative col-span-2 sm:min-w-56 sm:max-w-sm sm:flex-1">
           <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}

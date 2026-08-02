@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Orphancare HR Suite
+
+برنامج إدارةالموراد البشرية  لمؤسسة اليتيم التنموية ادارة المخطط التنظيمي وادارة الادارات والاقسام وادارة الموظفين والمهام  التي يتم تكليف الموظف من قبل المدير التنفيذي او المدير المباشر مع اصدار تقارير الانجاز للموظف و القسم  يومية واسبوعية وشهرية وربعية ونصف سنوية وتصديرها الى ملف وورد أو pdf مع إمكانية اضافة مهمة عبر الصوت وايضا ادارة تقييم الموظف واضافة الى التقييم الشهري او الربعي تقييم تقارير الانجاز للمهام وايضا تقييم الدوام
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://odf-yemen.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/976e6205-d2eb-4fec-aff7-774435371124).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS

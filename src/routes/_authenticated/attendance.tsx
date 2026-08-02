@@ -454,6 +454,12 @@ function AttendancePage() {
         )}
 
         {isAdmin && (
+          <TabsContent value="devices">
+            <BiometricDevices />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
           <TabsContent value="settings">
             <AttendanceSettings />
           </TabsContent>

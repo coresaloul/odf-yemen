@@ -5,12 +5,25 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const ROLES = ["executive_director", "manager", "hr", "employee"] as const;
 type Role = (typeof ROLES)[number];
 
-async function assertDirector(supabase: {
-  rpc: (fn: "is_director") => Promise<{ data: unknown; error: unknown }>;
-}) {
+type RpcClient = {
+  rpc: (fn: "is_director" | "is_hr") => Promise<{ data: unknown; error: unknown }>;
+};
+
+async function assertDirector(supabase: RpcClient) {
   const { data, error } = await supabase.rpc("is_director");
   if (error || data !== true) {
-    throw new Error("غير مصرح: هذه الصفحة للمدير التنفيذي فقط");
+    throw new Error("غير مصرح: هذا الإجراء للمدير التنفيذي فقط");
+  }
+}
+
+/** لوحة المستخدمين: متاحة للمدير التنفيذي أو الموارد البشرية فقط */
+async function assertUserAdmin(supabase: RpcClient) {
+  const [director, hr] = await Promise.all([
+    supabase.rpc("is_director"),
+    supabase.rpc("is_hr"),
+  ]);
+  if (director.data !== true && hr.data !== true) {
+    throw new Error("غير مصرح: هذه الصفحة للمدير التنفيذي أو الموارد البشرية فقط");
   }
 }
 

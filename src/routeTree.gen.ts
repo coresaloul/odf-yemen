@@ -19,6 +19,7 @@ import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEvaluationsRouteImport } from './routes/_authenticated/evaluations'
 import { Route as AuthenticatedLeavesRouteImport } from './routes/_authenticated/leaves'
 import { Route as AuthenticatedOrgRouteImport } from './routes/_authenticated/org'
+import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
@@ -76,6 +77,11 @@ const AuthenticatedOrgRoute = AuthenticatedOrgRouteImport.update({
   path: '/org',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
   '/org': typeof AuthenticatedOrgRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
   '/org': typeof AuthenticatedOrgRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/_authenticated/evaluations': typeof AuthenticatedEvaluationsRoute
   '/_authenticated/leaves': typeof AuthenticatedLeavesRoute
   '/_authenticated/org': typeof AuthenticatedOrgRoute
+  '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/evaluations'
     | '/leaves'
     | '/org'
+    | '/payroll'
     | '/reports'
     | '/settings'
     | '/tasks'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/evaluations'
     | '/leaves'
     | '/org'
+    | '/payroll'
     | '/reports'
     | '/settings'
     | '/tasks'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/_authenticated/evaluations'
     | '/_authenticated/leaves'
     | '/_authenticated/org'
+    | '/_authenticated/payroll'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
@@ -296,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payroll': {
+      id: '/_authenticated/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AuthenticatedPayrollRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports': {
       id: '/_authenticated/reports'
       path: '/reports'
@@ -349,6 +368,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEvaluationsRoute: typeof AuthenticatedEvaluationsRoute
   AuthenticatedLeavesRoute: typeof AuthenticatedLeavesRoute
   AuthenticatedOrgRoute: typeof AuthenticatedOrgRoute
+  AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
@@ -363,6 +383,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEvaluationsRoute: AuthenticatedEvaluationsRoute,
   AuthenticatedLeavesRoute: AuthenticatedLeavesRoute,
   AuthenticatedOrgRoute: AuthenticatedOrgRoute,
+  AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,

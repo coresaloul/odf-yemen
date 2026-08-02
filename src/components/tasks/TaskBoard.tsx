@@ -22,7 +22,7 @@ export function TaskBoard({
         return (
           <div
             key={status}
-            className="rounded-lg border bg-muted/30 p-2"
+            className="w-[78vw] shrink-0 snap-start rounded-lg border bg-muted/30 p-2 sm:w-64 md:w-auto md:shrink"
             onDragOver={(e) => {
               if (canManage) e.preventDefault();
             }}

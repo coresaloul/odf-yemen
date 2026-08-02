@@ -17,6 +17,7 @@ export type AdminUserRow = {
   banned: boolean;
   roles: Role[];
   employee_name: string | null;
+  employee_id: string | null;
 };
 
 export const listAppUsers = createServerFn({ method: "GET" })

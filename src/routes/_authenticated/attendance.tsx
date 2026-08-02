@@ -308,14 +308,14 @@ function AttendancePage() {
 
         {/* الشهري */}
         <TabsContent value="monthly" className="space-y-4">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+            <div className="w-full space-y-2 sm:w-auto">
               <Label>الشهر</Label>
               <Input
                 type="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="w-48"
+                className="w-full sm:w-48"
               />
             </div>
             {isAdmin && (

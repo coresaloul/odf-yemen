@@ -1182,7 +1182,13 @@ export type Database = {
         | "holiday"
         | "permission"
       employee_status: "active" | "on_leave" | "terminated"
-      period_type: "daily" | "weekly" | "monthly" | "quarterly" | "semiannual"
+      period_type:
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "semiannual"
+        | "annual"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "new" | "in_progress" | "completed" | "cancelled"
     }
@@ -1329,7 +1335,14 @@ export const Constants = {
         "permission",
       ],
       employee_status: ["active", "on_leave", "terminated"],
-      period_type: ["daily", "weekly", "monthly", "quarterly", "semiannual"],
+      period_type: [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "semiannual",
+        "annual",
+      ],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["new", "in_progress", "completed", "cancelled"],
     },

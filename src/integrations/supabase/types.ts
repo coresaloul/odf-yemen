@@ -96,51 +96,170 @@ export type Database = {
           },
         ]
       }
-      employees: {
+      employee_documents: {
         Row: {
           created_at: string
+          doc_number: string | null
+          doc_type: string
+          employee_id: string
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          issue_date: string | null
+          issuer: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doc_number?: string | null
+          doc_type?: string
+          employee_id: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          issuer?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doc_number?: string | null
+          doc_type?: string
+          employee_id?: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          issuer?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          address: string | null
+          allergies: string | null
+          basic_salary: number | null
+          birth_date: string | null
+          blood_type: string | null
+          chronic_diseases: string | null
+          contract_end_date: string | null
+          contract_type: string | null
+          created_at: string
           department_id: string | null
+          education_level: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
           employee_no: string
           full_name: string
+          gender: string | null
           hire_date: string | null
+          iban: string | null
           id: string
           job_title: string | null
           manager_id: string | null
+          marital_status: string | null
+          national_id: string | null
+          national_id_expiry: string | null
+          nationality: string | null
+          notes: string | null
+          passport_expiry: string | null
+          passport_no: string | null
           phone: string | null
           section_id: string | null
+          specialization: string | null
           status: Database["public"]["Enums"]["employee_status"]
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          address?: string | null
+          allergies?: string | null
+          basic_salary?: number | null
+          birth_date?: string | null
+          blood_type?: string | null
+          chronic_diseases?: string | null
+          contract_end_date?: string | null
+          contract_type?: string | null
           created_at?: string
           department_id?: string | null
+          education_level?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           employee_no: string
           full_name: string
+          gender?: string | null
           hire_date?: string | null
+          iban?: string | null
           id?: string
           job_title?: string | null
           manager_id?: string | null
+          marital_status?: string | null
+          national_id?: string | null
+          national_id_expiry?: string | null
+          nationality?: string | null
+          notes?: string | null
+          passport_expiry?: string | null
+          passport_no?: string | null
           phone?: string | null
           section_id?: string | null
+          specialization?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          address?: string | null
+          allergies?: string | null
+          basic_salary?: number | null
+          birth_date?: string | null
+          blood_type?: string | null
+          chronic_diseases?: string | null
+          contract_end_date?: string | null
+          contract_type?: string | null
           created_at?: string
           department_id?: string | null
+          education_level?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           employee_no?: string
           full_name?: string
+          gender?: string | null
           hire_date?: string | null
+          iban?: string | null
           id?: string
           job_title?: string | null
           manager_id?: string | null
+          marital_status?: string | null
+          national_id?: string | null
+          national_id_expiry?: string | null
+          nationality?: string | null
+          notes?: string | null
+          passport_expiry?: string | null
+          passport_no?: string | null
           phone?: string | null
           section_id?: string | null
+          specialization?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
           updated_at?: string
           user_id?: string | null

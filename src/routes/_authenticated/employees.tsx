@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
 });
 
 function EmployeesPage() {
-  const { isManagerOrAbove, isDirector } = useAuth();
+  const { isManager, isDirector } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
 

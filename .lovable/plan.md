@@ -80,7 +80,7 @@
 
 ## ملاحظات تقنية
 
-- جداول جديدة: `payroll_settings`, `payroll_components`, `employee_payroll_profiles`, `employee_components`, `employee_advances`, `consultant_contracts`, `contract_installments`, `payroll_runs`, `payroll_items`, `payroll_item_lines`, `payroll_approvals` — جميعها مع GRANT وRLS وسياسات مبنية على `has_role` ودوال التسلسل الإداري الموجودة في مخطط `private`
+- جداول جديدة: `payroll_settings`, `payroll_components`, `employee_payroll_profiles`, `employee_components`, `payroll_adjustments`, `employee_advances`, `consultant_contracts`, `contract_installments`, `payroll_runs`, `payroll_items`, `payroll_item_lines`, `payroll_approvals` — جميعها مع GRANT وRLS وسياسات مبنية على `has_role` ودوال التسلسل الإداري الموجودة في مخطط `private`
 - حساب الدورة يتم في دالة خادمية (`createServerFn`) تقرأ الحضور والإجازات والتقييمات المعتمدة وتكتب البنود، لضمان عدم تلاعب العميل
 - إعادة استخدام `src/lib/report-export.ts` لتصدير Word/PDF بالخط العربي والشعار
 - دمج طلبات اعتماد الرواتب داخل `src/lib/approvals.*` ومركز الموافقات القائم

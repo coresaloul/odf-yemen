@@ -34,6 +34,8 @@ const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: bo
   { to: "/attendance", label: "الدوام", icon: CalendarClock },
   { to: "/leaves", label: "الإجازات", icon: CalendarDays },
   { to: "/evaluations", label: "التقييم", icon: Star },
+  { to: "/approvals", label: "الموافقات", icon: ClipboardCheck },
+
   { to: "/reports", label: "التقارير", icon: FileBarChart },
   { to: "/settings", label: "الإشعارات", icon: Settings },
   { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },

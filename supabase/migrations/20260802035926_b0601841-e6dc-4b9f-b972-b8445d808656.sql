@@ -1,0 +1,1 @@
+ALTER TYPE public.period_type ADD VALUE IF NOT EXISTS 'annual';

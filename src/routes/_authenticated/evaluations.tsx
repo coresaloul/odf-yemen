@@ -1,267 +1,173 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { submitEvaluation, decideEvaluation } from "@/lib/evaluation-approval.functions";
-import { useState } from "react";
-import { toast } from "sonner";
-import { CheckCircle2, RotateCcw, Send, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PERIOD_LABELS, formatDate, gradeFor, periodRange, type PeriodKey } from "@/lib/hr";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  STAGE_LABELS,
-  STAGE_STEP_LABELS,
-  canActOnStage,
-  stageBadgeVariant,
-  stepDone,
-  type ApprovalStage,
-} from "@/lib/evaluation-approval";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EvaluationForm } from "@/components/evaluations/EvaluationForm";
+import {
+  EvaluationRecord,
+  type ApprovalRow,
+  type CriterionRow,
+  type EvaluationRow,
+  type GoalRow,
+} from "@/components/evaluations/EvaluationRecord";
+import { SelfAssessmentTab } from "@/components/evaluations/SelfAssessmentTab";
+import { CriteriaTemplatesTab } from "@/components/evaluations/CriteriaTemplatesTab";
+import { EVALUATION_PERIOD_LABELS, PERIOD_LABELS } from "@/lib/hr";
+import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
 
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({
     meta: [
-      { title: "تقييم الموظفين | الموارد البشرية" },
-      { name: "description", content: "تقييم شهري وربعي يجمع بين إنجاز المهام والالتزام بالدوام ومعايير المدير." },
-      { property: "og:title", content: "تقييم الموظفين | الموارد البشرية" },
-      { property: "og:description", content: "درجات الأداء المعتمدة على المهام والدوام والمعايير الإدارية." },
+      { title: "تقييم الأداء | مؤسسة اليتيم التنموية" },
+      {
+        name: "description",
+        content:
+          "تقييم أداء شهري وربعي ونصف سنوي وسنوي يجمع إنجاز المهام والالتزام بالدوام والمعايير السلوكية مع مسار اعتماد متكامل.",
+      },
+      { property: "og:title", content: "تقييم الأداء | مؤسسة اليتيم التنموية" },
+      {
+        property: "og:description",
+        content: "درجات أداء تلقائية من المهام والدوام مع معايير سلوكية وخطط تحسين واعتماد إداري.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: EvaluationsPage,
 });
 
-const WEIGHTS = { tasks: 0.5, attendance: 0.3, criteria: 0.2 };
-
-type ApprovalRow = {
-  id: string;
-  evaluation_id: string;
-  stage: string;
-  action: string;
-  note: string | null;
-  created_at: string;
-};
-
-function ApprovalTrack({ stage }: { stage: ApprovalStage }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 text-xs">
-      {STAGE_STEP_LABELS.map((s, i) => {
-        const done = stepDone(s.stage, stage);
-        const current = stage === s.stage;
-        return (
-          <span key={s.stage} className="flex items-center gap-2">
-            {i > 0 && <span className="text-muted-foreground">←</span>}
-            <span
-              className={
-                done
-                  ? "rounded-full bg-primary/10 px-2 py-1 font-medium text-primary"
-                  : current
-                    ? "rounded-full bg-accent px-2 py-1 font-medium text-accent-foreground"
-                    : "rounded-full bg-muted px-2 py-1 text-muted-foreground"
-              }
-            >
-              {done ? "✓ " : current ? "• " : ""}
-              {s.label}
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
 function EvaluationsPage() {
   const { isManager, isHR, isDirector, employee } = useAuth();
   const qc = useQueryClient();
-  const [employeeId, setEmployeeId] = useState("");
-  const [period, setPeriod] = useState<PeriodKey>("monthly");
-  const [criteriaScore, setCriteriaScore] = useState("80");
-  const [notes, setNotes] = useState("");
-  const [computed, setComputed] = useState<{
-    tasks: number;
-    attendance: number;
-    total: number;
-    start: string;
-    end: string;
-  } | null>(null);
+  const [search, setSearch] = useState("");
+  const [periodFilter, setPeriodFilter] = useState("all");
+  const [stageFilter, setStageFilter] = useState("all");
 
   const { data } = useQuery({
     queryKey: ["evaluations-page"],
     queryFn: async () => {
-      const [employees, evaluations, approvals] = await Promise.all([
+      const [employees, evaluations, approvals, criteria, goals] = await Promise.all([
         supabase.from("employees").select("id, full_name").order("full_name"),
         supabase.from("evaluations").select("*").order("created_at", { ascending: false }),
         supabase
           .from("evaluation_approvals")
           .select("id, evaluation_id, stage, action, note, created_at")
           .order("created_at", { ascending: true }),
+        supabase
+          .from("evaluation_criteria")
+          .select("id, evaluation_id, name, kind, weight, score, max_score, note"),
+        supabase
+          .from("evaluation_goals")
+          .select("id, evaluation_id, title, metric, target_date, status"),
       ]);
       return {
         employees: employees.data ?? [],
-        evaluations: evaluations.data ?? [],
-        approvals: approvals.data ?? [],
+        evaluations: (evaluations.data ?? []) as unknown as EvaluationRow[],
+        approvals: (approvals.data ?? []) as ApprovalRow[],
+        criteria: (criteria.data ?? []) as unknown as CriterionRow[],
+        goals: (goals.data ?? []) as GoalRow[],
       };
     },
   });
 
   const employees = data?.employees ?? [];
   const evaluations = data?.evaluations ?? [];
-  const trail = (data?.approvals ?? []).reduce<Record<string, ApprovalRow[]>>((acc, a) => {
-    (acc[a.evaluation_id] ??= []).push(a);
-    return acc;
-  }, {});
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
 
+  const grouped = useMemo(() => {
+    const trail: Record<string, ApprovalRow[]> = {};
+    for (const a of data?.approvals ?? []) (trail[a.evaluation_id] ??= []).push(a);
+    const criteria: Record<string, CriterionRow[]> = {};
+    for (const c of data?.criteria ?? []) (criteria[c.evaluation_id] ??= []).push(c);
+    const goals: Record<string, GoalRow[]> = {};
+    for (const g of data?.goals ?? []) (goals[g.evaluation_id] ??= []).push(g);
+    return { trail, criteria, goals };
+  }, [data]);
 
-  const compute = useMutation({
-    mutationFn: async () => {
-      const { start, end } = periodRange(period);
-      const [tasksRes, attRes] = await Promise.all([
-        supabase
-          .from("tasks")
-          .select("status, progress, weight, due_date, completed_at")
-          .eq("assignee_id", employeeId)
-          .gte("start_date", start)
-          .lte("start_date", end),
-        supabase
-          .from("attendance_records")
-          .select("status, late_minutes, early_leave_minutes")
-          .eq("employee_id", employeeId)
-          .gte("work_date", start)
-          .lte("work_date", end),
-      ]);
-
-      const tasks = tasksRes.data ?? [];
-      const totalWeight = tasks.reduce((s, t) => s + (t.weight || 1), 0);
-      const earned = tasks.reduce((s, t) => {
-        const base = (t.progress ?? 0) * (t.weight || 1);
-        const late = t.status === "completed" && t.due_date && t.completed_at
-          ? t.completed_at.slice(0, 10) > t.due_date
-          : false;
-        return s + (late ? base * 0.85 : base);
-      }, 0);
-      const tasksScore = totalWeight ? Math.min(100, Math.round(earned / totalWeight)) : 0;
-
-      const att = attRes.data ?? [];
-      const workDays = att.filter((a) => a.status !== "holiday").length;
-      const presentDays = att.filter((a) => a.status === "present").length;
-      const lateMinutes = att.reduce((s, a) => s + a.late_minutes + a.early_leave_minutes, 0);
-      const presenceRate = workDays ? (presentDays / workDays) * 100 : 0;
-      const attendanceScore = workDays
-        ? Math.max(0, Math.round(presenceRate - lateMinutes / 30))
-        : 0;
-
-      const total = Math.round(
-        tasksScore * WEIGHTS.tasks +
-          attendanceScore * WEIGHTS.attendance +
-          Number(criteriaScore) * WEIGHTS.criteria,
-      );
-
-      return { tasks: tasksScore, attendance: attendanceScore, total, start, end };
-    },
-    onSuccess: (r) => setComputed(r),
-    onError: (e: Error) => toast.error(e.message),
+  const filtered = evaluations.filter((ev) => {
+    if (periodFilter !== "all" && ev.period !== periodFilter) return false;
+    if (stageFilter !== "all" && ev.approval_stage !== stageFilter) return false;
+    if (search && !nameOf(ev.employee_id).includes(search.trim())) return false;
+    return true;
   });
 
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!computed) throw new Error("احسب الدرجات أولاً");
-      const { error } = await supabase.from("evaluations").insert({
-        employee_id: employeeId,
-        evaluator_id: employee?.id ?? null,
-        period,
-        period_start: computed.start,
-        period_end: computed.end,
-        tasks_score: computed.tasks,
-        attendance_score: computed.attendance,
-        criteria_score: Number(criteriaScore),
-        total_score: computed.total,
-        grade: gradeFor(computed.total),
-        notes: notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("تم حفظ التقييم");
-      setComputed(null);
-      setNotes("");
-      void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const mine = evaluations.filter((ev) => employee && ev.employee_id === employee.id);
+  const actor = { isManager, isHR, isDirector };
 
-  const submitFn = useServerFn(submitEvaluation);
-  const decideFn = useServerFn(decideEvaluation);
-
-  const submit = useMutation({
-    mutationFn: async (id: string) => {
-      await submitFn({ data: { evaluationId: id } });
-    },
-    onSuccess: () => {
-      toast.success("تم إرسال التقييم إلى مسار الاعتماد");
-      void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const decide = useMutation({
-    mutationFn: async (v: { id: string; action: "approved" | "returned"; note?: string }) => {
-      await decideFn({
-        data: { evaluationId: v.id, action: v.action, ...(v.note ? { note: v.note } : {}) },
-      });
-    },
-
-    onSuccess: (_d, v) => {
-      toast.success(v.action === "approved" ? "تم اعتماد المرحلة" : "تمت إعادة التقييم للتعديل");
-      void qc.invalidateQueries({ queryKey: ["evaluations-page"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
+  const renderList = (rows: EvaluationRow[]) =>
+    rows.length === 0 ? (
+      <p className="text-sm text-muted-foreground">لا توجد تقييمات مطابقة.</p>
+    ) : (
+      rows.map((ev) => (
+        <EvaluationRecord
+          key={ev.id}
+          ev={ev}
+          employeeName={nameOf(ev.employee_id)}
+          criteria={grouped.criteria[ev.id] ?? []}
+          goals={grouped.goals[ev.id] ?? []}
+          trail={grouped.trail[ev.id] ?? []}
+          actor={actor}
+          isOwner={!!employee && ev.employee_id === employee.id}
+          onChanged={refresh}
+        />
+      ))
+    );
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="تقييم الموظفين"
-        description="الدرجة النهائية = 50% إنجاز المهام + 30% الالتزام بالدوام + 20% معايير المدير"
+        title="تقييم الأداء"
+        description="فترات شهرية وربعية ونصف سنوية وسنوية — إنجاز المهام والدوام يُحتسبان تلقائياً وتُضاف إليهما المعايير السلوكية"
       />
 
-      {isManager && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">تقييم جديد</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
+      <Tabs defaultValue={isManager || isHR ? "new" : "mine"}>
+        <TabsList className="flex-wrap">
+          {(isManager || isHR) && <TabsTrigger value="new">تقييم جديد</TabsTrigger>}
+          <TabsTrigger value="records">سجل التقييمات</TabsTrigger>
+          <TabsTrigger value="mine">تقييماتي</TabsTrigger>
+          <TabsTrigger value="self">التقييم الذاتي</TabsTrigger>
+          <TabsTrigger value="criteria">المعايير</TabsTrigger>
+        </TabsList>
+
+        {(isManager || isHR) && (
+          <TabsContent value="new" className="mt-4">
+            <EvaluationForm employees={employees} onSaved={refresh} />
+          </TabsContent>
+        )}
+
+        <TabsContent value="records" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">تصفية</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label>الموظف</Label>
-                <Select value={employeeId} onValueChange={setEmployeeId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الموظف" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>بحث باسم الموظف</Label>
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="الاسم" />
               </div>
               <div className="space-y-2">
                 <Label>الفترة</Label>
-                <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+                <Select value={periodFilter} onValueChange={setPeriodFilter}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PERIOD_LABELS).map(([k, v]) => (
+                    <SelectItem value="all">كل الفترات</SelectItem>
+                    {Object.entries(EVALUATION_PERIOD_LABELS).map(([k, v]) => (
                       <SelectItem key={k} value={k}>
                         {v}
                       </SelectItem>
@@ -270,155 +176,44 @@ function EvaluationsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>درجة معايير المدير (0-100)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={criteriaScore}
-                  onChange={(e) => setCriteriaScore(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>ملاحظات</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => compute.mutate()}
-                disabled={!employeeId || compute.isPending}
-              >
-                <Sparkles className="size-4" /> احتساب الدرجات
-              </Button>
-              <Button onClick={() => save.mutate()} disabled={!computed || save.isPending}>
-                حفظ التقييم
-              </Button>
-            </div>
-
-            {computed && (
-              <div className="grid gap-3 rounded-lg bg-muted/50 p-4 sm:grid-cols-4">
-                <Metric label="إنجاز المهام" value={computed.tasks} />
-                <Metric label="الالتزام بالدوام" value={computed.attendance} />
-                <Metric label="معايير المدير" value={Number(criteriaScore)} />
-                <Metric label="الدرجة النهائية" value={computed.total} highlight />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">سجل التقييمات</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {evaluations.length === 0 && (
-            <p className="text-sm text-muted-foreground">لا توجد تقييمات بعد.</p>
-          )}
-          {evaluations.map((ev) => {
-            const stage = ev.approval_stage as ApprovalStage;
-            const canAct = canActOnStage(stage, { isManager, isHR, isDirector });
-            return (
-              <div key={ev.id} className="space-y-3 rounded-lg border p-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{nameOf(ev.employee_id)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {PERIOD_LABELS[ev.period]} — {formatDate(ev.period_start)} إلى {formatDate(ev.period_end)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      مهام {ev.tasks_score} — دوام {ev.attendance_score} — معايير {ev.criteria_score}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{ev.grade ?? gradeFor(ev.total_score)}</Badge>
-                    <span className="font-display text-xl font-bold text-primary">{ev.total_score}</span>
-                    <Badge variant={stageBadgeVariant(stage)}>
-                      {stage === "approved" && <CheckCircle2 className="ml-1 size-3" />}
-                      {STAGE_LABELS[stage]}
-                    </Badge>
-                  </div>
-                </div>
-
-                <ApprovalTrack stage={stage} />
-
-                {ev.return_reason && (
-                  <p className="text-xs text-destructive">سبب الإعادة: {ev.return_reason}</p>
-                )}
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {(stage === "draft" || stage === "returned") && isManager && (
-                    <Button size="sm" onClick={() => submit.mutate(ev.id)} disabled={submit.isPending}>
-                      <Send className="size-4" /> إرسال للاعتماد
-                    </Button>
-                  )}
-                  {canAct && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => decide.mutate({ id: ev.id, action: "approved" })}
-                        disabled={decide.isPending}
-                      >
-                        <CheckCircle2 className="size-4" /> اعتماد المرحلة
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const note = window.prompt("سبب الإعادة للتعديل:")?.trim();
-                          if (!note) return;
-                          decide.mutate({ id: ev.id, action: "returned", note });
-                        }}
-                        disabled={decide.isPending}
-                      >
-                        <RotateCcw className="size-4" /> إعادة للتعديل
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                {(trail[ev.id]?.length ?? 0) > 0 && (
-                  <ul className="space-y-1 border-t pt-2 text-xs text-muted-foreground">
-                    {trail[ev.id]!.map((a) => (
-                      <li key={a.id}>
-                        {formatDate(a.created_at.slice(0, 10))} — {STAGE_LABELS[a.stage as ApprovalStage]}:{" "}
-                        {a.action === "submitted"
-                          ? "إرسال للاعتماد"
-                          : a.action === "approved"
-                            ? "اعتماد"
-                            : "إعادة للتعديل"}
-                        {a.note ? ` (${a.note})` : ""}
-                      </li>
+                <Label>مرحلة الاعتماد</Label>
+                <Select value={stageFilter} onValueChange={setStageFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل المراحل</SelectItem>
+                    {Object.entries(STAGE_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v as string}
+                      </SelectItem>
                     ))}
-                  </ul>
-                )}
+                  </SelectContent>
+                </Select>
               </div>
-            );
-          })}
+            </CardContent>
+          </Card>
+          <div className="space-y-3">{renderList(filtered)}</div>
+        </TabsContent>
 
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+        <TabsContent value="mine" className="mt-4 space-y-3">
+          {renderList(mine)}
+          {mine.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              آخر تقييم: {PERIOD_LABELS[mine[0]!.period]} —{" "}
+              {STAGE_LABELS[mine[0]!.approval_stage as ApprovalStage]}
+            </p>
+          )}
+        </TabsContent>
 
-function Metric({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p
-        className={
-          highlight
-            ? "font-display text-3xl font-bold text-primary"
-            : "font-display text-2xl font-semibold"
-        }
-      >
-        {value}
-      </p>
+        <TabsContent value="self" className="mt-4">
+          <SelfAssessmentTab employeeId={employee?.id ?? null} />
+        </TabsContent>
+
+        <TabsContent value="criteria" className="mt-4">
+          <CriteriaTemplatesTab canEdit={isDirector || isHR} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

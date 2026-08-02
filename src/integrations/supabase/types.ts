@@ -377,26 +377,41 @@ export type Database = {
       evaluation_criteria: {
         Row: {
           created_at: string
+          details: Json | null
           evaluation_id: string
           id: string
+          kind: string
+          max_score: number
           name: string
+          note: string | null
           score: number
+          template_id: string | null
           weight: number
         }
         Insert: {
           created_at?: string
+          details?: Json | null
           evaluation_id: string
           id?: string
+          kind?: string
+          max_score?: number
           name: string
+          note?: string | null
           score?: number
+          template_id?: string | null
           weight?: number
         }
         Update: {
           created_at?: string
+          details?: Json | null
           evaluation_id?: string
           id?: string
+          kind?: string
+          max_score?: number
           name?: string
+          note?: string | null
           score?: number
+          template_id?: string | null
           weight?: number
         }
         Relationships: [
@@ -407,10 +422,156 @@ export type Database = {
             referencedRelation: "evaluations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "evaluation_criteria_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_criteria_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_criteria_templates: {
+        Row: {
+          active: boolean
+          applies_periods: string[]
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          max_score: number
+          name: string
+          sort_order: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          applies_periods?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          max_score?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          applies_periods?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          max_score?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      evaluation_goals: {
+        Row: {
+          achievement_note: string | null
+          created_at: string
+          evaluation_id: string
+          id: string
+          metric: string | null
+          status: string
+          target_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          achievement_note?: string | null
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          metric?: string | null
+          status?: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          achievement_note?: string | null
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          metric?: string | null
+          status?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_goals_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_self_assessments: {
+        Row: {
+          achievements: string | null
+          challenges: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          period: Database["public"]["Enums"]["period_type"]
+          period_end: string
+          period_start: string
+          scores: Json
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          achievements?: string | null
+          challenges?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          period: Database["public"]["Enums"]["period_type"]
+          period_end: string
+          period_start: string
+          scores?: Json
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          achievements?: string | null
+          challenges?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          period?: Database["public"]["Enums"]["period_type"]
+          period_end?: string
+          period_start?: string
+          scores?: Json
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_self_assessments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
         ]
       }
       evaluations: {
         Row: {
+          acknowledged_at: string | null
+          acknowledgement_note: string | null
+          acknowledgement_status: string
           approval_stage: Database["public"]["Enums"]["approval_stage"]
           approved: boolean
           attendance_score: number
@@ -424,6 +585,7 @@ export type Database = {
           hr_approved_at: string | null
           hr_approved_by: string | null
           id: string
+          improvements: string | null
           manager_approved_at: string | null
           manager_approved_by: string | null
           notes: string | null
@@ -431,12 +593,16 @@ export type Database = {
           period_end: string
           period_start: string
           return_reason: string | null
+          strengths: string | null
           submitted_at: string | null
           tasks_score: number
           total_score: number
           updated_at: string
         }
         Insert: {
+          acknowledged_at?: string | null
+          acknowledgement_note?: string | null
+          acknowledgement_status?: string
           approval_stage?: Database["public"]["Enums"]["approval_stage"]
           approved?: boolean
           attendance_score?: number
@@ -450,6 +616,7 @@ export type Database = {
           hr_approved_at?: string | null
           hr_approved_by?: string | null
           id?: string
+          improvements?: string | null
           manager_approved_at?: string | null
           manager_approved_by?: string | null
           notes?: string | null
@@ -457,12 +624,16 @@ export type Database = {
           period_end: string
           period_start: string
           return_reason?: string | null
+          strengths?: string | null
           submitted_at?: string | null
           tasks_score?: number
           total_score?: number
           updated_at?: string
         }
         Update: {
+          acknowledged_at?: string | null
+          acknowledgement_note?: string | null
+          acknowledgement_status?: string
           approval_stage?: Database["public"]["Enums"]["approval_stage"]
           approved?: boolean
           attendance_score?: number
@@ -476,6 +647,7 @@ export type Database = {
           hr_approved_at?: string | null
           hr_approved_by?: string | null
           id?: string
+          improvements?: string | null
           manager_approved_at?: string | null
           manager_approved_by?: string | null
           notes?: string | null
@@ -483,6 +655,7 @@ export type Database = {
           period_end?: string
           period_start?: string
           return_reason?: string | null
+          strengths?: string | null
           submitted_at?: string | null
           tasks_score?: number
           total_score?: number
@@ -1182,7 +1355,13 @@ export type Database = {
         | "holiday"
         | "permission"
       employee_status: "active" | "on_leave" | "terminated"
-      period_type: "daily" | "weekly" | "monthly" | "quarterly" | "semiannual"
+      period_type:
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "semiannual"
+        | "annual"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "new" | "in_progress" | "completed" | "cancelled"
     }
@@ -1329,7 +1508,14 @@ export const Constants = {
         "permission",
       ],
       employee_status: ["active", "on_leave", "terminated"],
-      period_type: ["daily", "weekly", "monthly", "quarterly", "semiannual"],
+      period_type: [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "semiannual",
+        "annual",
+      ],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["new", "in_progress", "completed", "cancelled"],
     },

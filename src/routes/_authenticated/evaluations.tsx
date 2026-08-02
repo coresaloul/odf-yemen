@@ -259,34 +259,87 @@ function EvaluationsPage() {
           {evaluations.length === 0 && (
             <p className="text-sm text-muted-foreground">لا توجد تقييمات بعد.</p>
           )}
-          {evaluations.map((ev) => (
-            <div key={ev.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-              <div>
-                <p className="font-medium">{nameOf(ev.employee_id)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {PERIOD_LABELS[ev.period]} — {formatDate(ev.period_start)} إلى {formatDate(ev.period_end)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  مهام {ev.tasks_score} — دوام {ev.attendance_score} — معايير {ev.criteria_score}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{ev.grade ?? gradeFor(ev.total_score)}</Badge>
-                <span className="font-display text-xl font-bold text-primary">{ev.total_score}</span>
-                {ev.approved ? (
-                  <Badge>
-                    <CheckCircle2 className="ml-1 size-3" /> معتمد
-                  </Badge>
-                ) : (
-                  isManager && (
-                    <Button size="sm" variant="outline" onClick={() => approve.mutate(ev.id)}>
-                      اعتماد
+          {evaluations.map((ev) => {
+            const stage = ev.approval_stage as ApprovalStage;
+            const canAct = canActOnStage(stage, { isManager, isHR, isDirector });
+            return (
+              <div key={ev.id} className="space-y-3 rounded-lg border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{nameOf(ev.employee_id)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {PERIOD_LABELS[ev.period]} — {formatDate(ev.period_start)} إلى {formatDate(ev.period_end)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      مهام {ev.tasks_score} — دوام {ev.attendance_score} — معايير {ev.criteria_score}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{ev.grade ?? gradeFor(ev.total_score)}</Badge>
+                    <span className="font-display text-xl font-bold text-primary">{ev.total_score}</span>
+                    <Badge variant={stageBadgeVariant(stage)}>
+                      {stage === "approved" && <CheckCircle2 className="ml-1 size-3" />}
+                      {STAGE_LABELS[stage]}
+                    </Badge>
+                  </div>
+                </div>
+
+                <ApprovalTrack stage={stage} />
+
+                {ev.return_reason && (
+                  <p className="text-xs text-destructive">سبب الإعادة: {ev.return_reason}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {(stage === "draft" || stage === "returned") && isManager && (
+                    <Button size="sm" onClick={() => submit.mutate(ev.id)} disabled={submit.isPending}>
+                      <Send className="size-4" /> إرسال للاعتماد
                     </Button>
-                  )
+                  )}
+                  {canAct && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => decide.mutate({ id: ev.id, action: "approved" })}
+                        disabled={decide.isPending}
+                      >
+                        <CheckCircle2 className="size-4" /> اعتماد المرحلة
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const note = window.prompt("سبب الإعادة للتعديل:")?.trim();
+                          if (!note) return;
+                          decide.mutate({ id: ev.id, action: "returned", note });
+                        }}
+                        disabled={decide.isPending}
+                      >
+                        <RotateCcw className="size-4" /> إعادة للتعديل
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {(trail[ev.id]?.length ?? 0) > 0 && (
+                  <ul className="space-y-1 border-t pt-2 text-xs text-muted-foreground">
+                    {trail[ev.id]!.map((a) => (
+                      <li key={a.id}>
+                        {formatDate(a.created_at.slice(0, 10))} — {STAGE_LABELS[a.stage as ApprovalStage]}:{" "}
+                        {a.action === "submitted"
+                          ? "إرسال للاعتماد"
+                          : a.action === "approved"
+                            ? "اعتماد"
+                            : "إعادة للتعديل"}
+                        {a.note ? ` (${a.note})` : ""}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
+
         </CardContent>
       </Card>
     </div>

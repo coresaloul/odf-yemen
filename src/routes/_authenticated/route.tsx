@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   ClipboardCheck,
+  Wallet,
   LogOut,
   Menu,
 } from "lucide-react";
@@ -28,7 +29,13 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: boolean; adminOnly?: boolean }[] = [
+const NAV: {
+  to: string;
+  label: string;
+  icon: typeof Settings;
+  directorOnly?: boolean;
+  adminOnly?: boolean;
+}[] = [
   { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard },
   { to: "/org", label: "المخطط التنظيمي", icon: Network },
   { to: "/employees", label: "الموظفون", icon: Users },
@@ -38,6 +45,7 @@ const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: bo
   { to: "/evaluations", label: "التقييم", icon: Star },
   { to: "/approvals", label: "الموافقات", icon: ClipboardCheck },
 
+  { to: "/payroll", label: "الرواتب", icon: Wallet },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
   { to: "/settings", label: "الإشعارات", icon: Settings },
   { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },
@@ -121,7 +129,12 @@ function AuthenticatedLayout() {
         <header className="no-print sticky top-0 z-30 flex items-center gap-2 border-b bg-card px-3 py-2 md:px-4">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 md:hidden" aria-label="القائمة">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 md:hidden"
+                aria-label="القائمة"
+              >
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
@@ -135,7 +148,9 @@ function AuthenticatedLayout() {
                   <Logo className="h-9 w-9" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-display text-sm font-bold leading-tight">{ORG_NAME}</p>
+                  <p className="truncate font-display text-sm font-bold leading-tight">
+                    {ORG_NAME}
+                  </p>
                   <p className="mt-0.5 text-xs text-accent">نظام الموارد البشرية</p>
                 </div>
               </div>

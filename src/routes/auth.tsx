@@ -52,7 +52,10 @@ function AuthPage() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) return toast.error("تعذر تسجيل الدخول: " + error.message);
+    if (error) {
+      toast.error("تعذر تسجيل الدخول: " + error.message);
+      return;
+    }
     toast.success("مرحباً بك");
   };
 
@@ -68,7 +71,10 @@ function AuthPage() {
       },
     });
     setBusy(false);
-    if (error) return toast.error("تعذر إنشاء الحساب: " + error.message);
+    if (error) {
+      toast.error("تعذر إنشاء الحساب: " + error.message);
+      return;
+    }
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
   };
 
@@ -76,7 +82,10 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + "/auth",
     });
-    if (result.error) return toast.error("تعذر الدخول عبر Google");
+    if (result.error) {
+      toast.error("تعذر الدخول عبر Google");
+      return;
+    }
     if (result.redirected) return;
     void navigate({ to: target });
   };

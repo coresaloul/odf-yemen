@@ -141,7 +141,7 @@ export function TaskFilters({
             </Button>
           </div>
         </div>
-      </details>
+      </div>
     </div>
   );
 }

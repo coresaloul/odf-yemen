@@ -57,8 +57,8 @@
 
 ## التفاصيل التقنية
 
-- ترحيل قاعدة بيانات: إضافة `annual` إلى `period_type`؛ جدول `evaluation_criteria_templates`؛ توسعة `evaluation_criteria` لربطها بالقالب والملاحظة؛ جدول `evaluation_self_assessments`؛ جدول `evaluation_goals`؛ أعمدة إقرار الموظف (`acknowledged_at`, `acknowledgement_status`, `acknowledgement_note`) على `evaluations`؛ قيد فريد (موظف + فترة + بداية الفترة). مع GRANT وسياسات RLS لكل جدول جديد بحيث يرى الموظف بياناته والمشرف بيانات مرؤوسيه والموارد البشرية/المدير التنفيذي الكل.
-- منطق الفترات التقويمية في `src/lib/hr.ts` (دوال توليد خيارات الفترة ونطاقها).
-- احتساب الدرجات والتحقق من الصلاحيات ينتقل إلى دوال خادم في `src/lib/evaluation.functions.ts` بدل الاحتساب في المتصفح، مع إبقاء `evaluation-approval.functions.ts` لمسار الاعتماد وإضافة دالة الإقرار.
+- ترحيل قاعدة بيانات: إضافة `annual` إلى `period_type`؛ جدول `evaluation_criteria_templates` (يشمل نوع المعيار: تلقائي مهام / تلقائي دوام / سلوكي، والوزن)؛ توسعة `evaluation_criteria` لربطها بالقالب والملاحظة وتخزين تفاصيل الاحتساب التلقائي (jsonb)؛ جدول `evaluation_self_assessments`؛ جدول `evaluation_goals`؛ أعمدة إقرار الموظف (`acknowledged_at`, `acknowledgement_status`, `acknowledgement_note`) على `evaluations`؛ قيد فريد (موظف + فترة + بداية الفترة). مع GRANT وسياسات RLS لكل جدول جديد بحيث يرى الموظف بياناته والمشرف بيانات مرؤوسيه والموارد البشرية/المدير التنفيذي الكل.
+- منطق الفترات التقويمية في `src/lib/hr.ts` (دوال توليد خيارات الفترة ونطاقها، وحصر فترات التقييم في الشهري/الربعي/النصف سنوي/السنوي).
+- احتساب درجتي المهام والدوام تلقائياً والتحقق من الصلاحيات ينتقل إلى دوال خادم في `src/lib/evaluation.functions.ts` بدل الاحتساب في المتصفح، مع إبقاء `evaluation-approval.functions.ts` لمسار الاعتماد وإضافة دالة الإقرار.
 - مكونات جديدة تحت `src/components/evaluations/` (نموذج المعايير، مقارنة التقييم الذاتي، الأهداف، بطاقة التقييم، تبويب إعداد المعايير).
 - التصدير عبر `src/lib/report-export.ts` الحالي للحفاظ على نفس الترويسة والشعار.

@@ -18,6 +18,7 @@ import {
   type PeriodKey,
 } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
+import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({

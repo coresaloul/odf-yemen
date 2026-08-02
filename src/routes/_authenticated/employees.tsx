@@ -25,6 +25,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EMPLOYEE_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { EmployeeAccountsDialog } from "@/components/EmployeeAccountsDialog";
+import { useServerFn } from "@tanstack/react-start";
+import { provisionEmployeeAccounts } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({
@@ -291,7 +293,8 @@ function EmployeeProfileDialog({
   sections: { id: string; name: string }[];
   onOpenChange: (open: boolean) => void;
 }) {
-  const { isDirector } = useAuth();
+  const { isDirector, isHR } = useAuth();
+  const provision = useServerFn(provisionEmployeeAccounts);
   const qc = useQueryClient();
   const e = employee;
 
@@ -540,7 +543,8 @@ function EmployeeDialog({
   onOpenChange?: (open: boolean) => void;
   onDone: () => void;
 }) {
-  const { isDirector } = useAuth();
+  const { isDirector, isHR } = useAuth();
+  const provision = useServerFn(provisionEmployeeAccounts);
   const [open, setOpen] = useState(false);
   const isEdit = Boolean(employee);
   const s = (v: unknown) => (v == null ? "" : String(v));
@@ -621,10 +625,31 @@ function EmployeeDialog({
         payload['basic_salary'] = form.basic_salary ? Number(form.basic_salary) : null;
         payload['iban'] = opt(form.iban);
       }
-      const { error } = isEdit
-        ? await supabase.from("employees").update(payload as never).eq("id", employee!.id)
-        : await supabase.from("employees").insert(payload as never);
+      if (isEdit) {
+        const { error } = await supabase
+          .from("employees")
+          .update(payload as never)
+          .eq("id", employee!.id);
+        if (error) throw error;
+        return { created: false as const };
+      }
+      const { data: inserted, error } = await supabase
+        .from("employees")
+        .insert(payload as never)
+        .select("id")
+        .single();
       if (error) throw error;
+      // كل موظف جديد يحصل تلقائياً على حساب مستخدم بدور «موظف»
+      if (opt(form.email) && (isDirector || isHR)) {
+        try {
+          const res = await provision({ data: { employeeIds: [(inserted as { id: string }).id] } });
+          const pwd = res.find((r) => r.password)?.password;
+          if (pwd) toast.info(`كلمة المرور المؤقتة للحساب: ${pwd}`, { duration: 20000 });
+        } catch (err) {
+          toast.warning(`تعذر إنشاء حساب المستخدم: ${(err as Error).message}`);
+        }
+      }
+      return { created: true as const };
     },
     onSuccess: () => {
       toast.success(isEdit ? "تم تحديث بيانات الموظف" : "تمت إضافة الموظف");

@@ -14,6 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_correction_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string | null
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          stage?: Database["public"]["Enums"]["approval_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_correction_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_correction_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_correction_requests: {
+        Row: {
+          attachment_url: string | null
+          correction_type: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          reason: string | null
+          requested_check_in: string | null
+          requested_check_out: string | null
+          return_reason: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+          submitted_at: string | null
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          correction_type?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          reason?: string | null
+          requested_check_in?: string | null
+          requested_check_out?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          attachment_url?: string | null
+          correction_type?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          reason?: string | null
+          requested_check_in?: string | null
+          requested_check_out?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_correction_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           check_in: string | null
@@ -1208,6 +1320,9 @@ export type Database = {
       }
       tasks: {
         Row: {
+          approval_note: string | null
+          approved_at: string | null
+          approved_by: string | null
           assigned_by: string | null
           assignee_id: string
           completed_at: string | null
@@ -1222,11 +1337,15 @@ export type Database = {
           recurrence: string | null
           start_date: string
           status: Database["public"]["Enums"]["task_status"]
+          submitted_for_approval_at: string | null
           title: string
           updated_at: string
           weight: number
         }
         Insert: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_by?: string | null
           assignee_id: string
           completed_at?: string | null
@@ -1241,11 +1360,15 @@ export type Database = {
           recurrence?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
+          submitted_for_approval_at?: string | null
           title: string
           updated_at?: string
           weight?: number
         }
         Update: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_by?: string | null
           assignee_id?: string
           completed_at?: string | null
@@ -1260,6 +1383,7 @@ export type Database = {
           recurrence?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
+          submitted_for_approval_at?: string | null
           title?: string
           updated_at?: string
           weight?: number
@@ -1363,7 +1487,12 @@ export type Database = {
         | "semiannual"
         | "annual"
       task_priority: "low" | "medium" | "high" | "urgent"
-      task_status: "new" | "in_progress" | "completed" | "cancelled"
+      task_status:
+        | "new"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "pending_approval"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1517,7 +1646,13 @@ export const Constants = {
         "annual",
       ],
       task_priority: ["low", "medium", "high", "urgent"],
-      task_status: ["new", "in_progress", "completed", "cancelled"],
+      task_status: [
+        "new",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "pending_approval",
+      ],
     },
   },
 } as const

@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { parseVoiceTask } from "@/lib/voice-task.functions";
 import { notifyTaskAssigned, notifyTaskStatusChanged } from "@/lib/task-emails.functions";
+import { submitTaskForApproval } from "@/lib/approvals.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +59,10 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 function TasksPage() {
   const { isManager, employee, user } = useAuth();
+  const requestApproval = useServerFn(submitTaskForApproval);
+  /** المكلَّف نفسه لا يعتمد إنجازه — يُرسل للاعتماد */
+  const needsApproval = (task?: TaskRow | null) =>
+    !!task && !isManager && task.assigned_by !== employee?.id;
   const qc = useQueryClient();
   const sendAssignedEmail = useServerFn(notifyTaskAssigned);
   const sendStatusEmail = useServerFn(notifyTaskStatusChanged);
@@ -136,6 +141,7 @@ function TasksPage() {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
     void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    void qc.invalidateQueries({ queryKey: ["pending-approvals"] });
   };
 
   const canManageTask = (t: TaskRow) => isManager || t.assigned_by === employee?.id;
@@ -207,6 +213,11 @@ function TasksPage() {
   const applyProgress = useMutation({
     mutationFn: async ({ id, progress }: { id: string; progress: number }) => {
       const task = tasks.find((t) => t.id === id);
+      if (progress >= 100 && needsApproval(task)) {
+        await requestApproval({ data: { taskId: id } });
+        await supabase.from("task_updates").insert({ task_id: id, progress, created_by: user?.id ?? null });
+        return "pending" as const;
+      }
       const status = statusForProgress(progress);
       const { error } = await supabase
         .from("tasks")
@@ -240,9 +251,12 @@ function TasksPage() {
       } catch {
         /* تجاهل أخطاء البريد */
       }
+      return "done" as const;
     },
-    onSuccess: () => {
-      toast.success("تم تحديث الإنجاز");
+    onSuccess: (result) => {
+      toast.success(
+        result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تحديث الإنجاز",
+      );
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -251,6 +265,10 @@ function TasksPage() {
   const changeStatus = useMutation({
     mutationFn: async ({ task, status }: { task: TaskRow; status: TaskStatus }) => {
       const progress = progressForStatus(status, task.progress);
+      if (status === "completed" && needsApproval(task)) {
+        await requestApproval({ data: { taskId: task.id } });
+        return "pending" as const;
+      }
       const { error } = await supabase
         .from("tasks")
         .update({
@@ -265,9 +283,12 @@ function TasksPage() {
       } catch {
         /* تجاهل أخطاء البريد */
       }
+      return "done" as const;
     },
-    onSuccess: () => {
-      toast.success("تم تغيير حالة المهمة");
+    onSuccess: (result) => {
+      toast.success(
+        result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تغيير حالة المهمة",
+      );
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),

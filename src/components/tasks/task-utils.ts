@@ -11,7 +11,13 @@ export type EmployeeLite = {
   section_id: string | null;
 };
 
-export const STATUS_ORDER: TaskStatus[] = ["new", "in_progress", "completed", "cancelled"];
+export const STATUS_ORDER: TaskStatus[] = [
+  "new",
+  "in_progress",
+  "pending_approval",
+  "completed",
+  "cancelled",
+];
 
 export const RECURRENCE_LABELS: Record<string, string> = {
   none: "بدون تكرار",
@@ -29,7 +35,8 @@ export const PRIORITY_RANK: Record<string, number> = {
 
 export function isOverdue(t: Pick<TaskRow, "due_date" | "status">) {
   if (!t.due_date) return false;
-  if (t.status === "completed" || t.status === "cancelled") return false;
+  if (t.status === "completed" || t.status === "cancelled" || t.status === "pending_approval")
+    return false;
   const today = new Date().toISOString().slice(0, 10);
   return t.due_date < today;
 }

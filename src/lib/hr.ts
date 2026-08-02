@@ -19,6 +19,7 @@ export const EVALUATION_PERIOD_LABELS: Record<string, string> = {
 export const TASK_STATUS_LABELS: Record<string, string> = {
   new: "جديدة",
   in_progress: "قيد التنفيذ",
+  pending_approval: "بانتظار الاعتماد",
   completed: "منجزة",
   cancelled: "ملغاة",
 };

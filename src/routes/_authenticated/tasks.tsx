@@ -53,6 +53,7 @@ function TasksPage() {
   const qc = useQueryClient();
   const sendAssignedEmail = useServerFn(notifyTaskAssigned);
   const sendStatusEmail = useServerFn(notifyTaskStatusChanged);
+  const [open, setOpen] = useState(false);
   const [viaVoice, setViaVoice] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [statusFilter, setStatusFilter] = useState("all");

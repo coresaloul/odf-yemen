@@ -215,18 +215,3 @@ export async function writeCriteriaRows(
   }
   if (rows.length) await supabaseAdmin.from("evaluation_criteria").insert(rows as never);
 }
-
-export async function notifyEmployee(employeeId: string, title: string, body: string) {
-  const { data: emp } = await supabaseAdmin
-    .from("employees")
-    .select("user_id")
-    .eq("id", employeeId)
-    .maybeSingle();
-  if (!emp?.user_id) return;
-  await supabaseAdmin.from("notifications").insert({
-    user_id: emp.user_id,
-    title,
-    body,
-    type: "evaluation",
-  });
-}

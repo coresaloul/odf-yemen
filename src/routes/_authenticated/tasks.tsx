@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { parseVoiceTask } from "@/lib/voice-task.functions";
+import { notifyTaskAssigned, notifyTaskStatusChanged } from "@/lib/task-emails.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,8 @@ const EMPTY_FORM = {
 function TasksPage() {
   const { isManager, employee } = useAuth();
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const sendAssignedEmail = useServerFn(notifyTaskAssigned);
+  const sendStatusEmail = useServerFn(notifyTaskStatusChanged);
   const [viaVoice, setViaVoice] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [statusFilter, setStatusFilter] = useState("all");

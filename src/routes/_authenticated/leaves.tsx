@@ -186,7 +186,9 @@ function LeavesPage() {
           <RequestsTable
             rows={pendingForMe}
             emptyText="لا توجد طلبات بانتظار اعتمادك"
-            onDecide={(id, action, note) => decideMut.mutate({ id, action, note })}
+            onDecide={(id, action, note) =>
+              decideMut.mutate(note ? { id, action, note } : { id, action })
+            }
           />
         </TabsContent>
 

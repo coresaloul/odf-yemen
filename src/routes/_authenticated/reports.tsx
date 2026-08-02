@@ -377,11 +377,85 @@ function ReportsPage() {
       </div>
 
       {!targetId && <p className="text-sm text-muted-foreground">اختر الجهة لعرض التقرير.</p>}
-      {isFetching && <p className="text-sm text-muted-foreground">جارٍ إعداد التقرير…</p>}
+      {(kind === "evaluation" ? loadingEvals : isFetching) && (
+        <p className="text-sm text-muted-foreground">جارٍ إعداد التقرير…</p>
+      )}
 
-      {targetId && (
+      {targetId && kind === "evaluation" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { label: "عدد التقييمات", value: evaluations.length },
+              { label: "متوسط المهام", value: `${avgTasksScore}%` },
+              { label: "متوسط الدوام", value: `${avgAttendanceScore}%` },
+              { label: "متوسط المعايير", value: `${avgCriteriaScore}%` },
+              { label: "الدرجة الكلية", value: `${avgTotal}%` },
+            ].map((s) => (
+              <Card key={s.label}>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="font-display text-2xl font-bold text-primary">{s.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {formatDate(range.start)} — {formatDate(range.end)} · تقييم أداء {SCOPE_LABELS[scope]}{" "}
+                {targetName} · التقدير العام: {gradeFor(avgTotal)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto p-0">
+              <table className="w-full text-right text-sm">
+                <thead className="bg-muted/60 text-xs">
+                  <tr>
+                    <th className="p-3">الموظف</th>
+                    <th className="p-3">الفترة</th>
+                    <th className="p-3">المهام</th>
+                    <th className="p-3">الدوام</th>
+                    <th className="p-3">المعايير</th>
+                    <th className="p-3">الكلية</th>
+                    <th className="p-3">التقدير</th>
+                    <th className="p-3">الاعتماد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evaluations.map((e) => (
+                    <tr key={e.id} className="border-t">
+                      <td className="p-3">{nameOf(e.employee_id)}</td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {formatDate(e.period_start)} — {formatDate(e.period_end)}
+                      </td>
+                      <td className="p-3">{Math.round(Number(e.tasks_score))}%</td>
+                      <td className="p-3">{Math.round(Number(e.attendance_score))}%</td>
+                      <td className="p-3">{Math.round(Number(e.criteria_score))}%</td>
+                      <td className="p-3 font-semibold text-primary">
+                        {Math.round(Number(e.total_score))}%
+                      </td>
+                      <td className="p-3">{e.grade ?? gradeFor(Number(e.total_score))}</td>
+                      <td className="p-3 text-xs">{e.approved ? "معتمد" : "غير معتمد"}</td>
+                    </tr>
+                  ))}
+                  {evaluations.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                        لا توجد تقييمات ضمن هذه الفترة.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {targetId && kind === "achievement" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
             {[
               { label: "إجمالي المهام", value: tasks.length },
               { label: "منجزة", value: completed },

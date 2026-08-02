@@ -11,7 +11,7 @@ export function DistributionCard({
   title: string;
   total: number;
   slices: Slice[];
-  footer?: string;
+  footer?: string | undefined;
 }) {
   return (
     <Card>

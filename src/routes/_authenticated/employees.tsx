@@ -88,7 +88,7 @@ function EmployeesPage() {
         title="الموظفون"
         description="ملفات الموظفين وبياناتهم التنظيمية"
         action={
-          isManagerOrAbove && (
+          isManager && (
             <EmployeeDialog
               departments={departments}
               sections={sections}

@@ -96,20 +96,27 @@ function AuthenticatedLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print flex items-center gap-2 overflow-x-auto border-b bg-card px-4 py-2 md:hidden">
-          {NAV.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "shrink-0 rounded-md px-3 py-1.5 text-xs",
-                pathname.startsWith(item.to) ? "bg-primary text-primary-foreground" : "bg-muted",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <header className="no-print flex items-center gap-2 border-b bg-card px-4 py-2">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto md:hidden">
+            {NAV.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "shrink-0 rounded-md px-3 py-1.5 text-xs",
+                  pathname.startsWith(item.to) ? "bg-primary text-primary-foreground" : "bg-muted",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <p className="hidden flex-1 text-sm text-muted-foreground md:block">
+            {employee?.full_name ?? user.email}
+          </p>
+          <NotificationsBell />
         </header>
+
         <main className="flex-1 p-4 md:p-8">
           <Outlet />
         </main>

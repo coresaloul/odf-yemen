@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "executive_director" | "manager" | "employee";
+export type AppRole = "executive_director" | "manager" | "hr" | "employee";
 
 export type EmployeeLite = {
   id: string;
@@ -21,6 +21,7 @@ type AuthState = {
   employee: EmployeeLite;
   isDirector: boolean;
   isManager: boolean;
+  isHR: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -81,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       employee,
       isDirector,
       isManager: isDirector || roles.includes("manager"),
+      isHR: roles.includes("hr"),
       refresh: async () => {
         await loadProfileData(user?.id);
       },

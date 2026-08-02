@@ -59,7 +59,8 @@ const ALL_ROLES = [
 type RoleValue = (typeof ALL_ROLES)[number]["value"];
 
 function UsersAdminPage() {
-  const { isDirector, loading: authLoading, refresh } = useAuth();
+  const { isDirector, isHR, loading: authLoading, refresh } = useAuth();
+  const canManageUsers = isDirector || isHR;
   const fetchUsers = useServerFn(listAppUsers);
   const doConfirm = useServerFn(confirmUserEmail);
   const doActive = useServerFn(setUserActive);

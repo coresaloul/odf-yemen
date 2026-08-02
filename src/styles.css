@@ -151,6 +151,24 @@
   }
 }
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px; /* يمنع تكبير الصفحة تلقائيًا عند الكتابة في iOS */
+    }
+  }
+}
+
 @media print {
   .no-print {
     display: none !important;

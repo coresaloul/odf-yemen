@@ -312,12 +312,14 @@ function Dashboard() {
         الفترة: {formatDate(range.start)} — {formatDate(range.end)}
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6">
         {stats.map((s) => (
           <Card key={s.label}>
-            <CardContent className="p-5">
+            <CardContent className="p-4 sm:p-5">
               <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="mt-1 font-display text-3xl font-bold text-primary">{s.value}</p>
+              <p className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl">
+                {s.value}
+              </p>
             </CardContent>
           </Card>
         ))}

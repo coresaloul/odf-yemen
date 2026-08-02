@@ -359,7 +359,7 @@ function TasksPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="إجمالي المهام" value={stats.total} />
         <StatCard label="قيد التنفيذ" value={stats.running} />
         <StatCard label="منجزة" value={stats.done} />

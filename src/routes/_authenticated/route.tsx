@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Star,
   FileBarChart,
+  Settings,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/attendance", label: "الدوام", icon: CalendarClock },
   { to: "/evaluations", label: "التقييم", icon: Star },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
+  { to: "/settings", label: "الإشعارات", icon: Settings },
 ] as const;
 
 function AuthenticatedLayout() {

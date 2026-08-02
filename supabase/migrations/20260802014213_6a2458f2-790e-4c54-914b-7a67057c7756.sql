@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.wants_notification(uuid, text, text) FROM authenticated;

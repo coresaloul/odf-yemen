@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, RotateCcw, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PERIOD_LABELS, formatDate, gradeFor, periodRange, type PeriodKey } from "@/lib/hr";
+import {
+  STAGE_LABELS,
+  STAGE_STEP_LABELS,
+  canActOnStage,
+  stageBadgeVariant,
+  stepDone,
+  type ApprovalStage,
+} from "@/lib/evaluation-approval";
 
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({

@@ -20,7 +20,15 @@ export const parseVoiceTask = createServerFn({ method: "POST" })
       employees: Array.isArray(data.employees) ? data.employees.slice(0, 200) : [],
     };
   })
-  .handler(async ({ data }): Promise<ParsedTask> => {
+  .handler(async ({ data, context }): Promise<ParsedTask> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: emp } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!emp) throw new Error("غير مصرح: حسابك غير مرتبط بسجل موظف");
+
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("خدمة الذكاء الاصطناعي غير متاحة حالياً");
 

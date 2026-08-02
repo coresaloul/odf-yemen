@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ORG_NAME } from "@/lib/hr";
 import { PasswordField } from "@/components/PasswordField";
 
@@ -40,7 +39,6 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
 
   const target = next && next.startsWith("/") ? next : "/dashboard";
 
@@ -59,28 +57,6 @@ function AuthPage() {
     }
     toast.success("مرحباً بك");
   };
-
-  const signUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin + target,
-        data: { full_name: fullName },
-      },
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("تعذر إنشاء الحساب: " + error.message);
-      return;
-    }
-    toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
-  };
-
-
-
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
@@ -103,76 +79,36 @@ function AuthPage() {
             <CardDescription>سجّل الدخول للمتابعة إلى لوحة العمل</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">دخول</TabsTrigger>
-                <TabsTrigger value="signup">حساب جديد</TabsTrigger>
-              </TabsList>
+            <form className="space-y-4" onSubmit={signIn}>
+              <div className="space-y-2">
+                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  dir="ltr"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <PasswordField
+                id="password"
+                value={password}
+                onChange={setPassword}
+                required
+                autoComplete="current-password"
+                showGenerator={false}
+                showMeter={false}
+              />
 
-              <TabsContent value="signin">
-                <form className="space-y-4" onSubmit={signIn}>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">البريد الإلكتروني</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      dir="ltr"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <PasswordField
-                    id="password"
-                    value={password}
-                    onChange={setPassword}
-                    required
-                    autoComplete="current-password"
-                    showGenerator={false}
-                    showMeter={false}
-                  />
+              <Button type="submit" className="w-full" disabled={busy}>
+                دخول
+              </Button>
+            </form>
 
-                  <Button type="submit" className="w-full" disabled={busy}>
-                    دخول
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form className="space-y-4" onSubmit={signUp}>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">الاسم الكامل</Label>
-                    <Input
-                      id="name"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email2">البريد الإلكتروني</Label>
-                    <Input
-                      id="email2"
-                      type="email"
-                      dir="ltr"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <PasswordField
-                    id="password2"
-                    value={password}
-                    onChange={setPassword}
-                    required
-                  />
-
-                  <Button type="submit" className="w-full" disabled={busy}>
-                    إنشاء الحساب
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              لا يوجد تسجيل ذاتي. تُنشأ الحسابات من قِبل الموارد البشرية أو المدير التنفيذي.
+            </p>
 
             <p className="mt-5 text-center text-xs text-muted-foreground">
               تبقى جلستك مفتوحة على هذا الجهاز حتى تسجّل الخروج.

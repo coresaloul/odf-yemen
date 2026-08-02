@@ -293,8 +293,7 @@ function EmployeeProfileDialog({
   sections: { id: string; name: string }[];
   onOpenChange: (open: boolean) => void;
 }) {
-  const { isDirector, isHR } = useAuth();
-  const provision = useServerFn(provisionEmployeeAccounts);
+  const { isDirector } = useAuth();
   const qc = useQueryClient();
   const e = employee;
 

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AttendanceSettings } from "@/components/attendance/AttendanceSettings";
+import { BiometricDevices } from "@/components/attendance/BiometricDevices";
 import {
   ATTENDANCE_STATUSES,
   ATTENDANCE_STATUS_LABELS,

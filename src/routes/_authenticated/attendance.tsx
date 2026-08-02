@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AttendanceSettings } from "@/components/attendance/AttendanceSettings";
+import { BiometricDevices } from "@/components/attendance/BiometricDevices";
 import {
   ATTENDANCE_STATUSES,
   ATTENDANCE_STATUS_LABELS,
@@ -242,6 +243,7 @@ function AttendancePage() {
           <TabsTrigger value="daily">اليومي</TabsTrigger>
           <TabsTrigger value="monthly">الملخص الشهري</TabsTrigger>
           {isAdmin && <TabsTrigger value="import">استيراد البصمة</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="devices">أجهزة البصمة</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">الإعدادات</TabsTrigger>}
         </TabsList>
 
@@ -448,6 +450,12 @@ function AttendancePage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="devices">
+            <BiometricDevices />
           </TabsContent>
         )}
 

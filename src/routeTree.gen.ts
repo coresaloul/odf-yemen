@@ -25,6 +25,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as IclockSplatRouteImport } from './routes/iclock/$'
+import { Route as ApiPublicZktecoSplatRouteImport } from './routes/api/public/zkteco/$'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -107,6 +109,16 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IclockSplatRoute = IclockSplatRouteImport.update({
+  id: '/iclock/$',
+  path: '/iclock/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicZktecoSplatRoute = ApiPublicZktecoSplatRouteImport.update({
+  id: '/api/public/zkteco/$',
+  path: '/api/public/zkteco/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -130,6 +142,8 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/iclock/$': typeof IclockSplatRoute
+  '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -148,6 +162,8 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/iclock/$': typeof IclockSplatRoute
+  '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -168,6 +184,8 @@ export interface FileRoutesById {
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/iclock/$': typeof IclockSplatRoute
+  '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -188,6 +206,8 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/api/transcribe'
+    | '/iclock/$'
+    | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -206,6 +226,8 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/api/transcribe'
+    | '/iclock/$'
+    | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -225,6 +247,8 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks'
     | '/_authenticated/users'
     | '/api/transcribe'
+    | '/iclock/$'
+    | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -233,6 +257,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  IclockSplatRoute: typeof IclockSplatRoute
+  ApiPublicZktecoSplatRoute: typeof ApiPublicZktecoSplatRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -350,6 +376,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/iclock/$': {
+      id: '/iclock/$'
+      path: '/iclock/$'
+      fullPath: '/iclock/$'
+      preLoaderRoute: typeof IclockSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/zkteco/$': {
+      id: '/api/public/zkteco/$'
+      path: '/api/public/zkteco/$'
+      fullPath: '/api/public/zkteco/$'
+      preLoaderRoute: typeof ApiPublicZktecoSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -398,6 +438,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  IclockSplatRoute: IclockSplatRoute,
+  ApiPublicZktecoSplatRoute: ApiPublicZktecoSplatRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport

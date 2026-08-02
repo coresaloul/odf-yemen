@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: boolean }[] = [
+const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: boolean; adminOnly?: boolean }[] = [
   { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard },
   { to: "/org", label: "المخطط التنظيمي", icon: Network },
   { to: "/employees", label: "الموظفون", icon: Users },
@@ -31,11 +31,13 @@ const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: bo
   { to: "/evaluations", label: "التقييم", icon: Star },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
   { to: "/settings", label: "الإشعارات", icon: Settings },
-  { to: "/users", label: "المستخدمون", icon: ShieldCheck, directorOnly: true },
+  { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },
 ];
 
 function AuthenticatedLayout() {
-  const { user, loading, roles, employee, signOut, isDirector } = useAuth();
+  const { user, loading, roles, employee, signOut, isDirector, isHR } = useAuth();
+  const canSee = (i: { directorOnly?: boolean; adminOnly?: boolean }) =>
+    (!i.directorOnly || isDirector) && (!i.adminOnly || isDirector || isHR);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -63,7 +65,7 @@ function AuthenticatedLayout() {
           <p className="mt-1 text-xs text-accent">نظام الموارد البشرية</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {NAV.filter((i) => !i.directorOnly || isDirector).map((item) => {
+          {NAV.filter(canSee).map((item) => {
             const active = pathname.startsWith(item.to);
             return (
               <Link
@@ -103,7 +105,7 @@ function AuthenticatedLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex items-center gap-2 border-b bg-card px-4 py-2">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto md:hidden">
-            {NAV.filter((i) => !i.directorOnly || isDirector).map((item) => (
+            {NAV.filter(canSee).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}

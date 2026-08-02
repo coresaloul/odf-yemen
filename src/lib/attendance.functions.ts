@@ -147,7 +147,11 @@ export const saveAttendanceRecord = createServerFn({ method: "POST" })
     const calc =
       data.status === "present" || data.status === "permission"
         ? computeAttendance(
-            { check_in: data.check_in, check_out: data.check_out, permission_minutes: permission },
+            {
+              check_in: data.check_in ?? null,
+              check_out: data.check_out ?? null,
+              permission_minutes: permission,
+            },
             settings,
           )
         : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0 };

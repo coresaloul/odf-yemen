@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,17 +78,8 @@ function AuthPage() {
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
   };
 
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
-    });
-    if (result.error) {
-      toast.error("تعذر الدخول عبر Google");
-      return;
-    }
-    if (result.redirected) return;
-    void navigate({ to: target });
-  };
+
+
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
@@ -188,14 +179,9 @@ function AuthPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <Button variant="outline" className="w-full" onClick={google}>
-              المتابعة عبر حساب Google
-            </Button>
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+              تبقى جلستك مفتوحة على هذا الجهاز حتى تسجّل الخروج.
+            </p>
           </CardContent>
         </Card>
       </section>

@@ -45,6 +45,7 @@ function AuthenticatedLayout() {
     (!i.directorOnly || isDirector) && (!i.adminOnly || isDirector || isHR);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {

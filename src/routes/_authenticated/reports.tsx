@@ -390,7 +390,24 @@ function ReportsPage() {
 
       {targetId && kind === "evaluation" && (
         <>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={approvedOnly}
+                onChange={(e) => setApprovedOnly(e.target.checked)}
+              />
+              الاكتفاء بالتقييمات المعتمدة نهائياً (السجلات النهائية)
+            </label>
+            {pendingCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {pendingCount} تقييم ما زال ضمن مراحل الاعتماد (المدير المباشر ← الموارد البشرية ← المدير التنفيذي)
+              </span>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
             {[
               { label: "عدد التقييمات", value: evaluations.length },
               { label: "متوسط المهام", value: `${avgTasksScore}%` },

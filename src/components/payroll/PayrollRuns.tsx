@@ -94,8 +94,10 @@ export function PayrollRuns() {
   });
 
   const decide = useMutation({
-    mutationFn: async (vars: { action: "submit" | "hr_approve" | "director_approve" | "return" | "mark_paid"; note?: string }) =>
-      decideFn({ data: { runId: selected!, action: vars.action, note: vars.note ?? null } }),
+    mutationFn: async (vars: {
+      action: "submit" | "hr_approve" | "director_approve" | "return" | "mark_paid";
+      note?: string;
+    }) => decideFn({ data: { runId: selected!, action: vars.action, note: vars.note ?? null } }),
     onSuccess: () => {
       toast.success("تم تنفيذ الإجراء");
       setReturnOpen(false);
@@ -192,7 +194,12 @@ export function PayrollRuns() {
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <Label>الشهر</Label>
-            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-44" />
+            <Input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-44"
+            />
           </div>
           <div className="space-y-1">
             <Label>الفئات المشمولة</Label>
@@ -282,7 +289,11 @@ export function PayrollRuns() {
                 )}
                 {masterDoc && (
                   <>
-                    <Button size="sm" variant="outline" onClick={() => exportWord(masterDoc, "payroll")}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => exportWord(masterDoc, "payroll")}
+                    >
                       <FileText className="ms-1 size-4" /> Word
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => exportPdf(masterDoc)}>
@@ -291,7 +302,11 @@ export function PayrollRuns() {
                   </>
                 )}
                 {["draft", "hr_review"].includes(status) && (
-                  <Button size="icon" variant="ghost" onClick={() => removeRun.mutate(detail.run!.id)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => removeRun.mutate(detail.run!.id)}
+                  >
                     <Trash2 className="size-4" />
                   </Button>
                 )}
@@ -347,7 +362,9 @@ export function PayrollRuns() {
                           <td className="p-2">{WORKER_TYPE_LABELS[String(i.worker_type)]}</td>
                           <td className="p-2">{formatMoney(i.gross_earnings, currency)}</td>
                           <td className="p-2">{formatMoney(i.total_deductions, currency)}</td>
-                          <td className="p-2 font-semibold">{formatMoney(i.net_amount, currency)}</td>
+                          <td className="p-2 font-semibold">
+                            {formatMoney(i.net_amount, currency)}
+                          </td>
                           <td className="p-2">
                             <div className="flex gap-1">
                               <Button
@@ -400,9 +417,17 @@ export function PayrollRuns() {
           <DialogHeader>
             <DialogTitle>إعادة المسير للتعديل</DialogTitle>
           </DialogHeader>
-          <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="سبب الإعادة" />
+          <Textarea
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="سبب الإعادة"
+          />
           <DialogFooter>
-            <Button onClick={() => decide.mutate({ action: "return", note })} disabled={!note.trim()}>
+            <Button
+              onClick={() => decide.mutate({ action: "return", note })}
+              disabled={!note.trim()}
+            >
               إرسال
             </Button>
           </DialogFooter>

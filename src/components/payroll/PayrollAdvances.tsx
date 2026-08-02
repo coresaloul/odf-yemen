@@ -107,7 +107,8 @@ export function PayrollAdvances() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const empName = (id: string) => (data?.employees ?? []).find((e) => e.id === id)?.full_name ?? "موظف";
+  const empName = (id: string) =>
+    (data?.employees ?? []).find((e) => e.id === id)?.full_name ?? "موظف";
 
   return (
     <div className="space-y-4">
@@ -117,7 +118,10 @@ export function PayrollAdvances() {
             <CardTitle className="text-base">تسجيل سلفة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Select value={adv.employee_id} onValueChange={(v) => setAdv({ ...adv, employee_id: v })}>
+            <Select
+              value={adv.employee_id}
+              onValueChange={(v) => setAdv({ ...adv, employee_id: v })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="اختر الموظف" />
               </SelectTrigger>
@@ -238,7 +242,9 @@ export function PayrollAdvances() {
                 <Input
                   type="number"
                   value={contract.total_amount}
-                  onChange={(e) => setContract({ ...contract, total_amount: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setContract({ ...contract, total_amount: Number(e.target.value) })
+                  }
                 />
               </div>
               <div className="space-y-1">

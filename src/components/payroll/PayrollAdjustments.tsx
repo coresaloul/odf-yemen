@@ -103,7 +103,10 @@ export function PayrollAdjustments() {
           </div>
           <div className="space-y-1">
             <Label>الموظف</Label>
-            <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
+            <Select
+              value={form.employee_id}
+              onValueChange={(v) => setForm({ ...form, employee_id: v })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="اختر الموظف" />
               </SelectTrigger>
@@ -146,7 +149,10 @@ export function PayrollAdjustments() {
           </div>
           <div className="space-y-1">
             <Label>سبب التعديل</Label>
-            <Select value={form.reason_type} onValueChange={(v) => setForm({ ...form, reason_type: v })}>
+            <Select
+              value={form.reason_type}
+              onValueChange={(v) => setForm({ ...form, reason_type: v })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -189,7 +195,10 @@ export function PayrollAdjustments() {
           {(rows ?? []).map((r) => {
             const emp = r.employees as { full_name?: string } | null;
             return (
-              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+              <div
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
+              >
                 <div>
                   <p className="font-medium">{emp?.full_name ?? "موظف"}</p>
                   <p className="text-xs text-muted-foreground">
@@ -213,7 +222,9 @@ export function PayrollAdjustments() {
             );
           })}
           {(rows ?? []).length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">لا توجد تعديلات لهذا الشهر.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              لا توجد تعديلات لهذا الشهر.
+            </p>
           )}
         </CardContent>
       </Card>

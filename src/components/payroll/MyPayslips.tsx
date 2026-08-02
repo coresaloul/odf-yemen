@@ -50,7 +50,9 @@ export function MyPayslips() {
         return (
           <Card key={item.id}>
             <CardHeader className="flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base">{run ? monthLabel(String(run.month)) : "قسيمة"}</CardTitle>
+              <CardTitle className="text-base">
+                {run ? monthLabel(String(run.month)) : "قسيمة"}
+              </CardTitle>
               <Badge variant="outline">{formatMoney(item.net_amount)}</Badge>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">

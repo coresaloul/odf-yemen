@@ -132,7 +132,12 @@ export function PayrollProfiles() {
     mutationFn: async () => {
       if (!selectedId || !compId) throw new Error("اختر البند");
       await saveEmpComponentFn({
-        data: { employee_id: selectedId, component_id: compId, amount: Number(compAmount), active: true },
+        data: {
+          employee_id: selectedId,
+          component_id: compId,
+          amount: Number(compAmount),
+          active: true,
+        },
       });
     },
     onSuccess: () => {
@@ -150,7 +155,8 @@ export function PayrollProfiles() {
   });
 
   const empComponents = (data?.empComponents ?? []).filter((c) => c.employee_id === selectedId);
-  const componentName = (id: string) => (data?.components ?? []).find((c) => c.id === id)?.name ?? "بند";
+  const componentName = (id: string) =>
+    (data?.components ?? []).find((c) => c.id === id)?.name ?? "بند";
 
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -161,7 +167,11 @@ export function PayrollProfiles() {
         <CardContent className="space-y-2">
           <div className="relative">
             <Search className="absolute end-2 top-2.5 size-4 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الرقم" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالاسم أو الرقم"
+            />
           </div>
           <div className="max-h-[420px] space-y-1 overflow-auto">
             {employees.map((e) => {
@@ -196,7 +206,9 @@ export function PayrollProfiles() {
         </CardHeader>
         <CardContent className="space-y-4">
           {!selectedId ? (
-            <p className="text-sm text-muted-foreground">اختر موظفاً من القائمة لعرض وتعديل بيانات أجره.</p>
+            <p className="text-sm text-muted-foreground">
+              اختر موظفاً من القائمة لعرض وتعديل بيانات أجره.
+            </p>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,7 +216,9 @@ export function PayrollProfiles() {
                   <Label>نوع العامل</Label>
                   <Select
                     value={form.worker_type}
-                    onValueChange={(v) => setForm({ ...form, worker_type: v as ProfileForm["worker_type"] })}
+                    onValueChange={(v) =>
+                      setForm({ ...form, worker_type: v as ProfileForm["worker_type"] })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -272,7 +286,10 @@ export function PayrollProfiles() {
                 </div>
                 <div className="space-y-1">
                   <Label>البنك</Label>
-                  <Input value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} />
+                  <Input
+                    value={form.bank_name}
+                    onChange={(e) => setForm({ ...form, bank_name: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label>رقم الحساب</Label>
@@ -283,7 +300,10 @@ export function PayrollProfiles() {
                 </div>
                 <div className="space-y-1">
                   <Label>الآيبان</Label>
-                  <Input value={form.iban} onChange={(e) => setForm({ ...form, iban: e.target.value })} />
+                  <Input
+                    value={form.iban}
+                    onChange={(e) => setForm({ ...form, iban: e.target.value })}
+                  />
                 </div>
               </div>
               <Button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>
@@ -323,13 +343,19 @@ export function PayrollProfiles() {
                         {componentName(c.component_id)}{" "}
                         <Badge variant="secondary">{Number(c.amount)}</Badge>
                       </span>
-                      <Button size="icon" variant="ghost" onClick={() => removeComponent.mutate(c.id)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeComponent.mutate(c.id)}
+                      >
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
                   ))}
                   {empComponents.length === 0 && (
-                    <p className="py-2 text-xs text-muted-foreground">لا توجد بنود مخصصة لهذا الموظف.</p>
+                    <p className="py-2 text-xs text-muted-foreground">
+                      لا توجد بنود مخصصة لهذا الموظف.
+                    </p>
                   )}
                 </div>
               </div>

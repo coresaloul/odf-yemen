@@ -64,7 +64,15 @@ export async function actorName(userId: string) {
 
 type Line = {
   line_type: "earning" | "deduction";
-  source: "basic" | "component" | "attendance" | "incentive" | "advance" | "adjustment" | "contract" | "manual";
+  source:
+    | "basic"
+    | "component"
+    | "attendance"
+    | "incentive"
+    | "advance"
+    | "adjustment"
+    | "contract"
+    | "manual";
   label: string;
   amount: number;
   ref_id?: string | null;
@@ -106,7 +114,9 @@ export async function computePayrollRun(runId: string) {
   ] = await Promise.all([
     supabaseAdmin
       .from("employees")
-      .select("id, full_name, employee_no, department_id, basic_salary, contract_type, iban, status")
+      .select(
+        "id, full_name, employee_no, department_id, basic_salary, contract_type, iban, status",
+      )
       .eq("status", "active"),
     supabaseAdmin.from("employee_payroll_profiles").select("*").eq("active", true),
     supabaseAdmin.from("payroll_components").select("*").eq("active", true),
@@ -182,7 +192,13 @@ export async function computePayrollRun(runId: string) {
     let baseAmount = 0;
     if (workerType === "employee") {
       baseAmount = basic;
-      if (basic > 0) lines.push({ line_type: "earning", source: "basic", label: "الراتب الأساسي", amount: basic });
+      if (basic > 0)
+        lines.push({
+          line_type: "earning",
+          source: "basic",
+          label: "الراتب الأساسي",
+          amount: basic,
+        });
     } else if (workerType === "worker") {
       const byDays = dailyRate > 0 ? dailyRate * daysPresent : 0;
       const byHours = dailyRate > 0 ? 0 : hourlyRate * workedHours;
@@ -198,12 +214,21 @@ export async function computePayrollRun(runId: string) {
     } else if (workerType === "volunteer") {
       baseAmount = stipend;
       if (stipend > 0)
-        lines.push({ line_type: "earning", source: "basic", label: "مكافأة تطوع", amount: stipend });
+        lines.push({
+          line_type: "earning",
+          source: "basic",
+          label: "مكافأة تطوع",
+          amount: stipend,
+        });
     } else if (workerType === "consultant") {
       const empContracts = (contracts ?? []).filter((c) => c.employee_id === emp.id);
       const ids = new Set(empContracts.map((c) => c.id));
       const due = (installments ?? []).filter(
-        (i) => ids.has(i.contract_id) && i.due_date && String(i.due_date) >= start && String(i.due_date) <= end,
+        (i) =>
+          ids.has(i.contract_id) &&
+          i.due_date &&
+          String(i.due_date) >= start &&
+          String(i.due_date) <= end,
       );
       for (const inst of due) {
         const contract = empContracts.find((c) => c.id === inst.contract_id);
@@ -240,7 +265,8 @@ export async function computePayrollRun(runId: string) {
     }
 
     // ── خصومات الدوام ──
-    const dayValue = workerType === "employee" && settings.month_days > 0 ? basic / settings.month_days : 0;
+    const dayValue =
+      workerType === "employee" && settings.month_days > 0 ? basic / settings.month_days : 0;
     if (dayValue > 0) {
       if (settings.deduct_absence && daysAbsent > 0) {
         lines.push({
@@ -319,7 +345,9 @@ export async function computePayrollRun(runId: string) {
       });
     }
 
-    const gross = round2(lines.filter((l) => l.line_type === "earning").reduce((s, l) => s + l.amount, 0));
+    const gross = round2(
+      lines.filter((l) => l.line_type === "earning").reduce((s, l) => s + l.amount, 0),
+    );
     const deductions = round2(
       lines.filter((l) => l.line_type === "deduction").reduce((s, l) => s + l.amount, 0),
     );

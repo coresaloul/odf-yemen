@@ -17,21 +17,31 @@ export const getPayrollSetup = createServerFn({ method: "GET" })
     const { assertPayrollAdmin, admin, loadPayrollSettings } = await import("@/lib/payroll.server");
     await assertPayrollAdmin(context.userId);
     const db = admin();
-    const [settings, components, profiles, employees, empComponents, advances, contracts, installments] =
-      await Promise.all([
-        loadPayrollSettings(),
-        db.from("payroll_components").select("*").order("sort_order"),
-        db.from("employee_payroll_profiles").select("*"),
-        db
-          .from("employees")
-          .select("id, full_name, employee_no, job_title, department_id, basic_salary, contract_type, iban, status")
-          .eq("status", "active")
-          .order("full_name"),
-        db.from("employee_payroll_components").select("*"),
-        db.from("employee_advances").select("*").order("created_at", { ascending: false }),
-        db.from("consultant_contracts").select("*").order("created_at", { ascending: false }),
-        db.from("contract_installments").select("*").order("seq"),
-      ]);
+    const [
+      settings,
+      components,
+      profiles,
+      employees,
+      empComponents,
+      advances,
+      contracts,
+      installments,
+    ] = await Promise.all([
+      loadPayrollSettings(),
+      db.from("payroll_components").select("*").order("sort_order"),
+      db.from("employee_payroll_profiles").select("*"),
+      db
+        .from("employees")
+        .select(
+          "id, full_name, employee_no, job_title, department_id, basic_salary, contract_type, iban, status",
+        )
+        .eq("status", "active")
+        .order("full_name"),
+      db.from("employee_payroll_components").select("*"),
+      db.from("employee_advances").select("*").order("created_at", { ascending: false }),
+      db.from("consultant_contracts").select("*").order("created_at", { ascending: false }),
+      db.from("contract_installments").select("*").order("seq"),
+    ]);
     return {
       settings,
       components: components.data ?? [],
@@ -227,7 +237,11 @@ export const saveAdjustment = createServerFn({ method: "POST" })
       created_by: context.userId,
     };
     const q = id
-      ? admin().from("payroll_adjustments").update(clean(payload)).eq("id", id).neq("status", "applied")
+      ? admin()
+          .from("payroll_adjustments")
+          .update(clean(payload))
+          .eq("id", id)
+          .neq("status", "applied")
       : admin().from("payroll_adjustments").insert(clean(payload));
     const { error } = await q;
     if (error) throw new Error(error.message);
@@ -315,7 +329,10 @@ export const saveContract = createServerFn({ method: "POST" })
     const { id, installments, ...rest } = data;
     let contractId = id ?? null;
     if (contractId) {
-      const { error } = await db.from("consultant_contracts").update(clean(rest)).eq("id", contractId);
+      const { error } = await db
+        .from("consultant_contracts")
+        .update(clean(rest))
+        .eq("id", contractId);
       if (error) throw new Error(error.message);
     } else {
       const { data: created, error } = await db
@@ -327,7 +344,11 @@ export const saveContract = createServerFn({ method: "POST" })
       contractId = created.id;
     }
     if (installments.length) {
-      await db.from("contract_installments").delete().eq("contract_id", contractId).eq("status", "pending");
+      await db
+        .from("contract_installments")
+        .delete()
+        .eq("contract_id", contractId)
+        .eq("status", "pending");
       const { error } = await db
         .from("contract_installments")
         .insert(installments.map((i) => clean({ ...i, contract_id: contractId! })));
@@ -436,9 +457,8 @@ export const decideRun = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { assertPayrollAdmin, admin, actorName, applyRunEffects } = await import(
-      "@/lib/payroll.server"
-    );
+    const { assertPayrollAdmin, admin, actorName, applyRunEffects } =
+      await import("@/lib/payroll.server");
     const { isDirector, isHr } = await assertPayrollAdmin(context.userId);
     const db = admin();
     const { data: run } = await db
@@ -468,7 +488,8 @@ export const decideRun = createServerFn({ method: "POST" })
       patch["director_approved_at"] = now;
     } else if (data.action === "return") {
       if (!data.note) throw new Error("يرجى كتابة سبب الإعادة");
-      if (["approved", "paid"].includes(String(run.status))) throw new Error("لا يمكن إعادة دورة معتمدة");
+      if (["approved", "paid"].includes(String(run.status)))
+        throw new Error("لا يمكن إعادة دورة معتمدة");
       patch["status"] = "draft";
       patch["return_reason"] = data.note;
     } else if (data.action === "mark_paid") {

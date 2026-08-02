@@ -21,11 +21,7 @@ import {
   savePayrollComponent,
   deletePayrollComponent,
 } from "@/lib/payroll.functions";
-import {
-  CALC_METHOD_LABELS,
-  COMPONENT_KIND_LABELS,
-  type PayrollSettings,
-} from "@/lib/payroll";
+import { CALC_METHOD_LABELS, COMPONENT_KIND_LABELS, type PayrollSettings } from "@/lib/payroll";
 
 type ComponentForm = {
   id: string | null;
@@ -54,7 +50,10 @@ export function PayrollSettingsPanel() {
   const saveComponentFn = useServerFn(savePayrollComponent);
   const deleteComponentFn = useServerFn(deletePayrollComponent);
 
-  const { data, isLoading } = useQuery({ queryKey: ["payroll-setup"], queryFn: () => fetchSetup() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["payroll-setup"],
+    queryFn: () => fetchSetup(),
+  });
   const [draft, setDraft] = useState<PayrollSettings | null>(null);
   const [form, setForm] = useState<ComponentForm>(emptyComponent);
 
@@ -133,7 +132,10 @@ export function PayrollSettingsPanel() {
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>العملة</Label>
-              <Input value={settings.currency} onChange={(e) => update({ currency: e.target.value })} />
+              <Input
+                value={settings.currency}
+                onChange={(e) => update({ currency: e.target.value })}
+              />
             </div>
             <div className="space-y-1">
               <Label>أيام الشهر</Label>
@@ -159,7 +161,10 @@ export function PayrollSettingsPanel() {
               { key: "deduct_late" as const, label: "خصم دقائق التأخير" },
               { key: "manager_can_view" as const, label: "السماح للمدير المباشر بالاطلاع" },
             ].map((row) => (
-              <div key={row.key} className="flex items-center justify-between rounded-md border p-3">
+              <div
+                key={row.key}
+                className="flex items-center justify-between rounded-md border p-3"
+              >
                 <Label className="text-sm">{row.label}</Label>
                 <Switch
                   checked={Boolean(settings[row.key])}
@@ -205,7 +210,9 @@ export function PayrollSettingsPanel() {
                   variant="ghost"
                   size="icon"
                   onClick={() =>
-                    update({ incentive_tiers: settings.incentive_tiers.filter((_, i) => i !== idx) })
+                    update({
+                      incentive_tiers: settings.incentive_tiers.filter((_, i) => i !== idx),
+                    })
                   }
                 >
                   <Trash2 className="size-4" />
@@ -216,7 +223,9 @@ export function PayrollSettingsPanel() {
               variant="outline"
               size="sm"
               onClick={() =>
-                update({ incentive_tiers: [...settings.incentive_tiers, { min_score: 80, percent: 5 }] })
+                update({
+                  incentive_tiers: [...settings.incentive_tiers, { min_score: 80, percent: 5 }],
+                })
               }
             >
               <Plus className="ms-1 size-4" /> إضافة شريحة
@@ -257,7 +266,9 @@ export function PayrollSettingsPanel() {
             </Select>
             <Select
               value={form.calc_method}
-              onValueChange={(v) => setForm({ ...form, calc_method: v as ComponentForm["calc_method"] })}
+              onValueChange={(v) =>
+                setForm({ ...form, calc_method: v as ComponentForm["calc_method"] })
+              }
             >
               <SelectTrigger>
                 <SelectValue />

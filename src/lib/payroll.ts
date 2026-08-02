@@ -41,7 +41,11 @@ export const ADJUSTMENT_KIND_LABELS: Record<string, string> = {
   deduction: "خصم",
 };
 
-export const ADJUSTMENT_REASONS: { value: string; label: string; kind: "addition" | "deduction" }[] = [
+export const ADJUSTMENT_REASONS: {
+  value: string;
+  label: string;
+  kind: "addition" | "deduction";
+}[] = [
   { value: "salary_difference", label: "فرق راتب", kind: "addition" },
   { value: "extra_allowance", label: "بدل إضافي", kind: "addition" },
   { value: "compensation", label: "تعويض", kind: "addition" },

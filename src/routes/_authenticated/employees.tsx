@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EMPLOYEE_STATUS_LABELS, formatDate } from "@/lib/hr";
+import { EmployeeAccountsDialog } from "@/components/EmployeeAccountsDialog";
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({
@@ -46,6 +47,7 @@ type Employee = {
   status: keyof typeof EMPLOYEE_STATUS_LABELS;
   job_title?: string | null;
   email?: string | null;
+  user_id?: string | null;
   phone?: string | null;
   hire_date?: string | null;
   department_id?: string | null;
@@ -95,7 +97,7 @@ const CONTRACTS = ["دوام كامل", "دوام جزئي", "مؤقت", "متع
 const DOC_TYPES = ["شهادة علمية", "دورة تدريبية", "عقد عمل", "هوية/إقامة", "جواز سفر", "شهادة خبرة", "تقرير طبي", "أخرى"];
 
 function EmployeesPage() {
-  const { isManager, isDirector } = useAuth();
+  const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Employee | null>(null);
@@ -152,14 +154,19 @@ function EmployeesPage() {
         title="الموظفون"
         description="ملفات الموظفين: البيانات التنظيمية والشخصية والصحية والوثائق"
         action={
-          isManager && (
+          <div className="flex flex-wrap gap-2">
+            {(isDirector || isHR) && (
+              <EmployeeAccountsDialog onDone={() => void qc.invalidateQueries({ queryKey: ["employees-page"] })} />
+            )}
+            {isManager && (
             <EmployeeDialog
               departments={departments}
               sections={sections}
               managers={employees}
               onDone={refresh}
             />
-          )
+            )}
+          </div>
         }
       />
 
@@ -189,9 +196,14 @@ function EmployeesPage() {
                     {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
                   </p>
                 </div>
-                <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                  {EMPLOYEE_STATUS_LABELS[e.status]}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant={e.status === "active" ? "default" : "secondary"}>
+                    {EMPLOYEE_STATUS_LABELS[e.status]}
+                  </Badge>
+                  {!e.user_id && (
+                    <Badge variant="outline" className="text-[10px]">بلا حساب مستخدم</Badge>
+                  )}
+                </div>
               </div>
               <dl className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                 <div>الإدارة: {departments.find((d) => d.id === e.department_id)?.name ?? "—"}</div>
@@ -209,6 +221,15 @@ function EmployeesPage() {
                   <Button variant="ghost" size="sm" onClick={() => setEditing(e)}>
                     <Pencil className="size-4" /> تعديل
                   </Button>
+                )}
+                {(isDirector || isHR) && !e.user_id && e.email && (
+                  <EmployeeAccountsDialog
+                    employeeIds={[e.id]}
+                    triggerLabel="إنشاء حساب"
+                    variant="secondary"
+                    size="sm"
+                    onDone={refresh}
+                  />
                 )}
                 {isDirector && (
                   <Button

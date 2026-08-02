@@ -303,12 +303,37 @@ function EmployeesPage() {
                     onDone={refresh}
                   />
                 )}
+                {(isDirector || isHR) && (
+                  <Select
+                    value={e.status}
+                    onValueChange={(v) =>
+                      changeStatus.mutate({
+                        ids: [e.id],
+                        status: v as "active" | "on_leave" | "terminated",
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-32 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(EMPLOYEE_STATUS_LABELS).map(([v, l]) => (
+                        <SelectItem key={v} value={v}>
+                          {l}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {isDirector && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-destructive"
-                    onClick={() => remove.mutate(e.id)}
+                    onClick={() => {
+                      if (!confirm(`حذف الموظف «${e.full_name}»؟`)) return;
+                      remove.mutate(e.id);
+                    }}
                   >
                     <Trash2 className="size-4" /> حذف
                   </Button>

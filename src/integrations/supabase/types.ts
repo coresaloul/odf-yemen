@@ -266,6 +266,54 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          email_evaluation: boolean
+          email_task_assigned: boolean
+          email_task_progress: boolean
+          email_task_status: boolean
+          inapp_enabled: boolean
+          inapp_evaluation: boolean
+          inapp_task_assigned: boolean
+          inapp_task_progress: boolean
+          inapp_task_status: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          email_evaluation?: boolean
+          email_task_assigned?: boolean
+          email_task_progress?: boolean
+          email_task_status?: boolean
+          inapp_enabled?: boolean
+          inapp_evaluation?: boolean
+          inapp_task_assigned?: boolean
+          inapp_task_progress?: boolean
+          inapp_task_status?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          email_evaluation?: boolean
+          email_task_assigned?: boolean
+          email_task_progress?: boolean
+          email_task_status?: boolean
+          inapp_enabled?: boolean
+          inapp_evaluation?: boolean
+          inapp_task_assigned?: boolean
+          inapp_task_progress?: boolean
+          inapp_task_status?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -513,6 +561,10 @@ export type Database = {
       }
       is_director: { Args: never; Returns: boolean }
       is_self_employee: { Args: { _employee_id: string }; Returns: boolean }
+      wants_notification: {
+        Args: { _channel: string; _type: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "executive_director" | "manager" | "employee"

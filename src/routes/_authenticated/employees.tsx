@@ -102,8 +102,13 @@ function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [accountFilter, setAccountFilter] = useState("all");
   const [editing, setEditing] = useState<Employee | null>(null);
   const [profile, setProfile] = useState<Employee | null>(null);
+  const removeEmployee = useServerFn(deleteEmployee);
+  const updateEmployeeStatus = useServerFn(setEmployeeStatus);
 
   const { data, isLoading } = useQuery({
     queryKey: ["employees-page"],

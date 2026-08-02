@@ -73,7 +73,7 @@ function EvaluationsPage() {
 
   const employees = data?.employees ?? [];
   const evaluations = data?.evaluations ?? [];
-  const trail = (data?.approvals ?? []).reduce<Record<string, typeof approvalsSample>>((acc, a) => {
+  const trail = (data?.approvals ?? []).reduce<Record<string, ApprovalRow[]>>((acc, a) => {
     (acc[a.evaluation_id] ??= []).push(a);
     return acc;
   }, {});
@@ -174,7 +174,7 @@ function EvaluationsPage() {
       const { error } = await supabase.rpc("decide_evaluation", {
         _evaluation_id: v.id,
         _action: v.action,
-        _note: v.note ?? undefined,
+        _note: v.note ?? "",
       });
       if (error) throw error;
     },

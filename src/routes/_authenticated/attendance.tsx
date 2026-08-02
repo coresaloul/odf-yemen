@@ -243,6 +243,7 @@ function AttendancePage() {
           <TabsTrigger value="daily">اليومي</TabsTrigger>
           <TabsTrigger value="monthly">الملخص الشهري</TabsTrigger>
           {isAdmin && <TabsTrigger value="import">استيراد البصمة</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="devices">أجهزة البصمة</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">الإعدادات</TabsTrigger>}
         </TabsList>
 

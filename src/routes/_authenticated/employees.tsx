@@ -39,7 +39,53 @@ export const Route = createFileRoute("/_authenticated/employees")({
   component: EmployeesPage,
 });
 
-type Employee = Record<string, any>;
+type Employee = {
+  id: string;
+  full_name: string;
+  employee_no: string;
+  status: keyof typeof EMPLOYEE_STATUS_LABELS;
+  job_title?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  hire_date?: string | null;
+  department_id?: string | null;
+  section_id?: string | null;
+  manager_id?: string | null;
+  birth_date?: string | null;
+  gender?: string | null;
+  marital_status?: string | null;
+  blood_type?: string | null;
+  chronic_diseases?: string | null;
+  allergies?: string | null;
+  nationality?: string | null;
+  national_id?: string | null;
+  national_id_expiry?: string | null;
+  passport_no?: string | null;
+  passport_expiry?: string | null;
+  address?: string | null;
+  education_level?: string | null;
+  specialization?: string | null;
+  contract_type?: string | null;
+  contract_end_date?: string | null;
+  basic_salary?: number | null;
+  iban?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relation?: string | null;
+  notes?: string | null;
+};
+
+type EmployeeDoc = {
+  id: string;
+  doc_type: string;
+  title: string;
+  issuer?: string | null;
+  doc_number?: string | null;
+  issue_date?: string | null;
+  expiry_date?: string | null;
+  file_url?: string | null;
+  notes?: string | null;
+};
 
 const GENDERS = ["ذكر", "أنثى"];
 const MARITAL = ["أعزب", "متزوج", "مطلق", "أرمل"];
@@ -64,7 +110,7 @@ function EmployeesPage() {
         supabase.from("sections").select("id, name, department_id").order("name"),
       ]);
       return {
-        employees: (employees.data ?? []) as Employee[],
+        employees: (employees.data ?? []) as unknown as Employee[],
         departments: departments.data ?? [],
         sections: sections.data ?? [],
       };
@@ -144,7 +190,7 @@ function EmployeesPage() {
                   </p>
                 </div>
                 <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                  {EMPLOYEE_STATUS_LABELS[e.status as keyof typeof EMPLOYEE_STATUS_LABELS]}
+                  {EMPLOYEE_STATUS_LABELS[e.status]}
                 </Badge>
               </div>
               <dl className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
@@ -204,7 +250,7 @@ function EmployeesPage() {
   );
 }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="space-y-0.5">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -228,7 +274,7 @@ function EmployeeProfileDialog({
   const qc = useQueryClient();
   const e = employee;
 
-  const { data: docs = [] } = useQuery({
+  const { data: docs = [] as EmployeeDoc[] } = useQuery({
     queryKey: ["employee-documents", e.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -237,12 +283,12 @@ function EmployeeProfileDialog({
         .eq("employee_id", e.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as EmployeeDoc[];
     },
   });
 
   const emptyDoc = {
-    doc_type: DOC_TYPES[0],
+    doc_type: "شهادة علمية",
     title: "",
     issuer: "",
     doc_number: "",
@@ -307,7 +353,7 @@ function EmployeeProfileDialog({
           <TabsContent value="job" className="grid gap-3 pt-4 sm:grid-cols-3">
             <Field label="الرقم الوظيفي" value={e.employee_no} />
             <Field label="المسمى الوظيفي" value={e.job_title} />
-            <Field label="الحالة" value={EMPLOYEE_STATUS_LABELS[e.status as keyof typeof EMPLOYEE_STATUS_LABELS]} />
+            <Field label="الحالة" value={EMPLOYEE_STATUS_LABELS[e.status]} />
             <Field label="الإدارة" value={departments.find((d) => d.id === e.department_id)?.name} />
             <Field label="القسم" value={sections.find((s) => s.id === e.section_id)?.name} />
             <Field label="تاريخ التعيين" value={e.hire_date ? formatDate(e.hire_date) : null} />
@@ -355,7 +401,7 @@ function EmployeeProfileDialog({
           <TabsContent value="docs" className="space-y-4 pt-4">
             {docs.length === 0 && <p className="text-sm text-muted-foreground">لا توجد وثائق مسجّلة.</p>}
             <div className="space-y-2">
-              {docs.map((d: any) => (
+              {docs.map((d) => (
                 <div key={d.id} className="rounded-md border p-3 text-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div>

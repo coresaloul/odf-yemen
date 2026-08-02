@@ -27,6 +27,8 @@ import { EMPLOYEE_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { EmployeeAccountsDialog } from "@/components/EmployeeAccountsDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { provisionEmployeeAccounts } from "@/lib/admin-users.functions";
+import { deleteEmployee, setEmployeeStatus } from "@/lib/org.functions";
+import { MoveEmployeesDialog } from "@/components/org/MoveEmployeesDialog";
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({
@@ -102,8 +104,13 @@ function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [accountFilter, setAccountFilter] = useState("all");
   const [editing, setEditing] = useState<Employee | null>(null);
   const [profile, setProfile] = useState<Employee | null>(null);
+  const removeEmployee = useServerFn(deleteEmployee);
+  const updateEmployeeStatus = useServerFn(setEmployeeStatus);
 
   const { data, isLoading } = useQuery({
     queryKey: ["employees-page"],
@@ -128,23 +135,39 @@ function EmployeesPage() {
 
   const filtered = useMemo(() => {
     const term = q.trim();
-    if (!term) return employees;
-    return employees.filter(
-      (e) =>
+    return employees.filter((e) => {
+      const matchTerm =
+        !term ||
         e.full_name.includes(term) ||
         e.employee_no.includes(term) ||
         (e.job_title ?? "").includes(term) ||
-        (e.national_id ?? "").includes(term),
-    );
-  }, [employees, q]);
+        (e.national_id ?? "").includes(term);
+      const matchDept = deptFilter === "all" || e.department_id === deptFilter;
+      const matchStatus = statusFilter === "all" || e.status === statusFilter;
+      const matchAccount =
+        accountFilter === "all" ||
+        (accountFilter === "linked" ? Boolean(e.user_id) : !e.user_id);
+      return matchTerm && matchDept && matchStatus && matchAccount;
+    });
+  }, [employees, q, deptFilter, statusFilter, accountFilter]);
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("employees").delete().eq("id", id);
-      if (error) throw error;
+      await removeEmployee({ data: { id } });
     },
     onSuccess: () => {
       toast.success("تم حذف الموظف");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: async (vars: { ids: string[]; status: "active" | "on_leave" | "terminated" }) => {
+      await updateEmployeeStatus({ data: { employeeIds: vars.ids, status: vars.status } });
+    },
+    onSuccess: () => {
+      toast.success("تم تحديث حالة الموظف");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -158,7 +181,15 @@ function EmployeesPage() {
         action={
           <div className="flex flex-wrap gap-2">
             {(isDirector || isHR) && (
-              <EmployeeAccountsDialog onDone={() => void qc.invalidateQueries({ queryKey: ["employees-page"] })} />
+              <>
+                <EmployeeAccountsDialog onDone={refresh} />
+                <MoveEmployeesDialog
+                  employees={employees}
+                  departments={departments}
+                  sections={sections}
+                  onDone={refresh}
+                />
+              </>
             )}
             {isManager && (
             <EmployeeDialog
@@ -172,15 +203,54 @@ function EmployeesPage() {
         }
       />
 
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="بحث بالاسم أو الرقم الوظيفي أو الهوية"
-          className="pr-9"
-        />
+      <div className="flex flex-wrap gap-3">
+        <div className="relative min-w-56 flex-1 max-w-sm">
+          <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث بالاسم أو الرقم الوظيفي أو الهوية"
+            className="pr-9"
+          />
+        </div>
+        <Select value={deptFilter} onValueChange={setDeptFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="الإدارة" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الإدارات</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d.id} value={d.id}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="الحالة" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الحالات</SelectItem>
+            {Object.entries(EMPLOYEE_STATUS_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={accountFilter} onValueChange={setAccountFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="الحساب" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">الكل</SelectItem>
+            <SelectItem value="linked">لديه حساب مستخدم</SelectItem>
+            <SelectItem value="unlinked">بلا حساب مستخدم</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
 
       {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>}
       {!isLoading && filtered.length === 0 && (
@@ -233,12 +303,37 @@ function EmployeesPage() {
                     onDone={refresh}
                   />
                 )}
+                {(isDirector || isHR) && (
+                  <Select
+                    value={e.status}
+                    onValueChange={(v) =>
+                      changeStatus.mutate({
+                        ids: [e.id],
+                        status: v as "active" | "on_leave" | "terminated",
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-32 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(EMPLOYEE_STATUS_LABELS).map(([v, l]) => (
+                        <SelectItem key={v} value={v}>
+                          {l}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {isDirector && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-destructive"
-                    onClick={() => remove.mutate(e.id)}
+                    onClick={() => {
+                      if (!confirm(`حذف الموظف «${e.full_name}»؟`)) return;
+                      remove.mutate(e.id);
+                    }}
                   >
                     <Trash2 className="size-4" /> حذف
                   </Button>

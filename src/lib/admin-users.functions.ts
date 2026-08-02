@@ -1,31 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdminRole, assertDirectorRole } from "@/lib/roles";
 
 const ROLES = ["executive_director", "manager", "hr", "employee"] as const;
 type Role = (typeof ROLES)[number];
 
-type RpcClient = {
-  rpc: (fn: "is_director" | "is_hr") => Promise<{ data: unknown; error: unknown }>;
-};
-
-async function assertDirector(supabase: RpcClient) {
-  const { data, error } = await supabase.rpc("is_director");
-  if (error || data !== true) {
-    throw new Error("غير مصرح: هذا الإجراء للمدير التنفيذي فقط");
-  }
-}
-
-/** لوحة المستخدمين: متاحة للمدير التنفيذي أو الموارد البشرية فقط */
-async function assertUserAdmin(supabase: RpcClient) {
-  const [director, hr] = await Promise.all([
-    supabase.rpc("is_director"),
-    supabase.rpc("is_hr"),
-  ]);
-  if (director.data !== true && hr.data !== true) {
-    throw new Error("غير مصرح: هذه الصفحة للمدير التنفيذي أو الموارد البشرية فقط");
-  }
-}
 
 export type AdminUserRow = {
   id: string;
@@ -37,12 +17,13 @@ export type AdminUserRow = {
   banned: boolean;
   roles: Role[];
   employee_name: string | null;
+  employee_id: string | null;
 };
 
 export const listAppUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminUserRow[]> => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
@@ -55,11 +36,12 @@ export const listAppUsers = createServerFn({ method: "GET" })
     const [{ data: roleRows }, { data: profileRows }, { data: employeeRows }] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
       supabaseAdmin.from("profiles").select("id, full_name").in("id", ids),
-      supabaseAdmin.from("employees").select("user_id, full_name").in("user_id", ids),
+      supabaseAdmin.from("employees").select("id, user_id, full_name").in("user_id", ids),
     ]);
 
     return list.users.map((u) => {
       const bannedUntil = (u as unknown as { banned_until?: string | null }).banned_until ?? null;
+      const emp = (employeeRows ?? []).find((e) => e.user_id === u.id);
       return {
         id: u.id,
         email: u.email ?? null,
@@ -71,7 +53,8 @@ export const listAppUsers = createServerFn({ method: "GET" })
         email_confirmed: Boolean(u.email_confirmed_at),
         banned: Boolean(bannedUntil && new Date(bannedUntil).getTime() > Date.now()),
         roles: (roleRows ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as Role),
-        employee_name: (employeeRows ?? []).find((e) => e.user_id === u.id)?.full_name ?? null,
+        employee_name: emp?.full_name ?? null,
+        employee_id: emp?.id ?? null,
       };
     });
   });
@@ -80,7 +63,7 @@ export const confirmUserEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       email_confirm: true,
@@ -95,7 +78,7 @@ export const setUserActive = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), active: z.boolean() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     if (data.userId === context.userId && !data.active) {
       throw new Error("لا يمكنك تعطيل حسابك الخاص");
     }
@@ -113,7 +96,7 @@ export const setUserPassword = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), password: z.string().min(1).max(72) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,
@@ -130,11 +113,26 @@ export const setUserRoles = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertDirector(context.supabase as never);
+    await assertDirectorRole(context.supabase, context.userId);
     if (data.userId === context.userId && !data.roles.includes("executive_director")) {
       throw new Error("لا يمكنك سحب دور المدير التنفيذي من حسابك");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("@/lib/org.server");
+
+    const { data: directors } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "executive_director");
+    const wasDirector = (directors ?? []).some((r) => r.user_id === data.userId);
+    if (
+      wasDirector &&
+      !data.roles.includes("executive_director") &&
+      (directors ?? []).length <= 1
+    ) {
+      throw new Error("لا يمكن سحب الدور من آخر مدير تنفيذي في النظام");
+    }
+
     const { error: delError } = await supabaseAdmin
       .from("user_roles")
       .delete()
@@ -146,7 +144,14 @@ export const setUserRoles = createServerFn({ method: "POST" })
         .insert(data.roles.map((role) => ({ user_id: data.userId, role })));
       if (insError) throw new Error(insError.message);
     }
+    await writeAudit(context.userId, {
+      action: "تعديل الأدوار",
+      entity: "مستخدم",
+      entity_id: data.userId,
+      details: { roles: data.roles },
+    });
     return { ok: true };
+
   });
 
 /* ─── ربط الموظفين بالمستخدمين (كل موظف = مستخدم بدور "موظف" افتراضياً) ─── */
@@ -177,7 +182,7 @@ export const provisionEmployeeAccounts = createServerFn({ method: "POST" })
       .parse(data ?? {}),
   )
   .handler(async ({ data, context }): Promise<ProvisionResult[]> => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let query = supabaseAdmin
@@ -256,7 +261,7 @@ export const provisionEmployeeAccounts = createServerFn({ method: "POST" })
 export const countUnlinkedEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count, error } = await supabaseAdmin
       .from("employees")
@@ -264,4 +269,128 @@ export const countUnlinkedEmployees = createServerFn({ method: "GET" })
       .is("user_id", null);
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
+  });
+
+/* ─── إدارة متكاملة للمستخدمين: دعوة، ربط بموظف، حذف ─── */
+
+export const inviteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        email: z.string().email("بريد إلكتروني غير صحيح"),
+        full_name: z.string().trim().min(2).max(120),
+        password: z.string().min(1).max(72),
+        role: z.enum(ROLES).default("employee"),
+        employeeId: z.string().uuid().nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const roles = await assertAdminRole(context.supabase, context.userId);
+    if (data.role !== "employee" && !roles.includes("executive_director")) {
+      throw new Error("منح الأدوار الإدارية للمدير التنفيذي فقط");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("@/lib/org.server");
+
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (error || !created.user) throw new Error(error?.message ?? "تعذر إنشاء الحساب");
+
+    await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: data.role });
+    if (data.employeeId) {
+      await supabaseAdmin
+        .from("employees")
+        .update({ user_id: created.user.id })
+        .eq("id", data.employeeId);
+    }
+    await writeAudit(context.userId, {
+      action: "إنشاء مستخدم",
+      entity: "مستخدم",
+      entity_id: created.user.id,
+      entity_label: data.email,
+      details: { role: data.role },
+    });
+    return { id: created.user.id };
+  });
+
+export const linkUserToEmployee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        employeeId: z.string().uuid().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdminRole(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("@/lib/org.server");
+
+    await supabaseAdmin.from("employees").update({ user_id: null }).eq("user_id", data.userId);
+    if (data.employeeId) {
+      const { error } = await supabaseAdmin
+        .from("employees")
+        .update({ user_id: data.userId })
+        .eq("id", data.employeeId);
+      if (error) throw new Error(error.message);
+    }
+    await writeAudit(context.userId, {
+      action: data.employeeId ? "ربط بموظف" : "فك الربط",
+      entity: "مستخدم",
+      entity_id: data.userId,
+      details: { employeeId: data.employeeId },
+    });
+    return { ok: true };
+  });
+
+export const deleteAppUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertDirectorRole(context.supabase, context.userId);
+    if (data.userId === context.userId) throw new Error("لا يمكنك حذف حسابك الخاص");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("@/lib/org.server");
+
+    const { data: directors } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "executive_director");
+    const isTargetDirector = (directors ?? []).some((r) => r.user_id === data.userId);
+    if (isTargetDirector && (directors ?? []).length <= 1) {
+      throw new Error("لا يمكن حذف آخر مدير تنفيذي في النظام");
+    }
+
+    await supabaseAdmin.from("employees").update({ user_id: null }).eq("user_id", data.userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+
+    await writeAudit(context.userId, {
+      action: "حذف مستخدم",
+      entity: "مستخدم",
+      entity_id: data.userId,
+    });
+    return { ok: true };
+  });
+
+/** قائمة الموظفين للربط في لوحة المستخدمين */
+export const listEmployeesForLinking = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdminRole(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("employees")
+      .select("id, full_name, employee_no, user_id")
+      .order("full_name");
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });

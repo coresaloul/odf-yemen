@@ -160,18 +160,13 @@ function AuthPage() {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password2">كلمة المرور</Label>
-                    <Input
-                      id="password2"
-                      type="password"
-                      dir="ltr"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+                  <PasswordField
+                    id="password2"
+                    value={password}
+                    onChange={setPassword}
+                    required
+                  />
+
                   <Button type="submit" className="w-full" disabled={busy}>
                     إنشاء الحساب
                   </Button>

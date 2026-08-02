@@ -16,7 +16,7 @@ export function TaskBoard({
   onStatusChange: (task: TaskRow, status: TaskStatus) => void;
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-4">
       {STATUS_ORDER.map((status) => {
         const column = tasks.filter((t) => t.status === status);
         return (

@@ -4,7 +4,17 @@ export const PERIOD_LABELS: Record<string, string> = {
   monthly: "شهري",
   quarterly: "ربع سنوي",
   semiannual: "نصف سنوي",
+  annual: "سنوي",
 };
+
+/** فترات التقييم المعتمدة فقط (لا يوجد تقييم يومي أو أسبوعي) */
+export const EVALUATION_PERIOD_LABELS: Record<string, string> = {
+  monthly: "شهري",
+  quarterly: "ربع سنوي",
+  semiannual: "نصف سنوي",
+  annual: "سنوي",
+};
+
 
 export const TASK_STATUS_LABELS: Record<string, string> = {
   new: "جديدة",

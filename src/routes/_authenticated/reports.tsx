@@ -163,7 +163,7 @@ function ReportsPage() {
   const avgCriteriaScore = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.criteria_score), 0) / evaluations.length)
     : 0;
-  const approvedCount = evaluations.filter((e) => e.approved).length;
+  const approvedCount = evaluations.filter((e) => e.approval_stage === "approved").length;
 
   const targetName = options.find((o) => o.id === targetId)?.name ?? "";
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";

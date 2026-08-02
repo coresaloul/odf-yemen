@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ORG_NAME, ROLE_LABELS } from "@/lib/hr";
 import { cn } from "@/lib/utils";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,

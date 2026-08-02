@@ -61,7 +61,7 @@ export function TaskFilters({
       <div>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((v: boolean) => !v)}
           className="text-xs font-medium text-primary md:hidden"
         >
           {open ? "إخفاء الفلاتر" : "عرض المزيد من الفلاتر"}

@@ -734,30 +734,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_supervise: { Args: { _employee_id: string }; Returns: boolean }
-      current_employee_id: { Args: never; Returns: string }
-      decide_evaluation: {
-        Args: { _action: string; _evaluation_id: string; _note?: string }
-        Returns: undefined
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_director: { Args: never; Returns: boolean }
-      is_hr: { Args: never; Returns: boolean }
-      is_self_employee: { Args: { _employee_id: string }; Returns: boolean }
-      submit_evaluation: {
-        Args: { _evaluation_id: string }
-        Returns: undefined
-      }
-      wants_notification: {
-        Args: { _channel: string; _type: string; _user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "executive_director" | "manager" | "employee" | "hr"

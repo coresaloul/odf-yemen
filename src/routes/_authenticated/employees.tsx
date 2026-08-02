@@ -597,8 +597,8 @@ function EmployeeDialog({
         notes: opt(form.notes),
       };
       if (isDirector) {
-        payload.basic_salary = form.basic_salary ? Number(form.basic_salary) : null;
-        payload.iban = opt(form.iban);
+        payload['basic_salary'] = form.basic_salary ? Number(form.basic_salary) : null;
+        payload['iban'] = opt(form.iban);
       }
       const { error } = isEdit
         ? await supabase.from("employees").update(payload as never).eq("id", employee!.id)

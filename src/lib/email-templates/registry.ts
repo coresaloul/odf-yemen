@@ -19,8 +19,10 @@ export interface TemplateEntry {
  */
 import { template as taskAssignedTemplate } from './task-assigned'
 import { template as taskStatusChangedTemplate } from './task-status-changed'
+import { template as leaveStatusTemplate } from './leave-status'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'task-assigned': taskAssignedTemplate,
   'task-status-changed': taskStatusChangedTemplate,
+  'leave-status': leaveStatusTemplate,
 }

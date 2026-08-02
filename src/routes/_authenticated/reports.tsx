@@ -45,6 +45,7 @@ function ReportsPage() {
   const [scope, setScope] = useState<Scope>("employee");
   const [targetId, setTargetId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
+  const [approvedOnly, setApprovedOnly] = useState(true);
 
 
   const { data: base } = useQuery({

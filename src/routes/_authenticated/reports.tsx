@@ -205,7 +205,7 @@ function ReportsPage() {
             `${Math.round(Number(e.criteria_score))}%`,
             `${Math.round(Number(e.total_score))}%`,
             e.grade ?? gradeFor(Number(e.total_score)),
-            e.approved ? "معتمد" : "غير معتمد",
+            STAGE_LABELS[e.approval_stage as ApprovalStage],
           ]),
         },
       },
@@ -459,7 +459,9 @@ function ReportsPage() {
                         {Math.round(Number(e.total_score))}%
                       </td>
                       <td className="p-3">{e.grade ?? gradeFor(Number(e.total_score))}</td>
-                      <td className="p-3 text-xs">{e.approved ? "معتمد" : "غير معتمد"}</td>
+                      <td className="p-3 text-xs">
+                        {STAGE_LABELS[e.approval_stage as ApprovalStage]}
+                      </td>
                     </tr>
                   ))}
                   {evaluations.length === 0 && (

@@ -188,14 +188,9 @@ function AuthPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <Button variant="outline" className="w-full" onClick={google}>
-              المتابعة عبر حساب Google
-            </Button>
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+              تبقى جلستك مفتوحة على هذا الجهاز حتى تسجّل الخروج.
+            </p>
           </CardContent>
         </Card>
       </section>

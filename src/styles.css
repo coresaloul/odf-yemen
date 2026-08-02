@@ -151,6 +151,33 @@
   }
 }
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  @media (max-width: 767px) {
+    button,
+    [role="button"],
+    a[data-nav],
+    input,
+    select,
+    textarea {
+      min-height: 40px;
+    }
+
+    button[data-slot="tab"],
+    .no-touch-min,
+    .no-touch-min * {
+      min-height: 0;
+    }
+  }
+}
+
 @media print {
   .no-print {
     display: none !important;

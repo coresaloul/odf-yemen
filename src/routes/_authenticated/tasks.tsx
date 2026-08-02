@@ -141,6 +141,7 @@ function TasksPage() {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
     void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    void qc.invalidateQueries({ queryKey: ["pending-approvals"] });
   };
 
   const canManageTask = (t: TaskRow) => isManager || t.assigned_by === employee?.id;
@@ -250,6 +251,7 @@ function TasksPage() {
       } catch {
         /* تجاهل أخطاء البريد */
       }
+      return "done" as const;
     },
     onSuccess: (result) => {
       toast.success(
@@ -281,6 +283,7 @@ function TasksPage() {
       } catch {
         /* تجاهل أخطاء البريد */
       }
+      return "done" as const;
     },
     onSuccess: (result) => {
       toast.success(

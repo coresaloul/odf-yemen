@@ -26,7 +26,16 @@ async function requireUser(request: Request): Promise<boolean> {
   });
 
   const { data, error } = await client.auth.getUser(token);
-  return Boolean(!error && data.user);
+  if (error || !data.user) return false;
+
+  // لا تُستهلك الخدمة المدفوعة إلا لحسابات مرتبطة بسجل موظف داخل المؤسسة
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: emp } = await supabaseAdmin
+    .from("employees")
+    .select("id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  return Boolean(emp);
 }
 
 export const Route = createFileRoute("/api/transcribe")({

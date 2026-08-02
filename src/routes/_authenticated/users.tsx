@@ -210,18 +210,20 @@ function UsersAdminPage() {
                   >
                     {u.banned ? "تفعيل الحساب" : "تعطيل الحساب"}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === u.id}
-                    onClick={() => {
-                      setRolesTarget(u);
-                      setDraftRoles(u.roles as RoleValue[]);
-                    }}
-                  >
-                    <ShieldCheck className="ml-2 size-4" />
-                    الأدوار
-                  </Button>
+                  {isDirector && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === u.id}
+                      onClick={() => {
+                        setRolesTarget(u);
+                        setDraftRoles(u.roles as RoleValue[]);
+                      }}
+                    >
+                      <ShieldCheck className="ml-2 size-4" />
+                      الأدوار
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

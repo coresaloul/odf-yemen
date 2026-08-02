@@ -217,7 +217,7 @@ function OrgPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="الإدارات" value={departments.length} icon={<Building2 className="size-4" />} />
         <StatCard label="الأقسام" value={sections.length} icon={<FolderTree className="size-4" />} />
         <StatCard

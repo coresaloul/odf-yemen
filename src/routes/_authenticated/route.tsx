@@ -9,6 +9,7 @@ import {
   Star,
   FileBarChart,
   Settings,
+  ShieldCheck,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: boolean }[] = [
   { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard },
   { to: "/org", label: "المخطط التنظيمي", icon: Network },
   { to: "/employees", label: "الموظفون", icon: Users },
@@ -30,10 +31,11 @@ const NAV = [
   { to: "/evaluations", label: "التقييم", icon: Star },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
   { to: "/settings", label: "الإشعارات", icon: Settings },
-] as const;
+  { to: "/users", label: "المستخدمون", icon: ShieldCheck, directorOnly: true },
+];
 
 function AuthenticatedLayout() {
-  const { user, loading, roles, employee, signOut } = useAuth();
+  const { user, loading, roles, employee, signOut, isDirector } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -61,7 +63,7 @@ function AuthenticatedLayout() {
           <p className="mt-1 text-xs text-accent">نظام الموارد البشرية</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {NAV.map((item) => {
+          {NAV.filter((i) => !i.directorOnly || isDirector).map((item) => {
             const active = pathname.startsWith(item.to);
             return (
               <Link
@@ -101,7 +103,7 @@ function AuthenticatedLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex items-center gap-2 border-b bg-card px-4 py-2">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto md:hidden">
-            {NAV.map((item) => (
+            {NAV.filter((i) => !i.directorOnly || isDirector).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}

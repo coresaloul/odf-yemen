@@ -37,6 +37,7 @@ export const ROLE_LABELS: Record<string, string> = {
   executive_director: "المدير التنفيذي",
   manager: "مدير مباشر",
   employee: "موظف",
+  hr: "الموارد البشرية",
 };
 
 export const ORG_NAME = "مؤسسة اليتيم التنموية";

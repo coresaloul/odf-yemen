@@ -22,7 +22,7 @@ export type AdminUserRow = {
 export const listAppUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminUserRow[]> => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
@@ -60,7 +60,7 @@ export const confirmUserEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       email_confirm: true,
@@ -75,7 +75,7 @@ export const setUserActive = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), active: z.boolean() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     if (data.userId === context.userId && !data.active) {
       throw new Error("لا يمكنك تعطيل حسابك الخاص");
     }
@@ -93,7 +93,7 @@ export const setUserPassword = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), password: z.string().min(1).max(72) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,
@@ -110,7 +110,7 @@ export const setUserRoles = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertDirector(context.supabase as never);
+    await assertDirectorRole(context.supabase, context.userId);
     if (data.userId === context.userId && !data.roles.includes("executive_director")) {
       throw new Error("لا يمكنك سحب دور المدير التنفيذي من حسابك");
     }
@@ -157,7 +157,7 @@ export const provisionEmployeeAccounts = createServerFn({ method: "POST" })
       .parse(data ?? {}),
   )
   .handler(async ({ data, context }): Promise<ProvisionResult[]> => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let query = supabaseAdmin
@@ -236,7 +236,7 @@ export const provisionEmployeeAccounts = createServerFn({ method: "POST" })
 export const countUnlinkedEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertUserAdmin(context.supabase as never);
+    await assertAdminRole(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count, error } = await supabaseAdmin
       .from("employees")

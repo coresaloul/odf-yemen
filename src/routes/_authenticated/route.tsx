@@ -111,29 +111,76 @@ function AuthenticatedLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print flex items-center gap-2 border-b bg-card px-4 py-2">
+        <header className="no-print sticky top-0 z-30 flex items-center gap-2 border-b bg-card px-3 py-2 md:px-4">
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0 md:hidden" aria-label="القائمة">
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              dir="rtl"
+              className="flex w-[82vw] max-w-xs flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground"
+            >
+              <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4">
+                <div className="rounded-lg bg-background/95 p-1.5">
+                  <Logo className="h-9 w-9" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-sm font-bold leading-tight">{ORG_NAME}</p>
+                  <p className="mt-0.5 text-xs text-accent">نظام الموارد البشرية</p>
+                </div>
+              </div>
+              <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+                {NAV.filter(canSee).map((item) => {
+                  const active = pathname.startsWith(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
+                        active
+                          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
+                      )}
+                    >
+                      <item.icon className="size-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="border-t border-sidebar-border p-4 text-xs">
+                <p className="truncate font-semibold">{employee?.full_name ?? user.email}</p>
+                <p className="text-sidebar-foreground/70">{roleLabel}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-3 w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    await signOut();
+                    void navigate({ to: "/auth", search: { next: undefined } });
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  تسجيل الخروج
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <Logo className="h-8 w-8 shrink-0 md:hidden" />
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto md:hidden">
-            {NAV.filter(canSee).map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "shrink-0 rounded-md px-3 py-1.5 text-xs",
-                  pathname.startsWith(item.to) ? "bg-primary text-primary-foreground" : "bg-muted",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <p className="hidden flex-1 text-sm text-muted-foreground md:block">
+          <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
             {employee?.full_name ?? user.email}
           </p>
           <NotificationsBell />
         </header>
 
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-3 sm:p-4 md:p-8">
           <Outlet />
         </main>
       </div>

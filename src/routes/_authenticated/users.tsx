@@ -27,6 +27,7 @@ import {
   type AdminUserRow,
 } from "@/lib/admin-users.functions";
 import { formatDate } from "@/lib/hr";
+import { PasswordField } from "@/components/PasswordField";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersAdminPage,

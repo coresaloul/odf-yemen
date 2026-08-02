@@ -66,7 +66,7 @@ export function buildReportHtml(doc: ReportDoc) {
 </style></head>
 <body>
   <div class="header">
-    <div class="logo">مؤسسة<br/>اليتيم</div>
+    <img class="logo" src="${LOGO_URL}" alt="شعار مؤسسة اليتيم التنموية" />
     <div class="org">${esc(ORG_NAME)}</div>
     <h1>${esc(doc.title)}</h1>
     <div class="sub">${esc(doc.subtitle ?? "")}</div>

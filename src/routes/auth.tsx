@@ -78,17 +78,8 @@ function AuthPage() {
     toast.success("تم إنشاء الحساب، يمكنك الدخول الآن");
   };
 
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
-    });
-    if (result.error) {
-      toast.error("تعذر الدخول عبر Google");
-      return;
-    }
-    if (result.redirected) return;
-    void navigate({ to: target });
-  };
+
+
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">

@@ -292,22 +292,19 @@ function UsersAdminPage() {
             <DialogTitle>تعيين كلمة مرور جديدة</DialogTitle>
             <DialogDescription>{pwTarget?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="pw">كلمة المرور الجديدة (8 أحرف على الأقل)</Label>
-            <Input
-              id="pw"
-              type="text"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
+          <PasswordField
+            id="pw"
+            label="كلمة المرور الجديدة"
+            value={newPassword}
+            onChange={setNewPassword}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setPwTarget(null)}>
               إلغاء
             </Button>
             <Button
-              disabled={newPassword.length < 8}
+              disabled={newPassword.length < 1}
+
               onClick={() => {
                 const target = pwTarget;
                 if (!target) return;

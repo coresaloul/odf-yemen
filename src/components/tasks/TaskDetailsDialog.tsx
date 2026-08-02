@@ -143,7 +143,10 @@ export function TaskDetailsDialog({
 
   const download = async (path: string) => {
     const { data, error } = await supabase.storage.from("task-files").createSignedUrl(path, 60);
-    if (error || !data) return toast.error("تعذر فتح الملف");
+    if (error || !data) {
+      toast.error("تعذر فتح الملف");
+      return;
+    }
     window.open(data.signedUrl, "_blank");
   };
 

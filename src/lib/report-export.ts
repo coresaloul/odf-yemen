@@ -1,4 +1,8 @@
 import { ORG_NAME } from "./hr";
+import logoAsset from "@/assets/odf-logo.png.asset.json";
+
+const LOGO_URL =
+  typeof window !== "undefined" ? window.location.origin + logoAsset.url : logoAsset.url;
 
 export type ReportSection = {
   heading?: string;
@@ -50,9 +54,7 @@ export function buildReportHtml(doc: ReportDoc) {
   @page { size: A4; margin: 1.6cm; }
   body { font-family: "Tajawal","Cairo","Arial",sans-serif; color:#1b2b23; direction: rtl; }
   .header { border-bottom: 3px solid #1f5c43; padding-bottom: 14px; margin-bottom: 18px; }
-  .logo { width:64px; height:64px; border-radius:50%; background:#1f5c43; color:#f0c060;
-          display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;
-          float:right; margin-left:14px; text-align:center; line-height:1.2; }
+  .logo { width:72px; height:auto; float:right; margin-left:14px; }
   .org { font-size: 20px; font-weight: 800; color:#1f5c43; }
   h1 { font-size: 18px; margin: 6px 0 2px; }
   .sub { color:#5a6b62; font-size: 13px; }
@@ -68,7 +70,7 @@ export function buildReportHtml(doc: ReportDoc) {
 </style></head>
 <body>
   <div class="header">
-    <div class="logo">مؤسسة<br/>اليتيم</div>
+    <img class="logo" src="${LOGO_URL}" alt="شعار مؤسسة اليتيم التنموية" />
     <div class="org">${esc(ORG_NAME)}</div>
     <h1>${esc(doc.title)}</h1>
     <div class="sub">${esc(doc.subtitle ?? "")}</div>

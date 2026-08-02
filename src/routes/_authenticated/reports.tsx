@@ -161,8 +161,59 @@ function ReportsPage() {
   const targetName = options.find((o) => o.id === targetId)?.name ?? "";
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
 
+  const buildEvaluationDoc = (): ReportDoc => ({
+    title: `تقرير تقييم الأداء — ${SCOPE_LABELS[scope]} ${targetName}`,
+    subtitle: `تقييم ${PERIOD_LABELS[period]} للأداء (المهام ٥٠٪ · الدوام ٣٠٪ · معايير المدير ٢٠٪)`,
+    periodLabel: `${formatDate(range.start)} — ${formatDate(range.end)}`,
+    meta: [
+      { label: "عدد التقييمات", value: String(evaluations.length) },
+      { label: "متوسط الدرجة الكلية", value: `${avgTotal}%` },
+      { label: "التقدير العام", value: gradeFor(avgTotal) },
+      { label: "المعتمدة", value: `${approvedCount} من ${evaluations.length}` },
+    ],
+    sections: [
+      {
+        heading: "الملخص التنفيذي",
+        paragraphs: [
+          `يشمل التقرير ${evaluations.length} تقييماً خلال الفترة، بمتوسط درجة كلية ${avgTotal}% وتقدير عام «${gradeFor(avgTotal)}»، واعتُمد منها ${approvedCount} تقييماً.`,
+          `توزّع متوسط الدرجات على المحاور: إنجاز المهام ${avgTasksScore}%، الالتزام بالدوام ${avgAttendanceScore}%، معايير المدير ${avgCriteriaScore}%.`,
+        ],
+      },
+      {
+        heading: "متوسط محاور التقييم",
+        table: {
+          columns: ["إنجاز المهام (٥٠٪)", "الدوام (٣٠٪)", "معايير المدير (٢٠٪)", "الدرجة الكلية", "التقدير"],
+          rows: [[`${avgTasksScore}%`, `${avgAttendanceScore}%`, `${avgCriteriaScore}%`, `${avgTotal}%`, gradeFor(avgTotal)]],
+        },
+      },
+      {
+        heading: "تفصيل تقييمات الموظفين",
+        table: {
+          columns: ["الموظف", "الفترة", "المهام", "الدوام", "المعايير", "الكلية", "التقدير", "الاعتماد"],
+          rows: evaluations.map((e) => [
+            nameOf(e.employee_id),
+            `${formatDate(e.period_start)} — ${formatDate(e.period_end)}`,
+            `${Math.round(Number(e.tasks_score))}%`,
+            `${Math.round(Number(e.attendance_score))}%`,
+            `${Math.round(Number(e.criteria_score))}%`,
+            `${Math.round(Number(e.total_score))}%`,
+            e.grade ?? gradeFor(Number(e.total_score)),
+            e.approved ? "معتمد" : "غير معتمد",
+          ]),
+        },
+      },
+      {
+        heading: "ملاحظات المقيّم",
+        table: {
+          columns: ["الموظف", "الملاحظات"],
+          rows: evaluations.filter((e) => e.notes).map((e) => [nameOf(e.employee_id), e.notes ?? ""]),
+        },
+      },
+    ],
+  });
 
-  const buildDoc = (): ReportDoc => ({
+  const buildAchievementDoc = (): ReportDoc => ({
+
     title:
       scope === "employee"
         ? `تقرير إنجاز الموظف — ${targetName}`

@@ -86,7 +86,7 @@ function AuthenticatedLayout() {
             className="mt-3 w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
             onClick={async () => {
               await signOut();
-              void navigate({ to: "/auth" });
+              void navigate({ to: "/auth", search: { next: undefined } });
             }}
           >
             <LogOut className="size-4" />

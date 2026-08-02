@@ -5,12 +5,25 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const ROLES = ["executive_director", "manager", "hr", "employee"] as const;
 type Role = (typeof ROLES)[number];
 
-async function assertDirector(supabase: {
-  rpc: (fn: "is_director") => Promise<{ data: unknown; error: unknown }>;
-}) {
+type RpcClient = {
+  rpc: (fn: "is_director" | "is_hr") => Promise<{ data: unknown; error: unknown }>;
+};
+
+async function assertDirector(supabase: RpcClient) {
   const { data, error } = await supabase.rpc("is_director");
   if (error || data !== true) {
-    throw new Error("غير مصرح: هذه الصفحة للمدير التنفيذي فقط");
+    throw new Error("غير مصرح: هذا الإجراء للمدير التنفيذي فقط");
+  }
+}
+
+/** لوحة المستخدمين: متاحة للمدير التنفيذي أو الموارد البشرية فقط */
+async function assertUserAdmin(supabase: RpcClient) {
+  const [director, hr] = await Promise.all([
+    supabase.rpc("is_director"),
+    supabase.rpc("is_hr"),
+  ]);
+  if (director.data !== true && hr.data !== true) {
+    throw new Error("غير مصرح: هذه الصفحة للمدير التنفيذي أو الموارد البشرية فقط");
   }
 }
 
@@ -29,7 +42,7 @@ export type AdminUserRow = {
 export const listAppUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminUserRow[]> => {
-    await assertDirector(context.supabase as never);
+    await assertUserAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
@@ -67,7 +80,7 @@ export const confirmUserEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await assertDirector(context.supabase as never);
+    await assertUserAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       email_confirm: true,
@@ -82,7 +95,7 @@ export const setUserActive = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), active: z.boolean() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertDirector(context.supabase as never);
+    await assertUserAdmin(context.supabase as never);
     if (data.userId === context.userId && !data.active) {
       throw new Error("لا يمكنك تعطيل حسابك الخاص");
     }
@@ -100,7 +113,7 @@ export const setUserPassword = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), password: z.string().min(8).max(72) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertDirector(context.supabase as never);
+    await assertUserAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,

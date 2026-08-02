@@ -59,7 +59,8 @@ const ALL_ROLES = [
 type RoleValue = (typeof ALL_ROLES)[number]["value"];
 
 function UsersAdminPage() {
-  const { isDirector, loading: authLoading, refresh } = useAuth();
+  const { isDirector, isHR, loading: authLoading, refresh } = useAuth();
+  const canManageUsers = isDirector || isHR;
   const fetchUsers = useServerFn(listAppUsers);
   const doConfirm = useServerFn(confirmUserEmail);
   const doActive = useServerFn(setUserActive);
@@ -86,22 +87,24 @@ function UsersAdminPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && isDirector) void load();
+    if (!authLoading && canManageUsers) void load();
     else if (!authLoading) setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, isDirector]);
+  }, [authLoading, canManageUsers]);
 
   if (authLoading) {
     return <div className="p-8 text-muted-foreground">جارٍ التحميل…</div>;
   }
 
-  if (!isDirector) {
+  if (!canManageUsers) {
     return (
       <div className="p-8">
         <Card>
           <CardHeader>
             <CardTitle>غير مصرح</CardTitle>
-            <CardDescription>هذه الصفحة متاحة للمدير التنفيذي فقط.</CardDescription>
+            <CardDescription>
+              هذه الصفحة متاحة للمدير التنفيذي أو الموارد البشرية فقط.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -207,18 +210,20 @@ function UsersAdminPage() {
                   >
                     {u.banned ? "تفعيل الحساب" : "تعطيل الحساب"}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === u.id}
-                    onClick={() => {
-                      setRolesTarget(u);
-                      setDraftRoles(u.roles as RoleValue[]);
-                    }}
-                  >
-                    <ShieldCheck className="ml-2 size-4" />
-                    الأدوار
-                  </Button>
+                  {isDirector && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === u.id}
+                      onClick={() => {
+                        setRolesTarget(u);
+                        setDraftRoles(u.roles as RoleValue[]);
+                      }}
+                    >
+                      <ShieldCheck className="ml-2 size-4" />
+                      الأدوار
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

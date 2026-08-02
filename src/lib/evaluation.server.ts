@@ -122,7 +122,7 @@ export async function loadTemplates(period: string): Promise<TemplateRow[]> {
     }));
 }
 
-export type BehaviorInput = { templateId: string; score: number; note?: string | null };
+export type BehaviorInput = { templateId: string; score: number; note?: string | null | undefined };
 
 export function buildTotals(
   templates: TemplateRow[],

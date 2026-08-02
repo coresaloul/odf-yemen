@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/evaluations")({
 const WEIGHTS = { tasks: 0.5, attendance: 0.3, criteria: 0.2 };
 
 function EvaluationsPage() {
-  const { isManager, employee } = useAuth();
+  const { isManager, isHR, isDirector, employee } = useAuth();
   const qc = useQueryClient();
   const [employeeId, setEmployeeId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
@@ -55,17 +55,30 @@ function EvaluationsPage() {
   const { data } = useQuery({
     queryKey: ["evaluations-page"],
     queryFn: async () => {
-      const [employees, evaluations] = await Promise.all([
+      const [employees, evaluations, approvals] = await Promise.all([
         supabase.from("employees").select("id, full_name").order("full_name"),
         supabase.from("evaluations").select("*").order("created_at", { ascending: false }),
+        supabase
+          .from("evaluation_approvals")
+          .select("id, evaluation_id, stage, action, note, created_at")
+          .order("created_at", { ascending: true }),
       ]);
-      return { employees: employees.data ?? [], evaluations: evaluations.data ?? [] };
+      return {
+        employees: employees.data ?? [],
+        evaluations: evaluations.data ?? [],
+        approvals: approvals.data ?? [],
+      };
     },
   });
 
   const employees = data?.employees ?? [];
   const evaluations = data?.evaluations ?? [];
+  const trail = (data?.approvals ?? []).reduce<Record<string, typeof approvalsSample>>((acc, a) => {
+    (acc[a.evaluation_id] ??= []).push(a);
+    return acc;
+  }, {});
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
+
 
   const compute = useMutation({
     mutationFn: async () => {
@@ -161,7 +174,7 @@ function EvaluationsPage() {
       const { error } = await supabase.rpc("decide_evaluation", {
         _evaluation_id: v.id,
         _action: v.action,
-        _note: v.note ?? null,
+        _note: v.note ?? undefined,
       });
       if (error) throw error;
     },

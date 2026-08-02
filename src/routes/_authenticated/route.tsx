@@ -11,6 +11,7 @@ import {
   FileBarChart,
   Settings,
   ShieldCheck,
+  ClipboardCheck,
   LogOut,
   Menu,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ORG_NAME, ROLE_LABELS } from "@/lib/hr";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { ApprovalsPopover } from "@/components/approvals/ApprovalsPopover";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -182,6 +184,7 @@ function AuthenticatedLayout() {
           <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
             {employee?.full_name ?? user.email}
           </p>
+          <ApprovalsPopover />
           <NotificationsBell />
         </header>
 

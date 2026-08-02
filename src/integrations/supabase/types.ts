@@ -221,6 +221,105 @@ export type Database = {
         }
         Relationships: []
       }
+      biometric_devices: {
+        Row: {
+          active: boolean
+          auth_key: string
+          auto_generate: boolean
+          created_at: string
+          day_start_time: string
+          id: string
+          last_seen_at: string | null
+          location: string | null
+          name: string
+          punches_count: number
+          serial_number: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          auth_key: string
+          auto_generate?: boolean
+          created_at?: string
+          day_start_time?: string
+          id?: string
+          last_seen_at?: string | null
+          location?: string | null
+          name: string
+          punches_count?: number
+          serial_number: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          auth_key?: string
+          auto_generate?: boolean
+          created_at?: string
+          day_start_time?: string
+          id?: string
+          last_seen_at?: string | null
+          location?: string | null
+          name?: string
+          punches_count?: number
+          serial_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      biometric_punches: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          device_serial: string | null
+          device_user_id: string
+          employee_id: string | null
+          id: string
+          processed: boolean
+          punch_type: string | null
+          punched_at: string
+          raw: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          device_serial?: string | null
+          device_user_id: string
+          employee_id?: string | null
+          id?: string
+          processed?: boolean
+          punch_type?: string | null
+          punched_at: string
+          raw?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          device_serial?: string | null
+          device_user_id?: string
+          employee_id?: string | null
+          id?: string
+          processed?: boolean
+          punch_type?: string | null
+          punched_at?: string
+          raw?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biometric_punches_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "biometric_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biometric_punches_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_contracts: {
         Row: {
           created_at: string
@@ -588,6 +687,7 @@ export type Database = {
           contract_type: string | null
           created_at: string
           department_id: string | null
+          device_user_id: string | null
           education_level: string | null
           email: string | null
           emergency_contact_name: string | null
@@ -626,6 +726,7 @@ export type Database = {
           contract_type?: string | null
           created_at?: string
           department_id?: string | null
+          device_user_id?: string | null
           education_level?: string | null
           email?: string | null
           emergency_contact_name?: string | null
@@ -664,6 +765,7 @@ export type Database = {
           contract_type?: string | null
           created_at?: string
           department_id?: string | null
+          device_user_id?: string | null
           education_level?: string | null
           email?: string | null
           emergency_contact_name?: string | null

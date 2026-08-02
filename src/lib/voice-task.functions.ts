@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type ParsedTask = {
   title: string;
@@ -9,6 +10,7 @@ type ParsedTask = {
 };
 
 export const parseVoiceTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: { transcript: string; employees: string[] }) => {
     if (!data?.transcript || typeof data.transcript !== "string") {
       throw new Error("النص المُدخل غير صالح");

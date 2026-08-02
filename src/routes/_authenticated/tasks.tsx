@@ -367,7 +367,14 @@ function VoiceTaskButton({
     try {
       const fd = new FormData();
       fd.append("file", blob, "recording.wav");
-      const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("انتهت الجلسة، سجّل الدخول مجدداً");
+      const res = await fetch("/api/transcribe", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
       const json = (await res.json()) as { text?: string; error?: string };
       if (!res.ok || !json.text) throw new Error(json.error ?? "تعذر تفريغ التسجيل");
 

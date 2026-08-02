@@ -87,22 +87,24 @@ function UsersAdminPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && isDirector) void load();
+    if (!authLoading && canManageUsers) void load();
     else if (!authLoading) setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, isDirector]);
+  }, [authLoading, canManageUsers]);
 
   if (authLoading) {
     return <div className="p-8 text-muted-foreground">جارٍ التحميل…</div>;
   }
 
-  if (!isDirector) {
+  if (!canManageUsers) {
     return (
       <div className="p-8">
         <Card>
           <CardHeader>
             <CardTitle>غير مصرح</CardTitle>
-            <CardDescription>هذه الصفحة متاحة للمدير التنفيذي فقط.</CardDescription>
+            <CardDescription>
+              هذه الصفحة متاحة للمدير التنفيذي أو الموارد البشرية فقط.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>

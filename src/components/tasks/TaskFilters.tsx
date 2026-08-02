@@ -40,6 +40,7 @@ export function TaskFilters({
   employees: EmployeeLite[];
   departments: { id: string; name: string }[];
 }) {
+  const [open, setOpen] = useState(false);
   const set = <K extends keyof TaskFiltersState>(k: K, v: TaskFiltersState[K]) =>
     onChange({ ...value, [k]: v });
 
@@ -55,13 +56,16 @@ export function TaskFilters({
         />
       </div>
 
-      <details className="group md:open" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-        <summary className="cursor-pointer list-none text-xs font-medium text-primary md:hidden">
+      <div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="text-xs font-medium text-primary md:hidden"
+        >
           {open ? "إخفاء الفلاتر" : "عرض المزيد من الفلاتر"}
-        </summary>
+        </button>
 
-        <div className="mt-3 space-y-3">
-          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
+        <div className={cn("mt-3 space-y-3", open ? "block" : "hidden md:block")}>
             <Select value={value.status} onValueChange={(v) => set("status", v)}>
               <SelectTrigger className="w-full md:w-36"><SelectValue placeholder="الحالة" /></SelectTrigger>
               <SelectContent>

@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   ClipboardCheck,
+  Wallet,
   LogOut,
   Menu,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const NAV: { to: string; label: string; icon: typeof Settings; directorOnly?: bo
   { to: "/evaluations", label: "التقييم", icon: Star },
   { to: "/approvals", label: "الموافقات", icon: ClipboardCheck },
 
+  { to: "/payroll", label: "الرواتب", icon: Wallet },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
   { to: "/settings", label: "الإشعارات", icon: Settings },
   { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },

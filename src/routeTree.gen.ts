@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedEvaluationsRouteImport } from './routes/_authenticated/evaluations'
 import { Route as AuthenticatedOrgRouteImport } from './routes/_authenticated/org'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
@@ -48,6 +49,12 @@ const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEvaluationsRoute =
+  AuthenticatedEvaluationsRouteImport.update({
+    id: '/evaluations',
+    path: '/evaluations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrgRoute = AuthenticatedOrgRouteImport.update({
   id: '/org',
   path: '/org',
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
+  '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/org': typeof AuthenticatedOrgRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -80,6 +88,7 @@ export interface FileRoutesByTo {
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
+  '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/org': typeof AuthenticatedOrgRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -92,6 +101,7 @@ export interface FileRoutesById {
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
+  '/_authenticated/evaluations': typeof AuthenticatedEvaluationsRoute
   '/_authenticated/org': typeof AuthenticatedOrgRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/evaluations'
     | '/org'
     | '/tasks'
     | '/api/transcribe'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/evaluations'
     | '/org'
     | '/tasks'
     | '/api/transcribe'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
     | '/_authenticated/attendance'
     | '/_authenticated/dashboard'
     | '/_authenticated/employees'
+    | '/_authenticated/evaluations'
     | '/_authenticated/org'
     | '/_authenticated/tasks'
     | '/api/transcribe'
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/evaluations': {
+      id: '/_authenticated/evaluations'
+      path: '/evaluations'
+      fullPath: '/evaluations'
+      preLoaderRoute: typeof AuthenticatedEvaluationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/org': {
       id: '/_authenticated/org'
       path: '/org'
@@ -209,6 +229,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
+  AuthenticatedEvaluationsRoute: typeof AuthenticatedEvaluationsRoute
   AuthenticatedOrgRoute: typeof AuthenticatedOrgRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
 }
@@ -217,6 +238,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
+  AuthenticatedEvaluationsRoute: AuthenticatedEvaluationsRoute,
   AuthenticatedOrgRoute: AuthenticatedOrgRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
 }

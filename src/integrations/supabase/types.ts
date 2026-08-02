@@ -169,6 +169,44 @@ export type Database = {
           },
         ]
       }
+      evaluation_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          evaluation_id: string
+          id: string
+          note: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          note?: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          note?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_approvals_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluation_criteria: {
         Row: {
           created_at: string
@@ -206,52 +244,79 @@ export type Database = {
       }
       evaluations: {
         Row: {
+          approval_stage: Database["public"]["Enums"]["approval_stage"]
           approved: boolean
           attendance_score: number
           created_at: string
           criteria_score: number
+          director_approved_at: string | null
+          director_approved_by: string | null
           employee_id: string
           evaluator_id: string | null
           grade: string | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
           id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
           notes: string | null
           period: Database["public"]["Enums"]["period_type"]
           period_end: string
           period_start: string
+          return_reason: string | null
+          submitted_at: string | null
           tasks_score: number
           total_score: number
           updated_at: string
         }
         Insert: {
+          approval_stage?: Database["public"]["Enums"]["approval_stage"]
           approved?: boolean
           attendance_score?: number
           created_at?: string
           criteria_score?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           employee_id: string
           evaluator_id?: string | null
           grade?: string | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           notes?: string | null
           period?: Database["public"]["Enums"]["period_type"]
           period_end: string
           period_start: string
+          return_reason?: string | null
+          submitted_at?: string | null
           tasks_score?: number
           total_score?: number
           updated_at?: string
         }
         Update: {
+          approval_stage?: Database["public"]["Enums"]["approval_stage"]
           approved?: boolean
           attendance_score?: number
           created_at?: string
           criteria_score?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           employee_id?: string
           evaluator_id?: string | null
           grade?: string | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           notes?: string | null
           period?: Database["public"]["Enums"]["period_type"]
           period_end?: string
           period_start?: string
+          return_reason?: string | null
+          submitted_at?: string | null
           tasks_score?: number
           total_score?: number
           updated_at?: string
@@ -552,6 +617,10 @@ export type Database = {
     Functions: {
       can_supervise: { Args: { _employee_id: string }; Returns: boolean }
       current_employee_id: { Args: never; Returns: string }
+      decide_evaluation: {
+        Args: { _action: string; _evaluation_id: string; _note?: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -560,14 +629,26 @@ export type Database = {
         Returns: boolean
       }
       is_director: { Args: never; Returns: boolean }
+      is_hr: { Args: never; Returns: boolean }
       is_self_employee: { Args: { _employee_id: string }; Returns: boolean }
+      submit_evaluation: {
+        Args: { _evaluation_id: string }
+        Returns: undefined
+      }
       wants_notification: {
         Args: { _channel: string; _type: string; _user_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      app_role: "executive_director" | "manager" | "employee"
+      app_role: "executive_director" | "manager" | "employee" | "hr"
+      approval_stage:
+        | "draft"
+        | "pending_manager"
+        | "pending_hr"
+        | "pending_director"
+        | "approved"
+        | "returned"
       attendance_status: "present" | "absent" | "leave" | "holiday"
       employee_status: "active" | "on_leave" | "terminated"
       period_type: "daily" | "weekly" | "monthly" | "quarterly" | "semiannual"
@@ -700,7 +781,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["executive_director", "manager", "employee"],
+      app_role: ["executive_director", "manager", "employee", "hr"],
+      approval_stage: [
+        "draft",
+        "pending_manager",
+        "pending_hr",
+        "pending_director",
+        "approved",
+        "returned",
+      ],
       attendance_status: ["present", "absent", "leave", "holiday"],
       employee_status: ["active", "on_leave", "terminated"],
       period_type: ["daily", "weekly", "monthly", "quarterly", "semiannual"],

@@ -66,6 +66,7 @@ export function TaskFilters({
         </button>
 
         <div className={cn("mt-3 space-y-3", open ? "block" : "hidden md:block")}>
+          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
             <Select value={value.status} onValueChange={(v) => set("status", v)}>
               <SelectTrigger className="w-full md:w-36"><SelectValue placeholder="الحالة" /></SelectTrigger>
               <SelectContent>

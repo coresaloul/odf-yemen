@@ -64,6 +64,9 @@ function AuthPage() {
       <section className="relative hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="text-sm tracking-widest text-accent">HR SYSTEM</div>
         <div>
+          <div className="mb-8 inline-flex rounded-2xl bg-background/95 p-5">
+            <Logo className="h-32 w-auto" />
+          </div>
           <h1 className="font-display text-4xl leading-snug font-bold">{ORG_NAME}</h1>
           <p className="mt-4 max-w-md text-sidebar-foreground/80">
             منصة موحّدة لإدارة الهيكل التنظيمي والموظفين والمهام والدوام والتقييم، مع تقارير إنجاز
@@ -75,7 +78,8 @@ function AuthPage() {
 
       <section className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
-          <CardHeader>
+          <CardHeader className="items-center text-center">
+            <Logo className="mb-2 h-20 w-auto lg:hidden" />
             <CardTitle className="font-display text-2xl">نظام الموارد البشرية</CardTitle>
             <CardDescription>سجّل الدخول للمتابعة إلى لوحة العمل</CardDescription>
           </CardHeader>

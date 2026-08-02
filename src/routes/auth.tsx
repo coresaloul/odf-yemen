@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ORG_NAME } from "@/lib/hr";
+import { PasswordField } from "@/components/PasswordField";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -121,17 +122,16 @@ function AuthPage() {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">كلمة المرور</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      dir="ltr"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+                  <PasswordField
+                    id="password"
+                    value={password}
+                    onChange={setPassword}
+                    required
+                    autoComplete="current-password"
+                    showGenerator={false}
+                    showMeter={false}
+                  />
+
                   <Button type="submit" className="w-full" disabled={busy}>
                     دخول
                   </Button>
@@ -160,18 +160,13 @@ function AuthPage() {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password2">كلمة المرور</Label>
-                    <Input
-                      id="password2"
-                      type="password"
-                      dir="ltr"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+                  <PasswordField
+                    id="password2"
+                    value={password}
+                    onChange={setPassword}
+                    required
+                  />
+
                   <Button type="submit" className="w-full" disabled={busy}>
                     إنشاء الحساب
                   </Button>

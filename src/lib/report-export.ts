@@ -1,4 +1,8 @@
 import { ORG_NAME } from "./hr";
+import logoAsset from "@/assets/odf-logo.png.asset.json";
+
+const LOGO_URL =
+  typeof window !== "undefined" ? window.location.origin + logoAsset.url : logoAsset.url;
 
 export type ReportSection = {
   heading?: string;

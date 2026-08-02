@@ -32,11 +32,20 @@ export const Route = createFileRoute("/_authenticated/reports")({
 });
 
 type Scope = "employee" | "section" | "department";
+type ReportKind = "achievement" | "evaluation";
+
+const SCOPE_LABELS: Record<Scope, string> = {
+  employee: "الموظف",
+  section: "القسم",
+  department: "الإدارة",
+};
 
 function ReportsPage() {
+  const [kind, setKind] = useState<ReportKind>("achievement");
   const [scope, setScope] = useState<Scope>("employee");
   const [targetId, setTargetId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
+
 
   const { data: base } = useQuery({
     queryKey: ["report-base"],
@@ -111,10 +120,100 @@ function ReportsPage() {
   const lateMinutes = attendance.reduce((s, a) => s + a.late_minutes, 0);
   const presentDays = attendance.filter((a) => a.status === "present").length;
 
+  const memberIds =
+    scope === "employee"
+      ? targetId
+        ? [targetId]
+        : []
+      : employees
+          .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
+          .map((e) => e.id);
+
+  const { data: evaluations = [], isFetching: loadingEvals } = useQuery({
+    enabled: kind === "evaluation" && Boolean(targetId) && memberIds.length > 0,
+    queryKey: ["report-evaluations", scope, targetId, period, range.start, range.end],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("evaluations")
+        .select("*")
+        .in("employee_id", memberIds)
+        .lte("period_start", range.end)
+        .gte("period_end", range.start)
+        .order("total_score", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const avgTotal = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.total_score), 0) / evaluations.length)
+    : 0;
+  const avgTasksScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.tasks_score), 0) / evaluations.length)
+    : 0;
+  const avgAttendanceScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.attendance_score), 0) / evaluations.length)
+    : 0;
+  const avgCriteriaScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.criteria_score), 0) / evaluations.length)
+    : 0;
+  const approvedCount = evaluations.filter((e) => e.approved).length;
+
   const targetName = options.find((o) => o.id === targetId)?.name ?? "";
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
 
-  const buildDoc = (): ReportDoc => ({
+  const buildEvaluationDoc = (): ReportDoc => ({
+    title: `تقرير تقييم الأداء — ${SCOPE_LABELS[scope]} ${targetName}`,
+    subtitle: `تقييم ${PERIOD_LABELS[period]} للأداء (المهام ٥٠٪ · الدوام ٣٠٪ · معايير المدير ٢٠٪)`,
+    periodLabel: `${formatDate(range.start)} — ${formatDate(range.end)}`,
+    meta: [
+      { label: "عدد التقييمات", value: String(evaluations.length) },
+      { label: "متوسط الدرجة الكلية", value: `${avgTotal}%` },
+      { label: "التقدير العام", value: gradeFor(avgTotal) },
+      { label: "المعتمدة", value: `${approvedCount} من ${evaluations.length}` },
+    ],
+    sections: [
+      {
+        heading: "الملخص التنفيذي",
+        paragraphs: [
+          `يشمل التقرير ${evaluations.length} تقييماً خلال الفترة، بمتوسط درجة كلية ${avgTotal}% وتقدير عام «${gradeFor(avgTotal)}»، واعتُمد منها ${approvedCount} تقييماً.`,
+          `توزّع متوسط الدرجات على المحاور: إنجاز المهام ${avgTasksScore}%، الالتزام بالدوام ${avgAttendanceScore}%، معايير المدير ${avgCriteriaScore}%.`,
+        ],
+      },
+      {
+        heading: "متوسط محاور التقييم",
+        table: {
+          columns: ["إنجاز المهام (٥٠٪)", "الدوام (٣٠٪)", "معايير المدير (٢٠٪)", "الدرجة الكلية", "التقدير"],
+          rows: [[`${avgTasksScore}%`, `${avgAttendanceScore}%`, `${avgCriteriaScore}%`, `${avgTotal}%`, gradeFor(avgTotal)]],
+        },
+      },
+      {
+        heading: "تفصيل تقييمات الموظفين",
+        table: {
+          columns: ["الموظف", "الفترة", "المهام", "الدوام", "المعايير", "الكلية", "التقدير", "الاعتماد"],
+          rows: evaluations.map((e) => [
+            nameOf(e.employee_id),
+            `${formatDate(e.period_start)} — ${formatDate(e.period_end)}`,
+            `${Math.round(Number(e.tasks_score))}%`,
+            `${Math.round(Number(e.attendance_score))}%`,
+            `${Math.round(Number(e.criteria_score))}%`,
+            `${Math.round(Number(e.total_score))}%`,
+            e.grade ?? gradeFor(Number(e.total_score)),
+            e.approved ? "معتمد" : "غير معتمد",
+          ]),
+        },
+      },
+      {
+        heading: "ملاحظات المقيّم",
+        table: {
+          columns: ["الموظف", "الملاحظات"],
+          rows: evaluations.filter((e) => e.notes).map((e) => [nameOf(e.employee_id), e.notes ?? ""]),
+        },
+      },
+    ],
+  });
+
+  const buildAchievementDoc = (): ReportDoc => ({
+
     title:
       scope === "employee"
         ? `تقرير إنجاز الموظف — ${targetName}`
@@ -168,13 +267,24 @@ function ReportsPage() {
     ],
   });
 
-  const fileName = `تقرير-${PERIOD_LABELS[period]}-${targetName || "عام"}`;
+  const buildDoc = (): ReportDoc =>
+    kind === "evaluation" ? buildEvaluationDoc() : buildAchievementDoc();
+
+  const fileName =
+    kind === "evaluation"
+      ? `تقرير-تقييم-الأداء-${PERIOD_LABELS[period]}-${targetName || "عام"}`
+      : `تقرير-${PERIOD_LABELS[period]}-${targetName || "عام"}`;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="تقارير الإنجاز"
-        description="تقارير يومية وأسبوعية وشهرية وربعية ونصف سنوية للموظف أو القسم أو الإدارة"
+        title={kind === "evaluation" ? "تقارير تقييم الأداء" : "تقارير الإنجاز"}
+        description={
+          kind === "evaluation"
+            ? "تقارير تقييم أداء الموظفين والأقسام والإدارات مع محاور المهام والدوام ومعايير المدير"
+            : "تقارير يومية وأسبوعية وشهرية وربعية ونصف سنوية للموظف أو القسم أو الإدارة"
+        }
+
         action={
           <>
             <Button
@@ -201,9 +311,22 @@ function ReportsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-2">
+          <Label>نوع التقرير</Label>
+          <Select value={kind} onValueChange={(v) => setKind(v as ReportKind)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="achievement">تقرير الإنجاز</SelectItem>
+              <SelectItem value="evaluation">تقرير تقييم الأداء</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <Label>نطاق التقرير</Label>
+
           <Select
             value={scope}
             onValueChange={(v) => {
@@ -254,11 +377,85 @@ function ReportsPage() {
       </div>
 
       {!targetId && <p className="text-sm text-muted-foreground">اختر الجهة لعرض التقرير.</p>}
-      {isFetching && <p className="text-sm text-muted-foreground">جارٍ إعداد التقرير…</p>}
+      {(kind === "evaluation" ? loadingEvals : isFetching) && (
+        <p className="text-sm text-muted-foreground">جارٍ إعداد التقرير…</p>
+      )}
 
-      {targetId && (
+      {targetId && kind === "evaluation" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { label: "عدد التقييمات", value: evaluations.length },
+              { label: "متوسط المهام", value: `${avgTasksScore}%` },
+              { label: "متوسط الدوام", value: `${avgAttendanceScore}%` },
+              { label: "متوسط المعايير", value: `${avgCriteriaScore}%` },
+              { label: "الدرجة الكلية", value: `${avgTotal}%` },
+            ].map((s) => (
+              <Card key={s.label}>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="font-display text-2xl font-bold text-primary">{s.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {formatDate(range.start)} — {formatDate(range.end)} · تقييم أداء {SCOPE_LABELS[scope]}{" "}
+                {targetName} · التقدير العام: {gradeFor(avgTotal)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto p-0">
+              <table className="w-full text-right text-sm">
+                <thead className="bg-muted/60 text-xs">
+                  <tr>
+                    <th className="p-3">الموظف</th>
+                    <th className="p-3">الفترة</th>
+                    <th className="p-3">المهام</th>
+                    <th className="p-3">الدوام</th>
+                    <th className="p-3">المعايير</th>
+                    <th className="p-3">الكلية</th>
+                    <th className="p-3">التقدير</th>
+                    <th className="p-3">الاعتماد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evaluations.map((e) => (
+                    <tr key={e.id} className="border-t">
+                      <td className="p-3">{nameOf(e.employee_id)}</td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {formatDate(e.period_start)} — {formatDate(e.period_end)}
+                      </td>
+                      <td className="p-3">{Math.round(Number(e.tasks_score))}%</td>
+                      <td className="p-3">{Math.round(Number(e.attendance_score))}%</td>
+                      <td className="p-3">{Math.round(Number(e.criteria_score))}%</td>
+                      <td className="p-3 font-semibold text-primary">
+                        {Math.round(Number(e.total_score))}%
+                      </td>
+                      <td className="p-3">{e.grade ?? gradeFor(Number(e.total_score))}</td>
+                      <td className="p-3 text-xs">{e.approved ? "معتمد" : "غير معتمد"}</td>
+                    </tr>
+                  ))}
+                  {evaluations.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                        لا توجد تقييمات ضمن هذه الفترة.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {targetId && kind === "achievement" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
             {[
               { label: "إجمالي المهام", value: tasks.length },
               { label: "منجزة", value: completed },

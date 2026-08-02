@@ -315,14 +315,14 @@ export async function decideTask(
 /* ───────────────── تصحيح الحضور ───────────────── */
 
 export type CorrectionInput = {
-  id?: string | null;
+  id?: string | null | undefined;
   employee_id: string;
   work_date: string;
   correction_type: string;
-  requested_check_in?: string | null;
-  requested_check_out?: string | null;
-  reason?: string | null;
-  attachment_url?: string | null;
+  requested_check_in?: string | null | undefined;
+  requested_check_out?: string | null | undefined;
+  reason?: string | null | undefined;
+  attachment_url?: string | null | undefined;
 };
 
 export async function saveCorrection(userId: string, input: CorrectionInput) {

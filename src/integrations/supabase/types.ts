@@ -24,8 +24,12 @@ export type Database = {
           id: string
           late_minutes: number
           notes: string | null
+          permission_minutes: number
+          source: string
           status: Database["public"]["Enums"]["attendance_status"]
+          updated_at: string
           work_date: string
+          worked_minutes: number
         }
         Insert: {
           check_in?: string | null
@@ -36,8 +40,12 @@ export type Database = {
           id?: string
           late_minutes?: number
           notes?: string | null
+          permission_minutes?: number
+          source?: string
           status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
           work_date: string
+          worked_minutes?: number
         }
         Update: {
           check_in?: string | null
@@ -48,8 +56,12 @@ export type Database = {
           id?: string
           late_minutes?: number
           notes?: string | null
+          permission_minutes?: number
+          source?: string
           status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
           work_date?: string
+          worked_minutes?: number
         }
         Relationships: [
           {
@@ -486,6 +498,266 @@ export type Database = {
           },
         ]
       }
+      holidays: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          recurring_annually: boolean
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          recurring_annually?: boolean
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          recurring_annually?: boolean
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leave_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string | null
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          stage?: Database["public"]["Enums"]["approval_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_balances: {
+        Row: {
+          carried: number
+          created_at: string
+          employee_id: string
+          entitled: number
+          id: string
+          leave_type_id: string
+          updated_at: string
+          used: number
+          year: number
+        }
+        Insert: {
+          carried?: number
+          created_at?: string
+          employee_id: string
+          entitled?: number
+          id?: string
+          leave_type_id: string
+          updated_at?: string
+          used?: number
+          year: number
+        }
+        Update: {
+          carried?: number
+          created_at?: string
+          employee_id?: string
+          entitled?: number
+          id?: string
+          leave_type_id?: string
+          updated_at?: string
+          used?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          created_by: string | null
+          days: number
+          director_approved_at: string | null
+          director_approved_by: string | null
+          employee_id: string
+          end_date: string
+          end_time: string | null
+          hours: number
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string
+          kind: string
+          leave_type_id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          reason: string | null
+          return_reason: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+          start_date: string
+          start_time: string | null
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          days?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id: string
+          end_date: string
+          end_time?: string | null
+          hours?: number
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          kind?: string
+          leave_type_id: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          reason?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          start_date: string
+          start_time?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          days?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id?: string
+          end_date?: string
+          end_time?: string | null
+          hours?: number
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          kind?: string
+          leave_type_id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          reason?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          start_date?: string
+          start_time?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          active: boolean
+          annual_days: number
+          code: string
+          created_at: string
+          id: string
+          is_hourly: boolean
+          is_paid: boolean
+          name: string
+          position: number
+          requires_attachment: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          annual_days?: number
+          code: string
+          created_at?: string
+          id?: string
+          is_hourly?: boolean
+          is_paid?: boolean
+          name: string
+          position?: number
+          requires_attachment?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          annual_days?: number
+          code?: string
+          created_at?: string
+          id?: string
+          is_hourly?: boolean
+          is_paid?: boolean
+          name?: string
+          position?: number
+          requires_attachment?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -857,6 +1129,36 @@ export type Database = {
         }
         Relationships: []
       }
+      work_settings: {
+        Row: {
+          created_at: string
+          end_time: string
+          grace_minutes: number
+          id: boolean
+          start_time: string
+          updated_at: string
+          work_days: number[]
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string
+          grace_minutes?: number
+          id?: boolean
+          start_time?: string
+          updated_at?: string
+          work_days?: number[]
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          grace_minutes?: number
+          id?: boolean
+          start_time?: string
+          updated_at?: string
+          work_days?: number[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -873,7 +1175,12 @@ export type Database = {
         | "pending_director"
         | "approved"
         | "returned"
-      attendance_status: "present" | "absent" | "leave" | "holiday"
+      attendance_status:
+        | "present"
+        | "absent"
+        | "leave"
+        | "holiday"
+        | "permission"
       employee_status: "active" | "on_leave" | "terminated"
       period_type: "daily" | "weekly" | "monthly" | "quarterly" | "semiannual"
       task_priority: "low" | "medium" | "high" | "urgent"
@@ -1014,7 +1321,13 @@ export const Constants = {
         "approved",
         "returned",
       ],
-      attendance_status: ["present", "absent", "leave", "holiday"],
+      attendance_status: [
+        "present",
+        "absent",
+        "leave",
+        "holiday",
+        "permission",
+      ],
       employee_status: ["active", "on_leave", "terminated"],
       period_type: ["daily", "weekly", "monthly", "quarterly", "semiannual"],
       task_priority: ["low", "medium", "high", "urgent"],

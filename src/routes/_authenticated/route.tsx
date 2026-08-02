@@ -62,9 +62,14 @@ function AuthenticatedLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="no-print sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
-        <div className="border-b border-sidebar-border px-5 py-6">
-          <p className="font-display text-lg font-bold leading-tight">{ORG_NAME}</p>
-          <p className="mt-1 text-xs text-accent">نظام الموارد البشرية</p>
+        <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
+          <div className="rounded-lg bg-background/95 p-1.5">
+            <Logo className="h-10 w-10" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-display text-base font-bold leading-tight">{ORG_NAME}</p>
+            <p className="mt-1 text-xs text-accent">نظام الموارد البشرية</p>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {NAV.filter(canSee).map((item) => {

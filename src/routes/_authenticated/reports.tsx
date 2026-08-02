@@ -120,8 +120,47 @@ function ReportsPage() {
   const lateMinutes = attendance.reduce((s, a) => s + a.late_minutes, 0);
   const presentDays = attendance.filter((a) => a.status === "present").length;
 
+  const memberIds =
+    scope === "employee"
+      ? targetId
+        ? [targetId]
+        : []
+      : employees
+          .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
+          .map((e) => e.id);
+
+  const { data: evaluations = [], isFetching: loadingEvals } = useQuery({
+    enabled: kind === "evaluation" && Boolean(targetId) && memberIds.length > 0,
+    queryKey: ["report-evaluations", scope, targetId, period, range.start, range.end],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("evaluations")
+        .select("*")
+        .in("employee_id", memberIds)
+        .lte("period_start", range.end)
+        .gte("period_end", range.start)
+        .order("total_score", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const avgTotal = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.total_score), 0) / evaluations.length)
+    : 0;
+  const avgTasksScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.tasks_score), 0) / evaluations.length)
+    : 0;
+  const avgAttendanceScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.attendance_score), 0) / evaluations.length)
+    : 0;
+  const avgCriteriaScore = evaluations.length
+    ? Math.round(evaluations.reduce((s, e) => s + Number(e.criteria_score), 0) / evaluations.length)
+    : 0;
+  const approvedCount = evaluations.filter((e) => e.approved).length;
+
   const targetName = options.find((o) => o.id === targetId)?.name ?? "";
   const nameOf = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
+
 
   const buildDoc = (): ReportDoc => ({
     title:

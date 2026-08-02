@@ -267,13 +267,24 @@ function ReportsPage() {
     ],
   });
 
-  const fileName = `تقرير-${PERIOD_LABELS[period]}-${targetName || "عام"}`;
+  const buildDoc = (): ReportDoc =>
+    kind === "evaluation" ? buildEvaluationDoc() : buildAchievementDoc();
+
+  const fileName =
+    kind === "evaluation"
+      ? `تقرير-تقييم-الأداء-${PERIOD_LABELS[period]}-${targetName || "عام"}`
+      : `تقرير-${PERIOD_LABELS[period]}-${targetName || "عام"}`;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="تقارير الإنجاز"
-        description="تقارير يومية وأسبوعية وشهرية وربعية ونصف سنوية للموظف أو القسم أو الإدارة"
+        title={kind === "evaluation" ? "تقارير تقييم الأداء" : "تقارير الإنجاز"}
+        description={
+          kind === "evaluation"
+            ? "تقارير تقييم أداء الموظفين والأقسام والإدارات مع محاور المهام والدوام ومعايير المدير"
+            : "تقارير يومية وأسبوعية وشهرية وربعية ونصف سنوية للموظف أو القسم أو الإدارة"
+        }
+
         action={
           <>
             <Button

@@ -129,7 +129,7 @@ function ReportsPage() {
           .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
           .map((e) => e.id);
 
-  const { data: evaluations = [], isFetching: loadingEvals } = useQuery({
+  const { data: allEvaluations = [], isFetching: loadingEvals } = useQuery({
     enabled: kind === "evaluation" && Boolean(targetId) && memberIds.length > 0,
     queryKey: ["report-evaluations", scope, targetId, period, range.start, range.end],
     queryFn: async () => {
@@ -143,6 +143,12 @@ function ReportsPage() {
       return data ?? [];
     },
   });
+
+  const evaluations = approvedOnly
+    ? allEvaluations.filter((e) => e.approval_stage === "approved")
+    : allEvaluations;
+  const pendingCount = allEvaluations.filter((e) => e.approval_stage !== "approved").length;
+
 
   const avgTotal = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.total_score), 0) / evaluations.length)

@@ -17,16 +17,39 @@ const STATUS_AR: Record<string, string> = {
   cancelled: 'ملغاة',
 }
 
-type EmployeeLite = { id: string; full_name: string; email: string | null }
+type EmployeeLite = {
+  id: string
+  full_name: string
+  email: string | null
+  user_id: string | null
+}
 
 async function loadEmployee(id: string | null): Promise<EmployeeLite | null> {
   if (!id) return null
   const { data } = await supabaseAdmin
     .from('employees')
-    .select('id, full_name, email')
+    .select('id, full_name, email, user_id')
     .eq('id', id)
     .maybeSingle()
   return (data as EmployeeLite | null) ?? null
+}
+
+type EmailPrefKey =
+  | 'email_task_assigned'
+  | 'email_task_status'
+  | 'email_task_progress'
+  | 'email_evaluation'
+
+async function wantsEmail(userId: string | null, key: EmailPrefKey) {
+  if (!userId) return true
+  const { data } = await supabaseAdmin
+    .from('notification_preferences')
+    .select(`email_enabled, ${key}`)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!data) return true
+  const row = data as Record<string, boolean>
+  return Boolean(row['email_enabled']) && row[key] !== false
 }
 
 export async function sendTaskAssignedEmail(taskId: string) {
@@ -42,6 +65,8 @@ export async function sendTaskAssignedEmail(taskId: string) {
     loadEmployee(task.assigned_by),
   ])
   if (!assignee?.email) return { sent: false as const, reason: 'no_recipient_email' }
+  if (!(await wantsEmail(assignee.user_id, 'email_task_assigned')))
+    return { sent: false as const, reason: 'opted_out' }
 
   return sendTemplateEmail('task-assigned', assignee.email, {
     templateData: {
@@ -69,6 +94,8 @@ export async function sendTaskStatusEmail(taskId: string, progress: number) {
     loadEmployee(task.assigned_by),
   ])
   if (!assigner?.email) return { sent: false as const, reason: 'no_recipient_email' }
+  if (!(await wantsEmail(assigner.user_id, 'email_task_progress')))
+    return { sent: false as const, reason: 'opted_out' }
 
   return sendTemplateEmail('task-status-changed', assigner.email, {
     templateData: {

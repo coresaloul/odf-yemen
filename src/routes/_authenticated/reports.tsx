@@ -32,11 +32,20 @@ export const Route = createFileRoute("/_authenticated/reports")({
 });
 
 type Scope = "employee" | "section" | "department";
+type ReportKind = "achievement" | "evaluation";
+
+const SCOPE_LABELS: Record<Scope, string> = {
+  employee: "الموظف",
+  section: "القسم",
+  department: "الإدارة",
+};
 
 function ReportsPage() {
+  const [kind, setKind] = useState<ReportKind>("achievement");
   const [scope, setScope] = useState<Scope>("employee");
   const [targetId, setTargetId] = useState("");
   const [period, setPeriod] = useState<PeriodKey>("monthly");
+
 
   const { data: base } = useQuery({
     queryKey: ["report-base"],

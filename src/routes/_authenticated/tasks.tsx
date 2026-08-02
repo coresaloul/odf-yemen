@@ -84,17 +84,28 @@ function TasksPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("tasks").insert({
-        title: form.title,
-        description: form.description || null,
-        assignee_id: form.assignee_id,
-        priority: form.priority as "low" | "medium" | "high" | "urgent",
-        due_date: form.due_date || null,
-        weight: Number(form.weight) || 1,
-        assigned_by: employee?.id ?? null,
-        created_via_voice: viaVoice,
-      });
+      const { data: inserted, error } = await supabase
+        .from("tasks")
+        .insert({
+          title: form.title,
+          description: form.description || null,
+          assignee_id: form.assignee_id,
+          priority: form.priority as "low" | "medium" | "high" | "urgent",
+          due_date: form.due_date || null,
+          weight: Number(form.weight) || 1,
+          assigned_by: employee?.id ?? null,
+          created_via_voice: viaVoice,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (inserted?.id) {
+        try {
+          await sendAssignedEmail({ data: { taskId: inserted.id } });
+        } catch {
+          // الإشعار داخل النظام يبقى فعّالاً حتى لو تعذّر إرسال البريد
+        }
+      }
     },
     onSuccess: () => {
       toast.success("تم إنشاء المهمة");
@@ -119,6 +130,11 @@ function TasksPage() {
         .eq("id", id);
       if (error) throw error;
       await supabase.from("task_updates").insert({ task_id: id, progress, created_by: employee?.id ?? null });
+      try {
+        await sendStatusEmail({ data: { taskId: id, progress } });
+      } catch {
+        // تجاهل أخطاء البريد
+      }
     },
     onSuccess: () => {
       toast.success("تم تحديث الإنجاز");

@@ -108,3 +108,20 @@ export async function sendTaskStatusEmail(taskId: string, progress: number) {
     idempotencyKey: `task-status-${task.id}-${progress}`,
   })
 }
+
+/** يتحقق أن المستخدم طرف في المهمة (مكلَّف/مكلِّف) أو يشرف على المكلَّف */
+export async function assertTaskParticipant(userId: string, taskId: string) {
+  const { data: task } = await supabaseAdmin
+    .from('tasks')
+    .select('id, assignee_id, assigned_by')
+    .eq('id', taskId)
+    .maybeSingle()
+  if (!task) throw new Error('المهمة غير موجودة')
+
+  const { loadActor, canSupervise } = await import('@/lib/attendance.server')
+  const ctx = await loadActor(userId)
+  if (!ctx.employeeId) throw new Error('غير مصرح: لا يوجد سجل موظف مرتبط بحسابك')
+  if (task.assignee_id === ctx.employeeId || task.assigned_by === ctx.employeeId) return
+  if (task.assignee_id && (await canSupervise(ctx, task.assignee_id))) return
+  throw new Error('غير مصرح: لا تملك صلاحية على هذه المهمة')
+}

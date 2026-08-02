@@ -148,3 +148,120 @@ export const setUserRoles = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/* ─── ربط الموظفين بالمستخدمين (كل موظف = مستخدم بدور "موظف" افتراضياً) ─── */
+
+export type ProvisionResult = {
+  employeeId: string;
+  full_name: string;
+  email: string | null;
+  status: "created" | "linked" | "already_linked" | "skipped_no_email" | "error";
+  password?: string;
+  message?: string;
+};
+
+function randomPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%";
+  let out = "";
+  const bytes = new Uint32Array(14);
+  crypto.getRandomValues(bytes);
+  for (const b of bytes) out += chars[b % chars.length];
+  return out;
+}
+
+export const provisionEmployeeAccounts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({ employeeIds: z.array(z.string().uuid()).max(500).optional() })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<ProvisionResult[]> => {
+    await assertUserAdmin(context.supabase as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let query = supabaseAdmin
+      .from("employees")
+      .select("id, full_name, email, user_id")
+      .is("user_id", null);
+    if (data.employeeIds?.length) query = query.in("id", data.employeeIds);
+    const { data: employees, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (listErr) throw new Error(listErr.message);
+    const byEmail = new Map(
+      list.users.filter((u) => u.email).map((u) => [u.email!.toLowerCase(), u.id]),
+    );
+
+    const results: ProvisionResult[] = [];
+    for (const emp of employees ?? []) {
+      const email = (emp.email ?? "").trim().toLowerCase();
+      const base: ProvisionResult = {
+        employeeId: emp.id,
+        full_name: emp.full_name,
+        email: email || null,
+        status: "error",
+      };
+      if (!email) {
+        results.push({ ...base, status: "skipped_no_email", message: "لا يوجد بريد إلكتروني" });
+        continue;
+      }
+      try {
+        let userId = byEmail.get(email);
+        let password: string | undefined;
+        if (!userId) {
+          password = randomPassword();
+          const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { full_name: emp.full_name },
+          });
+          if (createErr || !created.user) throw new Error(createErr?.message ?? "تعذر إنشاء الحساب");
+          userId = created.user.id;
+          byEmail.set(email, userId);
+        }
+
+        const { data: roleRows } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        if (!roleRows || roleRows.length === 0) {
+          await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: "employee" });
+        }
+
+        const { error: linkErr } = await supabaseAdmin
+          .from("employees")
+          .update({ user_id: userId })
+          .eq("id", emp.id);
+        if (linkErr) throw new Error(linkErr.message);
+
+        results.push({
+          ...base,
+          status: password ? "created" : "linked",
+          ...(password ? { password } : {}),
+        });
+      } catch (e) {
+        results.push({ ...base, status: "error", message: (e as Error).message });
+      }
+    }
+    return results;
+  });
+
+/** عدد الموظفين غير المرتبطين بحساب مستخدم */
+export const countUnlinkedEmployees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertUserAdmin(context.supabase as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error } = await supabaseAdmin
+      .from("employees")
+      .select("id", { count: "exact", head: true })
+      .is("user_id", null);
+    if (error) throw new Error(error.message);
+    return { count: count ?? 0 };
+  });

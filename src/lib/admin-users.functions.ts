@@ -115,6 +115,21 @@ export const setUserRoles = createServerFn({ method: "POST" })
       throw new Error("لا يمكنك سحب دور المدير التنفيذي من حسابك");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("@/lib/org.server");
+
+    const { data: directors } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "executive_director");
+    const wasDirector = (directors ?? []).some((r) => r.user_id === data.userId);
+    if (
+      wasDirector &&
+      !data.roles.includes("executive_director") &&
+      (directors ?? []).length <= 1
+    ) {
+      throw new Error("لا يمكن سحب الدور من آخر مدير تنفيذي في النظام");
+    }
+
     const { error: delError } = await supabaseAdmin
       .from("user_roles")
       .delete()
@@ -126,7 +141,14 @@ export const setUserRoles = createServerFn({ method: "POST" })
         .insert(data.roles.map((role) => ({ user_id: data.userId, role })));
       if (insError) throw new Error(insError.message);
     }
+    await writeAudit(context.userId, {
+      action: "تعديل الأدوار",
+      entity: "مستخدم",
+      entity_id: data.userId,
+      details: { roles: data.roles },
+    });
     return { ok: true };
+
   });
 
 /* ─── ربط الموظفين بالمستخدمين (كل موظف = مستخدم بدور "موظف" افتراضياً) ─── */

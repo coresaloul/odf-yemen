@@ -214,7 +214,7 @@ function EmployeesPage() {
           />
         </div>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="الإدارة" />
           </SelectTrigger>
           <SelectContent>
@@ -227,7 +227,7 @@ function EmployeesPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="الحالة" />
           </SelectTrigger>
           <SelectContent>
@@ -240,7 +240,7 @@ function EmployeesPage() {
           </SelectContent>
         </Select>
         <Select value={accountFilter} onValueChange={setAccountFilter}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="الحساب" />
           </SelectTrigger>
           <SelectContent>

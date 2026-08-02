@@ -36,11 +36,12 @@ export const listAppUsers = createServerFn({ method: "GET" })
     const [{ data: roleRows }, { data: profileRows }, { data: employeeRows }] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
       supabaseAdmin.from("profiles").select("id, full_name").in("id", ids),
-      supabaseAdmin.from("employees").select("user_id, full_name").in("user_id", ids),
+      supabaseAdmin.from("employees").select("id, user_id, full_name").in("user_id", ids),
     ]);
 
     return list.users.map((u) => {
       const bannedUntil = (u as unknown as { banned_until?: string | null }).banned_until ?? null;
+      const emp = (employeeRows ?? []).find((e) => e.user_id === u.id);
       return {
         id: u.id,
         email: u.email ?? null,
@@ -52,7 +53,8 @@ export const listAppUsers = createServerFn({ method: "GET" })
         email_confirmed: Boolean(u.email_confirmed_at),
         banned: Boolean(bannedUntil && new Date(bannedUntil).getTime() > Date.now()),
         roles: (roleRows ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as Role),
-        employee_name: (employeeRows ?? []).find((e) => e.user_id === u.id)?.full_name ?? null,
+        employee_name: emp?.full_name ?? null,
+        employee_id: emp?.id ?? null,
       };
     });
   });

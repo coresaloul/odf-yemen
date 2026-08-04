@@ -93,7 +93,11 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("employees").update(patch).eq("id", me.id);
+    const { error } = await supabaseAdmin
+      .from("employees")
+      .update(patch as never)
+      .eq("id", me.id);
+
     if (error) throw new Error(error.message);
 
     const { writeAudit } = await import("@/lib/org.server");

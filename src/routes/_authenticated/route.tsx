@@ -10,6 +10,8 @@ import {
   Star,
   FileBarChart,
   Settings,
+  UserRound,
+
   ShieldCheck,
   ClipboardCheck,
   Wallet,

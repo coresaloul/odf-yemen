@@ -10,6 +10,8 @@ import {
   Star,
   FileBarChart,
   Settings,
+  UserRound,
+
   ShieldCheck,
   ClipboardCheck,
   Wallet,
@@ -47,7 +49,9 @@ const NAV: {
 
   { to: "/payroll", label: "الرواتب", icon: Wallet },
   { to: "/reports", label: "التقارير", icon: FileBarChart },
+  { to: "/profile", label: "ملفي الشخصي", icon: UserRound },
   { to: "/settings", label: "الإشعارات", icon: Settings },
+
   { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },
 ];
 

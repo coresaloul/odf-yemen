@@ -52,6 +52,8 @@ import {
 import { listAuditLog, type AuditRow } from "@/lib/org.functions";
 import { formatDate } from "@/lib/hr";
 import { PasswordField } from "@/components/PasswordField";
+import { UserEmployeeMatchDialog } from "@/components/UserEmployeeMatchDialog";
+
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersAdminPage,
@@ -223,10 +225,12 @@ function UsersAdminPage() {
             إنشاء الحسابات وربطها بالموظفين، تفعيل البريد، تعطيل الحسابات، وتحديد الأدوار.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
             <RefreshCw className="ml-2 size-4" /> تحديث
           </Button>
+          <UserEmployeeMatchDialog onDone={() => void load()} />
+
           <Button
             size="sm"
             onClick={() => {

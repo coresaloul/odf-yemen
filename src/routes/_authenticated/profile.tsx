@@ -241,6 +241,71 @@ function MyProfilePage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
     </div>
   );
 }
+
+function ChangePasswordCard() {
+  const [pw, setPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!pw) {
+      toast.error("أدخل كلمة المرور الجديدة");
+      return;
+    }
+    if (pw !== confirmPw) {
+      toast.error("كلمتا المرور غير متطابقتين");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw new Error(error.message);
+      setPw("");
+      setConfirmPw("");
+      toast.success("تم تغيير كلمة المرور");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">تغيير كلمة المرور</CardTitle>
+        <CardDescription>اختر كلمة مرور جديدة لحسابك، ثم اضغط «تحديث كلمة المرور».</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <PasswordField
+            id="new-password"
+            label="كلمة المرور الجديدة"
+            value={pw}
+            onChange={setPw}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            id="confirm-password"
+            label="تأكيد كلمة المرور"
+            value={confirmPw}
+            onChange={setConfirmPw}
+            autoComplete="new-password"
+            showGenerator={false}
+            showMeter={false}
+          />
+        </div>
+        <Button onClick={() => void submit()} disabled={busy} className="gap-2">
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+          تحديث كلمة المرور
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+

@@ -394,3 +394,128 @@ export const listEmployeesForLinking = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/* ─── المطابقة التلقائية بين المستخدمين والموظفين (بالبريد ورقم الموظف) ─── */
+
+export type MatchRow = {
+  employeeId: string;
+  employee_no: string;
+  full_name: string;
+  email: string | null;
+  userId: string;
+  userEmail: string | null;
+  matchedBy: "email" | "employee_no";
+};
+
+export type MatchResult = {
+  matches: MatchRow[];
+  applied: number;
+  unmatchedEmployees: { id: string; employee_no: string; full_name: string; email: string | null }[];
+  unmatchedUsers: { id: string; email: string | null }[];
+};
+
+const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+
+export const matchUsersToEmployees = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ apply: z.boolean().default(false) }).parse(data ?? {}))
+  .handler(async ({ data, context }): Promise<MatchResult> => {
+    await assertAdminRole(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: employees, error: empErr }, { data: list, error: listErr }] = await Promise.all([
+      supabaseAdmin.from("employees").select("id, employee_no, full_name, email, user_id"),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    ]);
+    if (empErr) throw new Error(empErr.message);
+    if (listErr) throw new Error(listErr.message);
+
+    const takenUserIds = new Set(
+      (employees ?? []).filter((e) => e.user_id).map((e) => e.user_id as string),
+    );
+    const freeUsers = list.users.filter((u) => !takenUserIds.has(u.id));
+
+    const byEmail = new Map<string, string>();
+    const byEmployeeNo = new Map<string, string>();
+    for (const u of freeUsers) {
+      const email = norm(u.email);
+      if (email) {
+        byEmail.set(email, u.id);
+        const local = email.split("@")[0] ?? "";
+        if (local) byEmployeeNo.set(local, u.id);
+      }
+      const metaNo = norm((u.user_metadata as { employee_no?: string } | null)?.employee_no);
+      if (metaNo) byEmployeeNo.set(metaNo, u.id);
+    }
+
+    const matches: MatchRow[] = [];
+    const used = new Set<string>();
+    for (const emp of employees ?? []) {
+      if (emp.user_id) continue;
+      const email = norm(emp.email);
+      const no = norm(emp.employee_no);
+      let userId = email ? byEmail.get(email) : undefined;
+      let matchedBy: MatchRow["matchedBy"] = "email";
+      if (!userId && no) {
+        userId = byEmployeeNo.get(no);
+        matchedBy = "employee_no";
+      }
+      if (!userId || used.has(userId)) continue;
+      used.add(userId);
+      matches.push({
+        employeeId: emp.id,
+        employee_no: emp.employee_no,
+        full_name: emp.full_name,
+        email: emp.email ?? null,
+        userId,
+        userEmail: freeUsers.find((u) => u.id === userId)?.email ?? null,
+        matchedBy,
+      });
+    }
+
+    let applied = 0;
+    if (data.apply) {
+      const { writeAudit } = await import("@/lib/org.server");
+      for (const m of matches) {
+        const { error } = await supabaseAdmin
+          .from("employees")
+          .update({ user_id: m.userId })
+          .eq("id", m.employeeId);
+        if (error) continue;
+        applied += 1;
+        const { data: roleRows } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", m.userId);
+        if (!roleRows || roleRows.length === 0) {
+          await supabaseAdmin.from("user_roles").insert({ user_id: m.userId, role: "employee" });
+        }
+      }
+      if (applied > 0) {
+        await writeAudit(context.userId, {
+          action: "مطابقة تلقائية للمستخدمين بالموظفين",
+          entity: "مستخدم",
+          details: { applied, matchedBy: matches.map((m) => m.matchedBy) },
+        });
+      }
+    }
+
+    const matchedEmployeeIds = new Set(matches.map((m) => m.employeeId));
+    const matchedUserIds = new Set(matches.map((m) => m.userId));
+    return {
+      matches,
+      applied,
+      unmatchedEmployees: (employees ?? [])
+        .filter((e) => !e.user_id && !matchedEmployeeIds.has(e.id))
+        .map((e) => ({
+          id: e.id,
+          employee_no: e.employee_no,
+          full_name: e.full_name,
+          email: e.email ?? null,
+        })),
+      unmatchedUsers: freeUsers
+        .filter((u) => !matchedUserIds.has(u.id))
+        .map((u) => ({ id: u.id, email: u.email ?? null })),
+    };
+  });
+

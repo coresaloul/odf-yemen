@@ -252,9 +252,13 @@ function EmployeesPage() {
       </div>
 
 
-      {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>}
+      {isLoading && <ListSkeleton rows={4} />}
       {!isLoading && filtered.length === 0 && (
-        <p className="text-sm text-muted-foreground">لا يوجد موظفون مطابقون.</p>
+        <EmptyState
+          icon={Users}
+          title="لا يوجد موظفون مطابقون"
+          description="عدّل معايير البحث أو الفلاتر، أو أضف موظفاً جديداً."
+        />
       )}
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

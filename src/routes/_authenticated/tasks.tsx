@@ -408,8 +408,14 @@ function TasksPage() {
 
       <TaskFilters value={filters} onChange={setFilters} employees={employees} departments={departments} />
 
-      {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>}
-      {!isLoading && filtered.length === 0 && <p className="text-sm text-muted-foreground">لا توجد مهام مطابقة.</p>}
+      {isLoading && <ListSkeleton rows={4} />}
+      {!isLoading && filtered.length === 0 && (
+        <EmptyState
+          icon={ClipboardList}
+          title="لا توجد مهام مطابقة"
+          description="جرّب تعديل الفلاتر أو أنشئ مهمة جديدة لبدء المتابعة."
+        />
+      )}
 
       {!isLoading && filtered.length > 0 && view === "board" && (
         <TaskBoard

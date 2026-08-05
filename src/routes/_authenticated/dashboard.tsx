@@ -473,9 +473,9 @@ function Dashboard() {
           <CardTitle className="text-base">أحدث المهام</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>}
+          {isLoading && <ListSkeleton rows={3} />}
           {!isLoading && tasks.length === 0 && (
-            <p className="text-sm text-muted-foreground">لا توجد مهام بعد.</p>
+            <EmptyState compact icon={ClipboardList} title="لا توجد مهام بعد" />
           )}
           {tasks.slice(0, 8).map((t) => (
             <div

@@ -110,7 +110,12 @@ function EvaluationsPage() {
 
   const renderList = (rows: EvaluationRow[]) =>
     rows.length === 0 ? (
-      <p className="text-sm text-muted-foreground">لا توجد تقييمات مطابقة.</p>
+      <EmptyState
+        icon={Star}
+        title="لا توجد تقييمات مطابقة"
+        description="اختر دورة تقييم أخرى أو أنشئ تقييماً جديداً."
+      />
+
     ) : (
       rows.map((ev) => (
         <EvaluationRecord

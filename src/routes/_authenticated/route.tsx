@@ -18,14 +18,15 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     if (!loading && !user) {
-      void navigate({ to: "/auth", search: { next: pathname } });
+      const next = pathname.startsWith("/auth") ? undefined : pathname;
+      void navigate({ to: "/auth", search: next ? { next } : {}, replace: true });
     }
   }, [loading, user, navigate, pathname]);
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-muted-foreground">
-        جارٍ التحميل…
+      <div className="flex min-h-dvh items-center justify-center">
+        <LoadingState />
       </div>
     );
   }

@@ -281,16 +281,16 @@ function EmployeesPage() {
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((e) => (
-          <Card key={e.id}>
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold">{e.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
+          <Card key={e.id} className="h-full">
+            <CardContent className="flex h-full flex-col gap-2 p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{e.full_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
                     {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex shrink-0 flex-col items-end gap-1">
                   <Badge variant={e.status === "active" ? "default" : "secondary"}>
                     {EMPLOYEE_STATUS_LABELS[e.status]}
                   </Badge>

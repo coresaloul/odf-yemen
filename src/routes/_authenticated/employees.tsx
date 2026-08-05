@@ -301,15 +301,22 @@ function EmployeesPage() {
                   )}
                 </div>
               </div>
-              <dl className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                <div>الإدارة: {departments.find((d) => d.id === e.department_id)?.name ?? "—"}</div>
-                <div>القسم: {sections.find((s) => s.id === e.section_id)?.name ?? "—"}</div>
-                <div>التعيين: {formatDate(e.hire_date)}</div>
-                <div>الجوال: {e.phone ?? "—"}</div>
-                <div>الميلاد: {e.birth_date ? formatDate(e.birth_date) : "—"}</div>
-                <div>فصيلة الدم: {e.blood_type ?? "—"}</div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <div className="truncate">
+                  الإدارة: {departments.find((d) => d.id === e.department_id)?.name ?? "—"}
+                </div>
+                <div className="truncate">
+                  القسم: {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
+                </div>
+                <div className="truncate">التعيين: {formatDate(e.hire_date)}</div>
+                <div className="truncate">الجوال: {e.phone ?? "—"}</div>
+                <div className="truncate">
+                  الميلاد: {e.birth_date ? formatDate(e.birth_date) : "—"}
+                </div>
+                <div className="truncate">فصيلة الدم: {e.blood_type ?? "—"}</div>
               </dl>
-              <div className="flex flex-wrap gap-1 pt-1">
+              <div className="mt-auto flex flex-wrap items-center gap-1 border-t pt-2">
+
                 <Button variant="ghost" size="sm" onClick={() => setProfile(e)}>
                   <FileText className="size-4" /> الملف
                 </Button>

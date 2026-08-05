@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/hooks/useAuth";
 import { ORG_NAME } from "@/lib/hr";
 import { NotificationsBell } from "@/components/NotificationsBell";

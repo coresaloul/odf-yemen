@@ -27,6 +27,8 @@ import { SelfAssessmentTab } from "@/components/evaluations/SelfAssessmentTab";
 import { CriteriaTemplatesTab } from "@/components/evaluations/CriteriaTemplatesTab";
 import { EVALUATION_PERIOD_LABELS, PERIOD_LABELS } from "@/lib/hr";
 import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
+import { Star } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({

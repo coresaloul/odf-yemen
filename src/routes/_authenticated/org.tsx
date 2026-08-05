@@ -186,7 +186,11 @@ function OrgPage() {
         description={`الهيكل الإداري لـ${ORG_NAME}`}
         action={
           <>
-            <Button size="sm" variant="outline" onClick={() => exportWord(buildDoc(), "المخطط-التنظيمي")}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportWord(buildDoc(), "المخطط-التنظيمي")}
+            >
               <Download className="size-4" /> Word
             </Button>
             <Button size="sm" variant="outline" onClick={() => exportPdf(buildDoc())}>
@@ -218,8 +222,16 @@ function OrgPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard label="الإدارات" value={departments.length} icon={<Building2 className="size-4" />} />
-        <StatCard label="الأقسام" value={sections.length} icon={<FolderTree className="size-4" />} />
+        <StatCard
+          label="الإدارات"
+          value={departments.length}
+          icon={<Building2 className="size-4" />}
+        />
+        <StatCard
+          label="الأقسام"
+          value={sections.length}
+          icon={<FolderTree className="size-4" />}
+        />
         <StatCard
           label="الموظفون على رأس العمل"
           value={employees.filter((e) => e.status === "active").length}
@@ -257,9 +269,7 @@ function OrgPage() {
               const deptSections = sections.filter((s) => s.department_id === d.id);
               const st = statOf("departments", d.id);
               const isCollapsed = collapsed.includes(d.id);
-              const unassigned = employees.filter(
-                (e) => e.department_id === d.id && !e.section_id,
-              );
+              const unassigned = employees.filter((e) => e.department_id === d.id && !e.section_id);
               return (
                 <Card key={d.id} className="border-r-4 border-r-primary">
                   <CardHeader className="pb-2">
@@ -297,7 +307,8 @@ function OrgPage() {
                       )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      المدير: {employees.find((e) => e.id === d.manager_id)?.full_name ?? "غير محدد"}
+                      المدير:{" "}
+                      {employees.find((e) => e.id === d.manager_id)?.full_name ?? "غير محدد"}
                     </p>
                     <div className="flex flex-wrap gap-1 pt-1">
                       <Badge variant="secondary">{st?.employees ?? 0} موظف</Badge>
@@ -342,7 +353,8 @@ function OrgPage() {
                             </div>
                             <p className="mt-1 text-xs text-muted-foreground">
                               رئيس القسم:{" "}
-                              {employees.find((e) => e.id === s.manager_id)?.full_name ?? "غير محدد"}
+                              {employees.find((e) => e.id === s.manager_id)?.full_name ??
+                                "غير محدد"}
                               {" · "}
                               {ss?.openTasks ?? 0} مهمة مفتوحة · إنجاز {ss?.avgProgress ?? 0}%
                             </p>

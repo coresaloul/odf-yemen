@@ -261,8 +261,12 @@ function AttendancePage() {
             </div>
             <p className="text-sm text-muted-foreground">
               الحاضرون:{" "}
-              {(dayRecords ?? []).filter((r) => r.status === "present" || r.status === "permission").length} /{" "}
-              {employees.length}
+              {
+                (dayRecords ?? []).filter(
+                  (r) => r.status === "present" || r.status === "permission",
+                ).length
+              }{" "}
+              / {employees.length}
             </p>
           </div>
 
@@ -321,7 +325,12 @@ function AttendancePage() {
               />
             </div>
             {isAdmin && (
-              <Button size="sm" variant="outline" onClick={() => fillMut.mutate()} disabled={fillMut.isPending}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fillMut.mutate()}
+                disabled={fillMut.isPending}
+              >
                 <Wand2 className="size-4" /> توليد الأيام غير المسجلة
               </Button>
             )}
@@ -350,7 +359,11 @@ function AttendancePage() {
                       <td className="p-3">{formatMinutes(m.late)}</td>
                       <td className="p-3">{formatMinutes(m.early)}</td>
                       <td className="p-3">
-                        <Badge variant={m.score >= 90 ? "default" : m.score >= 70 ? "secondary" : "destructive"}>
+                        <Badge
+                          variant={
+                            m.score >= 90 ? "default" : m.score >= 70 ? "secondary" : "destructive"
+                          }
+                        >
                           {m.score}%
                         </Badge>
                       </td>
@@ -529,10 +542,20 @@ function DayRow({
       <td className="p-3">{employee.full_name}</td>
       <td className="p-3">{employee.employee_no}</td>
       <td className="p-2">
-        <Input type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="w-32" />
+        <Input
+          type="time"
+          value={checkIn}
+          onChange={(e) => setCheckIn(e.target.value)}
+          className="w-32"
+        />
       </td>
       <td className="p-2">
-        <Input type="time" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="w-32" />
+        <Input
+          type="time"
+          value={checkOut}
+          onChange={(e) => setCheckOut(e.target.value)}
+          className="w-32"
+        />
       </td>
       <td className="p-3">{formatMinutes(record?.late_minutes ?? 0)}</td>
       <td className="p-3">{formatMinutes(record?.early_leave_minutes ?? 0)}</td>

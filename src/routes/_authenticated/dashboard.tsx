@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Award, Building2, Layers, Trophy } from "lucide-react";
+import { Award, Building2, ClipboardList, Layers, Trophy } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+import { ListSkeleton } from "@/components/LoadingState";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate, periodRange, type PeriodKey } from "@/lib/hr";
+import {
+  PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
+  formatDate,
+  periodRange,
+  type PeriodKey,
+} from "@/lib/hr";
 import { PageHeader } from "@/components/PageHeader";
 import { TopPerformerCard } from "@/components/dashboard/TopPerformerCard";
 import { LeaderboardTable } from "@/components/dashboard/LeaderboardTable";
@@ -199,9 +207,7 @@ function Dashboard() {
   }).length;
   const rate = periodTasks.length ? Math.round((completed / periodTasks.length) * 100) : 0;
   const overallCompliance = employeeScores.length
-    ? Math.round(
-        employeeScores.reduce((s, e) => s + e.attendanceScore, 0) / employeeScores.length,
-      )
+    ? Math.round(employeeScores.reduce((s, e) => s + e.attendanceScore, 0) / employeeScores.length)
     : 0;
 
   const todayRows = attendance.filter((a) => a.work_date === today);
@@ -393,9 +399,7 @@ function Dashboard() {
           title="حضور اليوم"
           total={todayRows.length}
           slices={attendanceSlices}
-          footer={
-            todayRows.length === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined
-          }
+          footer={todayRows.length === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
         />
         <DistributionCard
           title="توزيع المهام حسب الحالة"
@@ -411,11 +415,7 @@ function Dashboard() {
             entityLabel="الموظف"
             rows={rank(employeeScores)}
           />
-          <LeaderboardTable
-            title="ترتيب الأقسام"
-            entityLabel="القسم"
-            rows={rank(sectionScores)}
-          />
+          <LeaderboardTable title="ترتيب الأقسام" entityLabel="القسم" rows={rank(sectionScores)} />
         </div>
       )}
 
@@ -473,9 +473,9 @@ function Dashboard() {
           <CardTitle className="text-base">أحدث المهام</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>}
+          {isLoading && <ListSkeleton rows={3} />}
           {!isLoading && tasks.length === 0 && (
-            <p className="text-sm text-muted-foreground">لا توجد مهام بعد.</p>
+            <EmptyState compact icon={ClipboardList} title="لا توجد مهام بعد" />
           )}
           {tasks.slice(0, 8).map((t) => (
             <div

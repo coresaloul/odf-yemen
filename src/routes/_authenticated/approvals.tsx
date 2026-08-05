@@ -10,11 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { ApprovalKind, PendingApproval } from "@/lib/approvals";
-import {
-  APPROVAL_KIND_LABELS,
-  CORRECTION_TYPE_LABELS,
-  waitingLabel,
-} from "@/lib/approvals";
+import { APPROVAL_KIND_LABELS, CORRECTION_TYPE_LABELS, waitingLabel } from "@/lib/approvals";
 import { STAGE_LABELS } from "@/lib/evaluation-approval";
 import { listCorrectionRequests } from "@/lib/approvals.functions";
 import { usePendingApprovals } from "@/components/approvals/useApprovals";
@@ -136,7 +132,10 @@ function ApprovalsPage() {
                 </Card>
               ) : (
                 items.map((item) => (
-                  <Card key={`${item.kind}-${item.id}`} className="transition-shadow hover:shadow-md">
+                  <Card
+                    key={`${item.kind}-${item.id}`}
+                    className="transition-shadow hover:shadow-md"
+                  >
                     <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4">
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">

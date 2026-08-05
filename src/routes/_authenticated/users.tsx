@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EmptyState } from "@/components/EmptyState";
+import { ListSkeleton, LoadingState } from "@/components/LoadingState";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -54,7 +56,6 @@ import { formatDate } from "@/lib/hr";
 import { PasswordField } from "@/components/PasswordField";
 import { UserEmployeeMatchDialog } from "@/components/UserEmployeeMatchDialog";
 
-
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersAdminPage,
   head: () => ({
@@ -84,18 +85,25 @@ const ALL_ROLES = [
 ] as const;
 
 type RoleValue = (typeof ALL_ROLES)[number]["value"];
-type EmployeeOption = { id: string; full_name: string; employee_no: string; user_id: string | null };
+type EmployeeOption = {
+  id: string;
+  full_name: string;
+  employee_no: string;
+  user_id: string | null;
+};
 
 const ROLE_MATRIX: { role: string; scope: string; abilities: string }[] = [
   {
     role: "المدير التنفيذي",
     scope: "كامل النظام",
-    abilities: "كل العمليات: الهيكل، الموظفون، المستخدمون والأدوار، المهام، التقييم والاعتماد النهائي",
+    abilities:
+      "كل العمليات: الهيكل، الموظفون، المستخدمون والأدوار، المهام، التقييم والاعتماد النهائي",
   },
   {
     role: "الموارد البشرية",
     scope: "كل الموظفين",
-    abilities: "الموظفون والوثائق والدوام، إنشاء الحسابات وربطها، اعتماد التقييم في مرحلة الموارد البشرية",
+    abilities:
+      "الموظفون والوثائق والدوام، إنشاء الحسابات وربطها، اعتماد التقييم في مرحلة الموارد البشرية",
   },
   {
     role: "مدير مباشر",
@@ -182,7 +190,7 @@ function UsersAdminPage() {
   }, [rows, query, roleFilter]);
 
   if (authLoading) {
-    return <div className="p-8 text-muted-foreground">جارٍ التحميل…</div>;
+    return <LoadingState className="p-8" />;
   }
 
   if (!canManageUsers) {
@@ -291,11 +299,13 @@ function UsersAdminPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {loading ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> جارٍ التحميل…
-                </p>
+                <ListSkeleton rows={4} />
               ) : filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground">لا توجد حسابات مطابقة.</p>
+                <EmptyState
+                  icon={ShieldCheck}
+                  title="لا توجد حسابات مطابقة"
+                  description="عدّل البحث أو فلتر الأدوار."
+                />
               ) : (
                 filtered.map((u) => (
                   <div
@@ -321,7 +331,9 @@ function UsersAdminPage() {
                           <Badge variant="outline">بدون دور</Badge>
                         ) : (
                           u.roles.map((r) => (
-                            <Badge key={r}>{ALL_ROLES.find((x) => x.value === r)?.label ?? r}</Badge>
+                            <Badge key={r}>
+                              {ALL_ROLES.find((x) => x.value === r)?.label ?? r}
+                            </Badge>
                           ))
                         )}
                         <span className="text-xs text-muted-foreground">
@@ -464,7 +476,9 @@ function UsersAdminPage() {
                       <strong>{a.actor_name ?? "مستخدم"}</strong> — {a.action} {a.entity}
                       {a.entity_label ? ` «${a.entity_label}»` : ""}
                     </span>
-                    <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(a.created_at)}
+                    </span>
                   </div>
                 ))
               )}
@@ -616,7 +630,10 @@ function UsersAdminPage() {
           </DialogHeader>
           <div className="space-y-3">
             {ALL_ROLES.map((r) => (
-              <label key={r.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
+              <label
+                key={r.value}
+                className="flex items-center gap-3 rounded-md border p-3 text-sm"
+              >
                 <Checkbox
                   checked={draftRoles.includes(r.value)}
                   onCheckedChange={(c) =>

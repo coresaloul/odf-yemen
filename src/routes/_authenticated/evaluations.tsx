@@ -27,6 +27,8 @@ import { SelfAssessmentTab } from "@/components/evaluations/SelfAssessmentTab";
 import { CriteriaTemplatesTab } from "@/components/evaluations/CriteriaTemplatesTab";
 import { EVALUATION_PERIOD_LABELS, PERIOD_LABELS } from "@/lib/hr";
 import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
+import { Star } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({
@@ -110,7 +112,11 @@ function EvaluationsPage() {
 
   const renderList = (rows: EvaluationRow[]) =>
     rows.length === 0 ? (
-      <p className="text-sm text-muted-foreground">لا توجد تقييمات مطابقة.</p>
+      <EmptyState
+        icon={Star}
+        title="لا توجد تقييمات مطابقة"
+        description="اختر دورة تقييم أخرى أو أنشئ تقييماً جديداً."
+      />
     ) : (
       rows.map((ev) => (
         <EvaluationRecord
@@ -157,7 +163,11 @@ function EvaluationsPage() {
             <CardContent className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label>بحث باسم الموظف</Label>
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="الاسم" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="الاسم"
+                />
               </div>
               <div className="space-y-2">
                 <Label>الفترة</Label>

@@ -17,7 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate, periodRange, type PeriodKey } from "@/lib/hr";
+import {
+  PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
+  formatDate,
+  periodRange,
+  type PeriodKey,
+} from "@/lib/hr";
 import { PageHeader } from "@/components/PageHeader";
 import { TopPerformerCard } from "@/components/dashboard/TopPerformerCard";
 import { LeaderboardTable } from "@/components/dashboard/LeaderboardTable";
@@ -201,9 +207,7 @@ function Dashboard() {
   }).length;
   const rate = periodTasks.length ? Math.round((completed / periodTasks.length) * 100) : 0;
   const overallCompliance = employeeScores.length
-    ? Math.round(
-        employeeScores.reduce((s, e) => s + e.attendanceScore, 0) / employeeScores.length,
-      )
+    ? Math.round(employeeScores.reduce((s, e) => s + e.attendanceScore, 0) / employeeScores.length)
     : 0;
 
   const todayRows = attendance.filter((a) => a.work_date === today);
@@ -395,9 +399,7 @@ function Dashboard() {
           title="حضور اليوم"
           total={todayRows.length}
           slices={attendanceSlices}
-          footer={
-            todayRows.length === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined
-          }
+          footer={todayRows.length === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
         />
         <DistributionCard
           title="توزيع المهام حسب الحالة"
@@ -413,11 +415,7 @@ function Dashboard() {
             entityLabel="الموظف"
             rows={rank(employeeScores)}
           />
-          <LeaderboardTable
-            title="ترتيب الأقسام"
-            entityLabel="القسم"
-            rows={rank(sectionScores)}
-          />
+          <LeaderboardTable title="ترتيب الأقسام" entityLabel="القسم" rows={rank(sectionScores)} />
         </div>
       )}
 

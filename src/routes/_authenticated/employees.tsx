@@ -24,7 +24,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EMPLOYEE_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { EmployeeAccountsDialog } from "@/components/EmployeeAccountsDialog";
 import { useServerFn } from "@tanstack/react-start";
@@ -36,7 +42,10 @@ export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({
     meta: [
       { title: "الموظفون | الموارد البشرية" },
-      { name: "description", content: "سجل الموظفين وبياناتهم الشخصية والصحية والوثائق الرسمية والبيانات التعاقدية." },
+      {
+        name: "description",
+        content: "سجل الموظفين وبياناتهم الشخصية والصحية والوثائق الرسمية والبيانات التعاقدية.",
+      },
       { property: "og:title", content: "الموظفون | الموارد البشرية" },
       { property: "og:description", content: "إدارة ملفات الموظفين في مؤسسة اليتيم التنموية." },
       { property: "og:type", content: "website" },
@@ -100,7 +109,16 @@ const MARITAL = ["أعزب", "متزوج", "مطلق", "أرمل"];
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const EDUCATION = ["ثانوية", "دبلوم", "بكالوريوس", "ماجستير", "دكتوراه"];
 const CONTRACTS = ["دوام كامل", "دوام جزئي", "مؤقت", "متعاون", "تحت التجربة"];
-const DOC_TYPES = ["شهادة علمية", "دورة تدريبية", "عقد عمل", "هوية/إقامة", "جواز سفر", "شهادة خبرة", "تقرير طبي", "أخرى"];
+const DOC_TYPES = [
+  "شهادة علمية",
+  "دورة تدريبية",
+  "عقد عمل",
+  "هوية/إقامة",
+  "جواز سفر",
+  "شهادة خبرة",
+  "تقرير طبي",
+  "أخرى",
+];
 
 function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
@@ -147,8 +165,7 @@ function EmployeesPage() {
       const matchDept = deptFilter === "all" || e.department_id === deptFilter;
       const matchStatus = statusFilter === "all" || e.status === statusFilter;
       const matchAccount =
-        accountFilter === "all" ||
-        (accountFilter === "linked" ? Boolean(e.user_id) : !e.user_id);
+        accountFilter === "all" || (accountFilter === "linked" ? Boolean(e.user_id) : !e.user_id);
       return matchTerm && matchDept && matchStatus && matchAccount;
     });
   }, [employees, q, deptFilter, statusFilter, accountFilter]);
@@ -194,12 +211,12 @@ function EmployeesPage() {
               </>
             )}
             {isManager && (
-            <EmployeeDialog
-              departments={departments}
-              sections={sections}
-              managers={employees}
-              onDone={refresh}
-            />
+              <EmployeeDialog
+                departments={departments}
+                sections={sections}
+                managers={employees}
+                onDone={refresh}
+              />
             )}
           </div>
         }
@@ -253,7 +270,6 @@ function EmployeesPage() {
         </Select>
       </div>
 
-
       {isLoading && <ListSkeleton rows={4} />}
       {!isLoading && filtered.length === 0 && (
         <EmptyState
@@ -279,7 +295,9 @@ function EmployeesPage() {
                     {EMPLOYEE_STATUS_LABELS[e.status]}
                   </Badge>
                   {!e.user_id && (
-                    <Badge variant="outline" className="text-[10px]">بلا حساب مستخدم</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      بلا حساب مستخدم
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -478,14 +496,25 @@ function EmployeeProfileDialog({
             <Field label="الرقم الوظيفي" value={e.employee_no} />
             <Field label="المسمى الوظيفي" value={e.job_title} />
             <Field label="الحالة" value={EMPLOYEE_STATUS_LABELS[e.status]} />
-            <Field label="الإدارة" value={departments.find((d) => d.id === e.department_id)?.name} />
+            <Field
+              label="الإدارة"
+              value={departments.find((d) => d.id === e.department_id)?.name}
+            />
             <Field label="القسم" value={sections.find((s) => s.id === e.section_id)?.name} />
             <Field label="تاريخ التعيين" value={e.hire_date ? formatDate(e.hire_date) : null} />
             <Field label="نوع العقد" value={e.contract_type} />
-            <Field label="نهاية العقد" value={e.contract_end_date ? formatDate(e.contract_end_date) : null} />
+            <Field
+              label="نهاية العقد"
+              value={e.contract_end_date ? formatDate(e.contract_end_date) : null}
+            />
             <Field label="المؤهل العلمي" value={e.education_level} />
             <Field label="التخصص" value={e.specialization} />
-            {isDirector && <Field label="الراتب الأساسي" value={e.basic_salary ? String(e.basic_salary) : null} />}
+            {isDirector && (
+              <Field
+                label="الراتب الأساسي"
+                value={e.basic_salary ? String(e.basic_salary) : null}
+              />
+            )}
             {isDirector && <Field label="الآيبان" value={e.iban} />}
           </TabsContent>
 
@@ -517,13 +546,21 @@ function EmployeeProfileDialog({
 
           <TabsContent value="official" className="grid gap-3 pt-4 sm:grid-cols-2">
             <Field label="رقم الهوية / الإقامة" value={e.national_id} />
-            <Field label="انتهاء الهوية" value={e.national_id_expiry ? formatDate(e.national_id_expiry) : null} />
+            <Field
+              label="انتهاء الهوية"
+              value={e.national_id_expiry ? formatDate(e.national_id_expiry) : null}
+            />
             <Field label="رقم جواز السفر" value={e.passport_no} />
-            <Field label="انتهاء الجواز" value={e.passport_expiry ? formatDate(e.passport_expiry) : null} />
+            <Field
+              label="انتهاء الجواز"
+              value={e.passport_expiry ? formatDate(e.passport_expiry) : null}
+            />
           </TabsContent>
 
           <TabsContent value="docs" className="space-y-4 pt-4">
-            {docs.length === 0 && <p className="text-sm text-muted-foreground">لا توجد وثائق مسجّلة.</p>}
+            {docs.length === 0 && (
+              <p className="text-sm text-muted-foreground">لا توجد وثائق مسجّلة.</p>
+            )}
             <div className="space-y-2">
               {docs.map((d) => (
                 <div key={d.id} className="rounded-md border p-3 text-sm">
@@ -595,26 +632,45 @@ function EmployeeProfileDialog({
                   </div>
                   <div className="space-y-2">
                     <Label>رقم الوثيقة</Label>
-                    <Input value={doc.doc_number} onChange={(ev) => setD("doc_number", ev.target.value)} />
+                    <Input
+                      value={doc.doc_number}
+                      onChange={(ev) => setD("doc_number", ev.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ الإصدار</Label>
-                    <Input type="date" value={doc.issue_date} onChange={(ev) => setD("issue_date", ev.target.value)} />
+                    <Input
+                      type="date"
+                      value={doc.issue_date}
+                      onChange={(ev) => setD("issue_date", ev.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ الانتهاء</Label>
-                    <Input type="date" value={doc.expiry_date} onChange={(ev) => setD("expiry_date", ev.target.value)} />
+                    <Input
+                      type="date"
+                      value={doc.expiry_date}
+                      onChange={(ev) => setD("expiry_date", ev.target.value)}
+                    />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label>رابط الملف</Label>
-                    <Input value={doc.file_url} onChange={(ev) => setD("file_url", ev.target.value)} placeholder="https://" />
+                    <Input
+                      value={doc.file_url}
+                      onChange={(ev) => setD("file_url", ev.target.value)}
+                      placeholder="https://"
+                    />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label>ملاحظات</Label>
                     <Textarea value={doc.notes} onChange={(ev) => setD("notes", ev.target.value)} />
                   </div>
                 </div>
-                <Button size="sm" disabled={!doc.title || addDoc.isPending} onClick={() => addDoc.mutate()}>
+                <Button
+                  size="sm"
+                  disabled={!doc.title || addDoc.isPending}
+                  onClick={() => addDoc.mutate()}
+                >
                   <Plus className="size-4" /> إضافة
                 </Button>
               </div>
@@ -722,8 +778,8 @@ function EmployeeDialog({
         notes: opt(form.notes),
       };
       if (isDirector) {
-        payload['basic_salary'] = form.basic_salary ? Number(form.basic_salary) : null;
-        payload['iban'] = opt(form.iban);
+        payload["basic_salary"] = form.basic_salary ? Number(form.basic_salary) : null;
+        payload["iban"] = opt(form.iban);
       }
       if (isEdit) {
         const { error } = await supabase
@@ -791,7 +847,11 @@ function EmployeeDialog({
           </div>
           <div className="space-y-2">
             <Label>تاريخ التعيين</Label>
-            <Input type="date" value={form.hire_date} onChange={(e) => set("hire_date", e.target.value)} />
+            <Input
+              type="date"
+              value={form.hire_date}
+              onChange={(e) => set("hire_date", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>البريد الإلكتروني</Label>
@@ -871,7 +931,11 @@ function EmployeeDialog({
         <TabsContent value="personal" className="grid gap-4 pt-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>تاريخ الميلاد</Label>
-            <Input type="date" value={form.birth_date} onChange={(e) => set("birth_date", e.target.value)} />
+            <Input
+              type="date"
+              value={form.birth_date}
+              onChange={(e) => set("birth_date", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>الجنس</Label>
@@ -943,11 +1007,17 @@ function EmployeeDialog({
           </div>
           <div className="space-y-2">
             <Label>التخصص</Label>
-            <Input value={form.specialization} onChange={(e) => set("specialization", e.target.value)} />
+            <Input
+              value={form.specialization}
+              onChange={(e) => set("specialization", e.target.value)}
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>الأمراض المزمنة</Label>
-            <Textarea value={form.chronic_diseases} onChange={(e) => set("chronic_diseases", e.target.value)} />
+            <Textarea
+              value={form.chronic_diseases}
+              onChange={(e) => set("chronic_diseases", e.target.value)}
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>الحساسية</Label>

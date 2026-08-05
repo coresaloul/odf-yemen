@@ -114,8 +114,7 @@ function SettingsPage() {
     };
   }, [user]);
 
-  const set = (key: keyof Prefs, value: boolean) =>
-    setPrefs((p) => ({ ...p, [key]: value }));
+  const set = (key: keyof Prefs, value: boolean) => setPrefs((p) => ({ ...p, [key]: value }));
 
   const save = async () => {
     if (!user) return;

@@ -3,7 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ClipboardList, FileText, KanbanSquare, List, Loader2, Mic, Plus, Printer, Square } from "lucide-react";
+import {
+  ClipboardList,
+  FileText,
+  KanbanSquare,
+  List,
+  Loader2,
+  Mic,
+  Plus,
+  Printer,
+  Square,
+} from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/LoadingState";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,9 +59,15 @@ export const Route = createFileRoute("/_authenticated/tasks")({
   head: () => ({
     meta: [
       { title: "المهام | الموارد البشرية" },
-      { name: "description", content: "تكليف الموظفين بالمهام ومتابعة نسب الإنجاز مع الإضافة الصوتية الذكية." },
+      {
+        name: "description",
+        content: "تكليف الموظفين بالمهام ومتابعة نسب الإنجاز مع الإضافة الصوتية الذكية.",
+      },
       { property: "og:title", content: "المهام | الموارد البشرية" },
-      { property: "og:description", content: "إدارة مهام الموظفين ومتابعة الإنجاز في مؤسسة اليتيم التنموية." },
+      {
+        property: "og:description",
+        content: "إدارة مهام الموظفين ومتابعة الإنجاز في مؤسسة اليتيم التنموية.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -84,7 +100,10 @@ function TasksPage() {
     queryFn: async () => {
       const [tasks, employees, departments] = await Promise.all([
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
-        supabase.from("employees").select("id, full_name, department_id, section_id").order("full_name"),
+        supabase
+          .from("employees")
+          .select("id, full_name, department_id, section_id")
+          .order("full_name"),
         supabase.from("departments").select("id, name").order("name"),
       ]);
       return {
@@ -105,7 +124,7 @@ function TasksPage() {
     let list = tasks.filter((t) => {
       if (scope === "mine" && t.assignee_id !== employee?.id) return false;
       if (scope === "assigned" && t.assigned_by !== employee?.id) return false;
-      if (q && !(`${t.title} ${t.description ?? ""}`.toLowerCase().includes(q))) return false;
+      if (q && !`${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)) return false;
       if (filters.status !== "all" && t.status !== filters.status) return false;
       if (filters.priority !== "all" && t.priority !== filters.priority) return false;
       if (filters.assignee !== "all" && t.assignee_id !== filters.assignee) return false;
@@ -217,7 +236,9 @@ function TasksPage() {
       const task = tasks.find((t) => t.id === id);
       if (progress >= 100 && needsApproval(task)) {
         await requestApproval({ data: { taskId: id } });
-        await supabase.from("task_updates").insert({ task_id: id, progress, created_by: user?.id ?? null });
+        await supabase
+          .from("task_updates")
+          .insert({ task_id: id, progress, created_by: user?.id ?? null });
         return "pending" as const;
       }
       const status = statusForProgress(progress);
@@ -230,7 +251,9 @@ function TasksPage() {
         })
         .eq("id", id);
       if (error) throw error;
-      await supabase.from("task_updates").insert({ task_id: id, progress, created_by: user?.id ?? null });
+      await supabase
+        .from("task_updates")
+        .insert({ task_id: id, progress, created_by: user?.id ?? null });
       if (task && progress >= 100 && task.recurrence && task.recurrence !== "none") {
         const next = nextRecurrenceDates(task.recurrence, task.start_date, task.due_date);
         if (next) {
@@ -256,9 +279,7 @@ function TasksPage() {
       return "done" as const;
     },
     onSuccess: (result) => {
-      toast.success(
-        result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تحديث الإنجاز",
-      );
+      toast.success(result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تحديث الإنجاز");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -288,9 +309,7 @@ function TasksPage() {
       return "done" as const;
     },
     onSuccess: (result) => {
-      toast.success(
-        result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تغيير حالة المهمة",
-      );
+      toast.success(result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تغيير حالة المهمة");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -342,7 +361,11 @@ function TasksPage() {
         description="تكليف الموظفين، متابعة الإنجاز، المهام الفرعية والمرفقات"
         action={
           <>
-            <Button size="sm" variant="outline" onClick={() => exportWord(reportDoc(), "تقرير-المهام")}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportWord(reportDoc(), "تقرير-المهام")}
+            >
               <FileText className="size-4" /> Word
             </Button>
             <Button size="sm" variant="outline" onClick={() => exportPdf(reportDoc())}>
@@ -399,16 +422,29 @@ function TasksPage() {
           </TabsList>
         </Tabs>
         <div className="flex gap-1">
-          <Button size="sm" variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")}>
+          <Button
+            size="sm"
+            variant={view === "list" ? "default" : "outline"}
+            onClick={() => setView("list")}
+          >
             <List className="size-4" /> قائمة
           </Button>
-          <Button size="sm" variant={view === "board" ? "default" : "outline"} onClick={() => setView("board")}>
+          <Button
+            size="sm"
+            variant={view === "board" ? "default" : "outline"}
+            onClick={() => setView("board")}
+          >
             <KanbanSquare className="size-4" /> لوحة
           </Button>
         </div>
       </div>
 
-      <TaskFilters value={filters} onChange={setFilters} employees={employees} departments={departments} />
+      <TaskFilters
+        value={filters}
+        onChange={setFilters}
+        employees={employees}
+        departments={departments}
+      />
 
       {isLoading && <ListSkeleton rows={4} />}
       {!isLoading && filtered.length === 0 && (
@@ -470,7 +506,9 @@ function TasksPage() {
         assigneeName={nameOf(detailTask?.assignee_id ?? null)}
         assignerName={nameOf(detailTask?.assigned_by ?? null)}
         canManage={detailTask ? canManageTask(detailTask) : false}
-        onProgress={(progress) => detailTask && applyProgress.mutate({ id: detailTask.id, progress })}
+        onProgress={(progress) =>
+          detailTask && applyProgress.mutate({ id: detailTask.id, progress })
+        }
       />
 
       <AlertDialog open={!!deleteTask} onOpenChange={(v) => !v && setDeleteTask(null)}>
@@ -483,7 +521,9 @@ function TasksPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteTask && remove.mutate(deleteTask.id)}>حذف</AlertDialogAction>
+            <AlertDialogAction onClick={() => deleteTask && remove.mutate(deleteTask.id)}>
+              حذف
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -491,12 +531,22 @@ function TasksPage() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: string | number; tone?: "danger" }) {
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "danger";
+}) {
   return (
     <Card>
       <CardContent className="p-4">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
+        <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : ""}`}>
+          {value}
+        </p>
       </CardContent>
     </Card>
   );
@@ -570,7 +620,12 @@ function VoiceTaskButton({
   };
 
   return (
-    <Button size="sm" variant={recording ? "destructive" : "outline"} onClick={handle} disabled={busy}>
+    <Button
+      size="sm"
+      variant={recording ? "destructive" : "outline"}
+      onClick={handle}
+      disabled={busy}
+    >
       {busy ? (
         <Loader2 className="size-4 animate-spin" />
       ) : recording ? (

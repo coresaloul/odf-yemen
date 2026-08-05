@@ -117,7 +117,6 @@ function EvaluationsPage() {
         title="لا توجد تقييمات مطابقة"
         description="اختر دورة تقييم أخرى أو أنشئ تقييماً جديداً."
       />
-
     ) : (
       rows.map((ev) => (
         <EvaluationRecord
@@ -164,7 +163,11 @@ function EvaluationsPage() {
             <CardContent className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label>بحث باسم الموظف</Label>
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="الاسم" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="الاسم"
+                />
               </div>
               <div className="space-y-2">
                 <Label>الفترة</Label>

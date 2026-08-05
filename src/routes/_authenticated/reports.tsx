@@ -8,7 +8,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   PERIOD_LABELS,
   TASK_STATUS_LABELS,
@@ -24,9 +30,15 @@ export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
       { title: "تقارير الإنجاز | الموارد البشرية" },
-      { name: "description", content: "تقارير إنجاز يومية وأسبوعية وشهرية وربعية ونصف سنوية قابلة للتصدير Word وPDF." },
+      {
+        name: "description",
+        content: "تقارير إنجاز يومية وأسبوعية وشهرية وربعية ونصف سنوية قابلة للتصدير Word وPDF.",
+      },
       { property: "og:title", content: "تقارير الإنجاز | الموارد البشرية" },
-      { property: "og:description", content: "تقارير أداء الموظفين والأقسام مع التصدير إلى Word وPDF." },
+      {
+        property: "og:description",
+        content: "تقارير أداء الموظفين والأقسام مع التصدير إلى Word وPDF.",
+      },
     ],
   }),
   component: ReportsPage,
@@ -48,12 +60,14 @@ function ReportsPage() {
   const [period, setPeriod] = useState<PeriodKey>("monthly");
   const [approvedOnly, setApprovedOnly] = useState(true);
 
-
   const { data: base } = useQuery({
     queryKey: ["report-base"],
     queryFn: async () => {
       const [employees, departments, sections] = await Promise.all([
-        supabase.from("employees").select("id, full_name, department_id, section_id").order("full_name"),
+        supabase
+          .from("employees")
+          .select("id, full_name, department_id, section_id")
+          .order("full_name"),
         supabase.from("departments").select("id, name").order("name"),
         supabase.from("sections").select("id, name, department_id").order("name"),
       ]);
@@ -86,7 +100,9 @@ function ReportsPage() {
         scope === "employee"
           ? [targetId]
           : employees
-              .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
+              .filter((e) =>
+                scope === "section" ? e.section_id === targetId : e.department_id === targetId,
+              )
               .map((e) => e.id);
 
       if (memberIds.length === 0) return { tasks: [], attendance: [], memberIds };
@@ -128,7 +144,9 @@ function ReportsPage() {
         ? [targetId]
         : []
       : employees
-          .filter((e) => (scope === "section" ? e.section_id === targetId : e.department_id === targetId))
+          .filter((e) =>
+            scope === "section" ? e.section_id === targetId : e.department_id === targetId,
+          )
           .map((e) => e.id);
 
   const { data: allEvaluations = [], isFetching: loadingEvals } = useQuery({
@@ -151,7 +169,6 @@ function ReportsPage() {
     : allEvaluations;
   const pendingCount = allEvaluations.filter((e) => e.approval_stage !== "approved").length;
 
-
   const avgTotal = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.total_score), 0) / evaluations.length)
     : 0;
@@ -159,7 +176,9 @@ function ReportsPage() {
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.tasks_score), 0) / evaluations.length)
     : 0;
   const avgAttendanceScore = evaluations.length
-    ? Math.round(evaluations.reduce((s, e) => s + Number(e.attendance_score), 0) / evaluations.length)
+    ? Math.round(
+        evaluations.reduce((s, e) => s + Number(e.attendance_score), 0) / evaluations.length,
+      )
     : 0;
   const avgCriteriaScore = evaluations.length
     ? Math.round(evaluations.reduce((s, e) => s + Number(e.criteria_score), 0) / evaluations.length)
@@ -190,14 +209,37 @@ function ReportsPage() {
       {
         heading: "متوسط محاور التقييم",
         table: {
-          columns: ["إنجاز المهام (٥٠٪)", "الدوام (٣٠٪)", "معايير المدير (٢٠٪)", "الدرجة الكلية", "التقدير"],
-          rows: [[`${avgTasksScore}%`, `${avgAttendanceScore}%`, `${avgCriteriaScore}%`, `${avgTotal}%`, gradeFor(avgTotal)]],
+          columns: [
+            "إنجاز المهام (٥٠٪)",
+            "الدوام (٣٠٪)",
+            "معايير المدير (٢٠٪)",
+            "الدرجة الكلية",
+            "التقدير",
+          ],
+          rows: [
+            [
+              `${avgTasksScore}%`,
+              `${avgAttendanceScore}%`,
+              `${avgCriteriaScore}%`,
+              `${avgTotal}%`,
+              gradeFor(avgTotal),
+            ],
+          ],
         },
       },
       {
         heading: "تفصيل تقييمات الموظفين",
         table: {
-          columns: ["الموظف", "الفترة", "المهام", "الدوام", "المعايير", "الكلية", "التقدير", "الاعتماد"],
+          columns: [
+            "الموظف",
+            "الفترة",
+            "المهام",
+            "الدوام",
+            "المعايير",
+            "الكلية",
+            "التقدير",
+            "الاعتماد",
+          ],
           rows: evaluations.map((e) => [
             nameOf(e.employee_id),
             `${formatDate(e.period_start)} — ${formatDate(e.period_end)}`,
@@ -214,14 +256,15 @@ function ReportsPage() {
         heading: "ملاحظات المقيّم",
         table: {
           columns: ["الموظف", "الملاحظات"],
-          rows: evaluations.filter((e) => e.notes).map((e) => [nameOf(e.employee_id), e.notes ?? ""]),
+          rows: evaluations
+            .filter((e) => e.notes)
+            .map((e) => [nameOf(e.employee_id), e.notes ?? ""]),
         },
       },
     ],
   });
 
   const buildAchievementDoc = (): ReportDoc => ({
-
     title:
       scope === "employee"
         ? `تقرير إنجاز الموظف — ${targetName}`
@@ -403,12 +446,12 @@ function ReportsPage() {
             </label>
             {pendingCount > 0 && (
               <span className="text-xs text-muted-foreground">
-                {pendingCount} تقييم ما زال ضمن مراحل الاعتماد (المدير المباشر ← الموارد البشرية ← المدير التنفيذي)
+                {pendingCount} تقييم ما زال ضمن مراحل الاعتماد (المدير المباشر ← الموارد البشرية ←
+                المدير التنفيذي)
               </span>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-
             {[
               { label: "عدد التقييمات", value: evaluations.length },
               { label: "متوسط المهام", value: `${avgTasksScore}%` },
@@ -428,8 +471,8 @@ function ReportsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                {formatDate(range.start)} — {formatDate(range.end)} · تقييم أداء {SCOPE_LABELS[scope]}{" "}
-                {targetName} · التقدير العام: {gradeFor(avgTotal)}
+                {formatDate(range.start)} — {formatDate(range.end)} · تقييم أداء{" "}
+                {SCOPE_LABELS[scope]} {targetName} · التقدير العام: {gradeFor(avgTotal)}
               </CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
@@ -482,7 +525,6 @@ function ReportsPage() {
       {targetId && kind === "achievement" && (
         <>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-
             {[
               { label: "إجمالي المهام", value: tasks.length },
               { label: "منجزة", value: completed },

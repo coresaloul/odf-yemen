@@ -85,8 +85,15 @@ function LeavesPage() {
           .select("*, employees(id, full_name, manager_id), leave_types(name, is_hourly)")
           .order("created_at", { ascending: false }),
         supabase.from("leave_types").select("*").eq("active", true).order("name"),
-        supabase.from("employees").select("id, full_name, manager_id").eq("status", "active").order("full_name"),
-        supabase.from("leave_balances").select("*, leave_types(name)").eq("year", new Date().getFullYear()),
+        supabase
+          .from("employees")
+          .select("id, full_name, manager_id")
+          .eq("status", "active")
+          .order("full_name"),
+        supabase
+          .from("leave_balances")
+          .select("*, leave_types(name)")
+          .eq("year", new Date().getFullYear()),
       ]);
       return {
         requests: requests.data ?? [],
@@ -320,7 +327,9 @@ function RequestsTable({
                   {r.kind === "permission" ? `${Number(r.hours)} ساعة` : `${Number(r.days)} يوم`}
                 </td>
                 <td className="p-3">
-                  <Badge variant={stageVariant(String(r.stage))}>{STAGE_LABELS[String(r.stage)]}</Badge>
+                  <Badge variant={stageVariant(String(r.stage))}>
+                    {STAGE_LABELS[String(r.stage)]}
+                  </Badge>
                   {r.return_reason && (
                     <p className="mt-1 text-xs text-destructive">{r.return_reason}</p>
                   )}

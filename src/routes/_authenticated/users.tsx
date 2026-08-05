@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EmptyState } from "@/components/EmptyState";
+import { ListSkeleton, LoadingState } from "@/components/LoadingState";
+import { ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -182,7 +185,7 @@ function UsersAdminPage() {
   }, [rows, query, roleFilter]);
 
   if (authLoading) {
-    return <div className="p-8 text-muted-foreground">جارٍ التحميل…</div>;
+    return <LoadingState className="p-8" />;
   }
 
   if (!canManageUsers) {
@@ -291,11 +294,9 @@ function UsersAdminPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {loading ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> جارٍ التحميل…
-                </p>
+                <ListSkeleton rows={4} />
               ) : filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground">لا توجد حسابات مطابقة.</p>
+                <EmptyState icon={ShieldCheck} title="لا توجد حسابات مطابقة" description="عدّل البحث أو فلتر الأدوار." />
               ) : (
                 filtered.map((u) => (
                   <div

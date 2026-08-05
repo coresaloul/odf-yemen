@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +43,6 @@ function PayrollPage() {
             ? "مسيرات الرواتب واعتمادها، البدلات والاستقطاعات، السلف، عقود الاستشاريين، والتعديلات."
             : "قسائم رواتبك المعتمدة."
         }
-        action={<Wallet className="size-6 text-muted-foreground" />}
       />
 
       {!isAdmin ? (

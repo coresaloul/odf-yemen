@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton, LoadingState } from "@/components/LoadingState";
-import { ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";

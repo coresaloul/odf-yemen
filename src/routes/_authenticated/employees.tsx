@@ -316,7 +316,6 @@ function EmployeesPage() {
                 <div className="truncate">فصيلة الدم: {e.blood_type ?? "—"}</div>
               </dl>
               <div className="mt-auto flex flex-wrap items-center gap-1 border-t pt-2">
-
                 <Button variant="ghost" size="sm" onClick={() => setProfile(e)}>
                   <FileText className="size-4" /> الملف
                 </Button>

@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  FileText,
   LayoutDashboard,
   Network,
   Users,
@@ -48,6 +49,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/tasks", label: "المهام", icon: ListChecks },
       { to: "/attendance", label: "الدوام", icon: CalendarClock },
       { to: "/leaves", label: "الإجازات", icon: CalendarDays },
+      { to: "/requests", label: "الطلبات والنماذج", icon: FileText },
     ],
   },
   {

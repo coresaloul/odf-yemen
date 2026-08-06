@@ -381,6 +381,13 @@ export async function completeOffboarding(userId: string, employeeId: string) {
   if ((open ?? []).length > 0)
     throw new Error(`لا يمكن الإنهاء قبل استكمال ${(open ?? []).length} بنداً من إخلاء الطرف`);
 
+  const { openCustodyForEmployee } = await import("@/lib/custody.server");
+  const openCustody = await openCustodyForEmployee(employeeId);
+  if (openCustody.length > 0)
+    throw new Error(
+      `لا يمكن الإنهاء قبل تسوية ${openCustody.length} عهدة مفتوحة للموظف (أصول/مركبات/وثائق/عهدة مالية)`,
+    );
+
   const { data: off } = await db()
     .from("employee_offboarding")
     .select("id, last_working_day")

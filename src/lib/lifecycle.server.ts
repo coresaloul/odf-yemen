@@ -199,7 +199,13 @@ export async function toggleChecklistItem(userId: string, id: string, done: bool
 
 export async function addChecklistItem(
   userId: string,
-  input: { employee_id: string; kind: ChecklistKind; title: string; owner_role: string; due_date?: string | null },
+  input: {
+    employee_id: string;
+    kind: ChecklistKind;
+    title: string;
+    owner_role: string;
+    due_date?: string | null | undefined;
+  },
 ) {
   await assertManage(userId, input.employee_id);
   const { error } = await db().from("lifecycle_checklist_items").insert({

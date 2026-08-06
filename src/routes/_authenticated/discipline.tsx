@@ -103,13 +103,11 @@ function DisciplinePage() {
 
   /* eslint-disable react-hooks/rules-of-hooks */
   const saveRecM = mutate(
-    (v: Parameters<typeof saveRecognitionFn>[0]["data"]) => saveRec({ data: v }),
+    (v: RecognitionInput) => saveRec({ data: v }),
     "تم حفظ سجل التكريم",
   );
-  const saveSanM = mutate(
-    (v: Parameters<typeof saveSanctionFn>[0]["data"]) => saveSan({ data: v }),
-    "تم حفظ الجزاء",
-  );
+  const saveSanM = mutate((v: SanctionInput) => saveSan({ data: v }), "تم حفظ الجزاء");
+
   const removeM = mutate(
     (v: { kind: DisciplineKind; id: string }) => removeFn({ data: v }),
     "تم الحذف",

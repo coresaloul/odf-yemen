@@ -447,6 +447,39 @@ function EmployeeProfileDialog({
   };
   const [doc, setDoc] = useState(emptyDoc);
   const setD = (k: keyof typeof emptyDoc, v: string) => setDoc((d) => ({ ...d, [k]: v }));
+  const [uploading, setUploading] = useState(false);
+
+  const uploadDocFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${e.id}/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from("employee-documents").upload(path, file);
+      if (error) throw error;
+      setD("file_url", path);
+      if (!doc.title) setD("title", file.name.replace(/\.[^.]+$/, ""));
+      toast.success("تم رفع الملف");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openDocFile = async (fileRef: string) => {
+    if (/^https?:\/\//i.test(fileRef)) {
+      window.open(fileRef, "_blank", "noopener");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("employee-documents")
+      .createSignedUrl(fileRef, 60 * 10);
+    if (error || !data) {
+      toast.error(error?.message ?? "تعذر فتح الملف");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
 
   const addDoc = useMutation({
     mutationFn: async () => {

@@ -4,6 +4,8 @@ import type { ApprovalStage } from "@/lib/evaluation-approval";
 import type { PendingApproval } from "@/lib/approvals";
 import { APPROVAL_KIND_LABELS, CORRECTION_TYPE_LABELS } from "@/lib/approvals";
 import { formatMinutes } from "@/lib/attendance";
+import { CUSTODY_KIND_LABELS, type CustodyKind } from "@/lib/custody";
+
 
 function db() {
   return supabaseAdmin;

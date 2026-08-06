@@ -65,6 +65,30 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 type Employee = { id: string; name: string; employee_no: string; department: string };
 
+type RecognitionInput = {
+  id?: string | null;
+  employee_id: string;
+  type_id: string;
+  title: string;
+  reason: string | null;
+  award_date: string;
+  amount: number;
+  submit: boolean;
+};
+
+type SanctionInput = {
+  id?: string | null;
+  employee_id: string;
+  type_id: string;
+  violation_date: string;
+  discovered_date: string;
+  violation_description: string;
+  employee_statement: string | null;
+  penalty_days: number;
+  amount: number;
+  submit: boolean;
+};
+
 function StageBadge({ stage }: { stage: DisciplineRecord["stage"] }) {
   const variant =
     stage === "approved" ? "default" : stage === "returned" ? "destructive" : "outline";

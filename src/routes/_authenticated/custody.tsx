@@ -402,7 +402,7 @@ function CustodyPage() {
   });
 
   const employees = refs.data?.employees ?? [];
-  const assetList = (assets.data ?? []) as Record<string, never>[] as unknown as {
+  const assetList = (assets.data ?? []) as unknown as {
     id: string;
     code: string;
     name: string;
@@ -423,7 +423,7 @@ function CustodyPage() {
         <PageHeader
           title={form.id ? "تعديل عهدة" : "تسجيل عهدة جديدة"}
           description="حدد الموظف ونوع العهدة والبنود ثم أرسلها لمسار الاعتماد"
-          actions={
+          action={
             <Button variant="outline" className="gap-2" onClick={() => setView("list")}>
               <ArrowRight className="size-4" />
               رجوع
@@ -645,7 +645,7 @@ function CustodyPage() {
         <PageHeader
           title={asset.id ? "تعديل أصل" : "إضافة أصل"}
           description="سجل الأصول والمركبات والوثائق القابلة للتسليم كعهدة"
-          actions={
+          action={
             <Button variant="outline" className="gap-2" onClick={() => setView("list")}>
               <ArrowRight className="size-4" />
               رجوع
@@ -824,7 +824,7 @@ function CustodyPage() {
         <PageHeader
           title={`إرجاع عهدة — ${active.employee_name}`}
           description="حدد حالة كل بند عند الاستلام"
-          actions={
+          action={
             <Button variant="outline" className="gap-2" onClick={() => setView("list")}>
               <ArrowRight className="size-4" />
               رجوع
@@ -901,7 +901,7 @@ function CustodyPage() {
         <PageHeader
           title={`حركة عهدة مالية — ${active.employee_name}`}
           description={`المبلغ ${money(active.cash_amount)} — المتبقي ${money(cashRemaining(active))}`}
-          actions={
+          action={
             <Button variant="outline" className="gap-2" onClick={() => setView("list")}>
               <ArrowRight className="size-4" />
               رجوع
@@ -968,7 +968,7 @@ function CustodyPage() {
       <PageHeader
         title="إدارة العهد"
         description="عهد الأصول والمركبات والوثائق والعهد المالية مع مسار اعتماد وتسليم وإرجاع"
-        actions={
+        action={
           <div className="flex flex-wrap gap-2">
             <Button className="gap-2" onClick={() => openAssignmentForm()}>
               <Plus className="size-4" />

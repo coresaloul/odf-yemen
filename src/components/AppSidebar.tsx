@@ -17,6 +17,7 @@ import {
   Gavel,
   Route as RouteIcon,
   LogOut,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ORG_NAME, ROLE_LABELS } from "@/lib/hr";

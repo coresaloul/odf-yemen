@@ -926,7 +926,6 @@ function EmployeeDialog({
           )}
         </TabsContent>
 
-
         <TabsContent value="contract" className="grid gap-4 pt-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>نوع العقد</Label>

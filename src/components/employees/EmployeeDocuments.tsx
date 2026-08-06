@@ -224,7 +224,7 @@ export function EmployeeDocuments({
   };
 
   const uploadToStorage = async (file: File) => {
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const safeName = file.name.replace(/[^\w.-]+/g, "_");
     const path = `${employeeId}/${Date.now()}-${safeName}`;
     const { error } = await supabase.storage.from("employee-documents").upload(path, file);
     if (error) throw new Error(error.message);

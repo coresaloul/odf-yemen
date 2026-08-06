@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   ClipboardCheck,
   Wallet,
+  Gavel,
+  Route as RouteIcon,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,6 +59,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/employees", label: "الموظفون", icon: Users },
       { to: "/org", label: "المخطط التنظيمي", icon: Network },
+      { to: "/lifecycle", label: "دورة حياة الموظف", icon: RouteIcon },
+      { to: "/discipline", label: "التكريم والجزاءات", icon: Gavel },
       { to: "/evaluations", label: "التقييم", icon: Star },
       { to: "/payroll", label: "الرواتب", icon: Wallet },
     ],

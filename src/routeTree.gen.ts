@@ -15,9 +15,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDisciplineRouteImport } from './routes/_authenticated/discipline'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedEvaluationsRouteImport } from './routes/_authenticated/evaluations'
 import { Route as AuthenticatedLeavesRouteImport } from './routes/_authenticated/leaves'
+import { Route as AuthenticatedLifecycleRouteImport } from './routes/_authenticated/lifecycle'
 import { Route as AuthenticatedOrgRouteImport } from './routes/_authenticated/org'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -60,6 +62,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDisciplineRoute = AuthenticatedDisciplineRouteImport.update({
+  id: '/discipline',
+  path: '/discipline',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
@@ -74,6 +81,11 @@ const AuthenticatedEvaluationsRoute =
 const AuthenticatedLeavesRoute = AuthenticatedLeavesRouteImport.update({
   id: '/leaves',
   path: '/leaves',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLifecycleRoute = AuthenticatedLifecycleRouteImport.update({
+  id: '/lifecycle',
+  path: '/lifecycle',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOrgRoute = AuthenticatedOrgRouteImport.update({
@@ -144,9 +156,11 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/discipline': typeof AuthenticatedDisciplineRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
+  '/lifecycle': typeof AuthenticatedLifecycleRoute
   '/org': typeof AuthenticatedOrgRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -166,9 +180,11 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/discipline': typeof AuthenticatedDisciplineRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
+  '/lifecycle': typeof AuthenticatedLifecycleRoute
   '/org': typeof AuthenticatedOrgRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -190,9 +206,11 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/discipline': typeof AuthenticatedDisciplineRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/evaluations': typeof AuthenticatedEvaluationsRoute
   '/_authenticated/leaves': typeof AuthenticatedLeavesRoute
+  '/_authenticated/lifecycle': typeof AuthenticatedLifecycleRoute
   '/_authenticated/org': typeof AuthenticatedOrgRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -214,9 +232,11 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/attendance'
     | '/dashboard'
+    | '/discipline'
     | '/employees'
     | '/evaluations'
     | '/leaves'
+    | '/lifecycle'
     | '/org'
     | '/payroll'
     | '/profile'
@@ -236,9 +256,11 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/attendance'
     | '/dashboard'
+    | '/discipline'
     | '/employees'
     | '/evaluations'
     | '/leaves'
+    | '/lifecycle'
     | '/org'
     | '/payroll'
     | '/profile'
@@ -259,9 +281,11 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/attendance'
     | '/_authenticated/dashboard'
+    | '/_authenticated/discipline'
     | '/_authenticated/employees'
     | '/_authenticated/evaluations'
     | '/_authenticated/leaves'
+    | '/_authenticated/lifecycle'
     | '/_authenticated/org'
     | '/_authenticated/payroll'
     | '/_authenticated/profile'
@@ -330,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/discipline': {
+      id: '/_authenticated/discipline'
+      path: '/discipline'
+      fullPath: '/discipline'
+      preLoaderRoute: typeof AuthenticatedDisciplineRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/employees': {
       id: '/_authenticated/employees'
       path: '/employees'
@@ -349,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/leaves'
       fullPath: '/leaves'
       preLoaderRoute: typeof AuthenticatedLeavesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lifecycle': {
+      id: '/_authenticated/lifecycle'
+      path: '/lifecycle'
+      fullPath: '/lifecycle'
+      preLoaderRoute: typeof AuthenticatedLifecycleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/org': {
@@ -442,9 +480,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDisciplineRoute: typeof AuthenticatedDisciplineRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedEvaluationsRoute: typeof AuthenticatedEvaluationsRoute
   AuthenticatedLeavesRoute: typeof AuthenticatedLeavesRoute
+  AuthenticatedLifecycleRoute: typeof AuthenticatedLifecycleRoute
   AuthenticatedOrgRoute: typeof AuthenticatedOrgRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -459,9 +499,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDisciplineRoute: AuthenticatedDisciplineRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedEvaluationsRoute: AuthenticatedEvaluationsRoute,
   AuthenticatedLeavesRoute: AuthenticatedLeavesRoute,
+  AuthenticatedLifecycleRoute: AuthenticatedLifecycleRoute,
   AuthenticatedOrgRoute: AuthenticatedOrgRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -487,13 +529,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

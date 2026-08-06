@@ -2,7 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Eye, FileText, Loader2, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Eye,
+  FileText,
+  Loader2,
+  Paperclip,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/LoadingState";
 import { supabase } from "@/integrations/supabase/client";

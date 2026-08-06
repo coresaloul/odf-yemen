@@ -6,6 +6,7 @@ import { listPendingApprovals, decideTaskApproval, decideCorrectionRequest } fro
 import { decideLeaveRequest } from "@/lib/leave.functions";
 import { decideEvaluation } from "@/lib/evaluation-approval.functions";
 import { decideHrRequest } from "@/lib/hr-requests.functions";
+import { decideCustodyAssignment } from "@/lib/custody.functions";
 
 export const APPROVALS_KEY = ["pending-approvals"];
 
@@ -28,6 +29,7 @@ export function useApprovalDecision(onDone?: () => void) {
   const leave = useServerFn(decideLeaveRequest);
   const evaluation = useServerFn(decideEvaluation);
   const hrRequest = useServerFn(decideHrRequest);
+  const custody = useServerFn(decideCustodyAssignment);
 
   return useMutation({
     mutationFn: async ({
@@ -51,6 +53,8 @@ export function useApprovalDecision(onDone?: () => void) {
           return evaluation({ data: { evaluationId: item.id, action, ...payload } });
         case "hr_request":
           return hrRequest({ data: { id: item.id, action, ...payload } });
+        case "custody":
+          return custody({ data: { id: item.id, action, ...payload } });
       }
     },
     onSuccess: (_r, v) => {
@@ -61,6 +65,7 @@ export function useApprovalDecision(onDone?: () => void) {
       void qc.invalidateQueries({ queryKey: ["evaluations"] });
       void qc.invalidateQueries({ queryKey: ["correction-requests"] });
       void qc.invalidateQueries({ queryKey: ["hr-requests"] });
+      void qc.invalidateQueries({ queryKey: ["custody-assignments"] });
       onDone?.();
     },
     onError: (e: Error) => toast.error(e.message),

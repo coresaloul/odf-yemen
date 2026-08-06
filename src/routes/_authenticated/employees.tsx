@@ -583,14 +583,14 @@ function EmployeeProfileDialog({
                         {d.expiry_date ? formatDate(d.expiry_date) : "—"}
                       </p>
                       {d.file_url && (
-                        <a
-                          href={d.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-primary underline"
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => void openDocFile(d.file_url as string)}
                         >
-                          فتح الملف
-                        </a>
+                          <Eye className="size-3.5" /> مشاهدة الوثيقة
+                        </Button>
                       )}
                       {d.notes && <p className="text-xs text-muted-foreground">{d.notes}</p>}
                     </div>

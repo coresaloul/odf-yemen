@@ -7,10 +7,12 @@ import {
   ExternalLink,
   Eye,
   FileText,
+  LayoutGrid,
   Loader2,
   Paperclip,
   Pencil,
   Plus,
+  Rows3,
   Search,
   Trash2,
   UploadCloud,
@@ -51,6 +53,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { provisionEmployeeAccounts } from "@/lib/admin-users.functions";
 import { deleteEmployee, setEmployeeStatus } from "@/lib/org.functions";
 import { MoveEmployeesDialog } from "@/components/org/MoveEmployeesDialog";
+import { EmployeeServiceLinks } from "@/components/employees/EmployeeServiceLinks";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({
@@ -112,6 +125,34 @@ const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const EDUCATION = ["ثانوية", "دبلوم", "بكالوريوس", "ماجستير", "دكتوراه"];
 const CONTRACTS = ["دوام كامل", "دوام جزئي", "مؤقت", "متعاون", "تحت التجربة"];
 
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0] ?? "")
+    .join("");
+}
+
+function EmployeeAvatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full bg-primary/10 font-semibold text-primary ${className ?? "size-10 text-sm"}`}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border bg-card px-3 py-2.5">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-display text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
 function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
@@ -119,6 +160,7 @@ function EmployeesPage() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [accountFilter, setAccountFilter] = useState("all");
+  const [view, setView] = useState<"cards" | "table">("table");
   const [editing, setEditing] = useState<Employee | null>(null);
   const [profile, setProfile] = useState<Employee | null>(null);
   const removeEmployee = useServerFn(deleteEmployee);
@@ -161,6 +203,19 @@ function EmployeesPage() {
       return matchTerm && matchDept && matchStatus && matchAccount;
     });
   }, [employees, q, deptFilter, statusFilter, accountFilter]);
+
+  const stats = useMemo(
+    () => ({
+      active: employees.filter((e) => e.status === "active").length,
+      onLeave: employees.filter((e) => e.status === "on_leave").length,
+      noAccount: employees.filter((e) => !e.user_id).length,
+    }),
+    [employees],
+  );
+
+  const deptName = (id?: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
+  const secName = (id?: string | null) => sections.find((s) => s.id === id)?.name ?? "—";
+
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -260,6 +315,29 @@ function EmployeesPage() {
             <SelectItem value="unlinked">بلا حساب مستخدم</SelectItem>
           </SelectContent>
         </Select>
+        <div className="col-span-2 sm:mr-auto">
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setView(v as "cards" | "table")}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            <ToggleGroupItem value="table" aria-label="عرض جدول" className="gap-1.5 px-3">
+              <Rows3 className="size-4" /> جدول
+            </ToggleGroupItem>
+            <ToggleGroupItem value="cards" aria-label="عرض بطاقات" className="gap-1.5 px-3">
+              <LayoutGrid className="size-4" /> بطاقات
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="النتائج المعروضة" value={filtered.length} />
+        <StatCard label="على رأس العمل" value={stats.active} />
+        <StatCard label="في إجازة" value={stats.onLeave} />
+        <StatCard label="بلا حساب مستخدم" value={stats.noAccount} />
       </div>
 
       {isLoading && <ListSkeleton rows={4} />}
@@ -271,100 +349,198 @@ function EmployeesPage() {
         />
       )}
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((e) => (
-          <Card key={e.id} className="h-full">
-            <CardContent className="flex h-full flex-col gap-2 p-4">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{e.full_name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
-                  </p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                    {EMPLOYEE_STATUS_LABELS[e.status]}
-                  </Badge>
-                  {!e.user_id && (
-                    <Badge variant="outline" className="text-[10px]">
-                      بلا حساب مستخدم
+      {!isLoading && filtered.length > 0 && view === "table" && (
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-right">الموظف</TableHead>
+                  <TableHead className="text-right">الرقم</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">الإدارة / القسم</TableHead>
+                  <TableHead className="hidden text-right lg:table-cell">التعيين</TableHead>
+                  <TableHead className="hidden text-right lg:table-cell">الجوال</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">إجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((e) => (
+                  <TableRow key={e.id} className="hover:bg-accent/40">
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <EmployeeAvatar name={e.full_name} className="size-8 text-xs" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{e.full_name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {e.job_title ?? "بدون مسمى"}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{e.employee_no}</TableCell>
+                    <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
+                      {deptName(e.department_id)}
+                      {e.section_id ? ` / ${secName(e.section_id)}` : ""}
+                    </TableCell>
+                    <TableCell className="hidden whitespace-nowrap text-xs lg:table-cell">
+                      {formatDate(e.hire_date)}
+                    </TableCell>
+                    <TableCell className="hidden whitespace-nowrap text-xs lg:table-cell">
+                      {e.phone ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge variant={e.status === "active" ? "default" : "secondary"}>
+                          {EMPLOYEE_STATUS_LABELS[e.status]}
+                        </Badge>
+                        {!e.user_id && (
+                          <Badge variant="outline" className="text-[10px]">
+                            بلا حساب
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="ملف الموظف"
+                          onClick={() => setProfile(e)}
+                        >
+                          <FileText className="size-4" />
+                        </Button>
+                        {isManager && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="تعديل"
+                            onClick={() => setEditing(e)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        )}
+                        {isDirector && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="حذف"
+                            className="text-destructive"
+                            onClick={() => {
+                              if (!confirm(`حذف الموظف «${e.full_name}»؟`)) return;
+                              remove.mutate(e.id);
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      )}
+
+      {!isLoading && filtered.length > 0 && view === "cards" && (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((e) => (
+            <Card key={e.id} className="h-full transition-shadow hover:shadow-md">
+              <CardContent className="flex h-full flex-col gap-3 p-4">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <EmployeeAvatar name={e.full_name} />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{e.full_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <Badge variant={e.status === "active" ? "default" : "secondary"}>
+                      {EMPLOYEE_STATUS_LABELS[e.status]}
                     </Badge>
+                    {!e.user_id && (
+                      <Badge variant="outline" className="text-[10px]">
+                        بلا حساب مستخدم
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-lg bg-muted/40 p-2.5 text-xs text-muted-foreground">
+                  <div className="truncate">الإدارة: {deptName(e.department_id)}</div>
+                  <div className="truncate">القسم: {secName(e.section_id)}</div>
+                  <div className="truncate">التعيين: {formatDate(e.hire_date)}</div>
+                  <div className="truncate">الجوال: {e.phone ?? "—"}</div>
+                  <div className="truncate">
+                    الميلاد: {e.birth_date ? formatDate(e.birth_date) : "—"}
+                  </div>
+                  <div className="truncate">فصيلة الدم: {e.blood_type ?? "—"}</div>
+                </dl>
+                <div className="mt-auto flex flex-wrap items-center gap-1 border-t pt-2">
+                  <Button variant="ghost" size="sm" onClick={() => setProfile(e)}>
+                    <FileText className="size-4" /> الملف
+                  </Button>
+                  {isManager && (
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(e)}>
+                      <Pencil className="size-4" /> تعديل
+                    </Button>
+                  )}
+                  {(isDirector || isHR) && !e.user_id && e.email && (
+                    <EmployeeAccountsDialog
+                      employeeIds={[e.id]}
+                      triggerLabel="إنشاء حساب"
+                      variant="secondary"
+                      size="sm"
+                      onDone={refresh}
+                    />
+                  )}
+                  {(isDirector || isHR) && (
+                    <Select
+                      value={e.status}
+                      onValueChange={(v) =>
+                        changeStatus.mutate({
+                          ids: [e.id],
+                          status: v as "active" | "on_leave" | "terminated",
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-32 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(EMPLOYEE_STATUS_LABELS).map(([v, l]) => (
+                          <SelectItem key={v} value={v}>
+                            {l}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {isDirector && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => {
+                        if (!confirm(`حذف الموظف «${e.full_name}»؟`)) return;
+                        remove.mutate(e.id);
+                      }}
+                    >
+                      <Trash2 className="size-4" /> حذف
+                    </Button>
                   )}
                 </div>
-              </div>
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <div className="truncate">
-                  الإدارة: {departments.find((d) => d.id === e.department_id)?.name ?? "—"}
-                </div>
-                <div className="truncate">
-                  القسم: {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
-                </div>
-                <div className="truncate">التعيين: {formatDate(e.hire_date)}</div>
-                <div className="truncate">الجوال: {e.phone ?? "—"}</div>
-                <div className="truncate">
-                  الميلاد: {e.birth_date ? formatDate(e.birth_date) : "—"}
-                </div>
-                <div className="truncate">فصيلة الدم: {e.blood_type ?? "—"}</div>
-              </dl>
-              <div className="mt-auto flex flex-wrap items-center gap-1 border-t pt-2">
-                <Button variant="ghost" size="sm" onClick={() => setProfile(e)}>
-                  <FileText className="size-4" /> الملف
-                </Button>
-                {isManager && (
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(e)}>
-                    <Pencil className="size-4" /> تعديل
-                  </Button>
-                )}
-                {(isDirector || isHR) && !e.user_id && e.email && (
-                  <EmployeeAccountsDialog
-                    employeeIds={[e.id]}
-                    triggerLabel="إنشاء حساب"
-                    variant="secondary"
-                    size="sm"
-                    onDone={refresh}
-                  />
-                )}
-                {(isDirector || isHR) && (
-                  <Select
-                    value={e.status}
-                    onValueChange={(v) =>
-                      changeStatus.mutate({
-                        ids: [e.id],
-                        status: v as "active" | "on_leave" | "terminated",
-                      })
-                    }
-                  >
-                    <SelectTrigger className="h-8 w-32 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(EMPLOYEE_STATUS_LABELS).map(([v, l]) => (
-                        <SelectItem key={v} value={v}>
-                          {l}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {isDirector && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => {
-                      if (!confirm(`حذف الموظف «${e.full_name}»؟`)) return;
-                      remove.mutate(e.id);
-                    }}
-                  >
-                    <Trash2 className="size-4" /> حذف
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
 
       {editing && (
         <EmployeeDialog
@@ -417,15 +593,39 @@ function EmployeeProfileDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent dir="rtl" className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>ملف الموظف — {e.full_name}</DialogTitle>
+          <DialogTitle className="flex items-center gap-3 text-right">
+            <EmployeeAvatar name={e.full_name} className="size-11 text-base" />
+            <span className="min-w-0">
+              <span className="block truncate">{e.full_name}</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
+                {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
+              </span>
+            </span>
+          </DialogTitle>
         </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={e.status === "active" ? "default" : "secondary"}>
+            {EMPLOYEE_STATUS_LABELS[e.status]}
+          </Badge>
+          <Badge variant="outline">
+            {departments.find((d) => d.id === e.department_id)?.name ?? "بدون إدارة"}
+          </Badge>
+          {e.section_id && (
+            <Badge variant="outline">
+              {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
+            </Badge>
+          )}
+        </div>
 
         <Tabs defaultValue="job" dir="rtl">
           <TabsList className="flex-wrap">
             <TabsTrigger value="job">بيانات وظيفية</TabsTrigger>
             <TabsTrigger value="personal">شخصية وصحية</TabsTrigger>
             <TabsTrigger value="docs">وثائق الموظف</TabsTrigger>
+            <TabsTrigger value="services">الخدمات المرتبطة</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="job" className="grid gap-3 pt-4 sm:grid-cols-3">
             <Field label="الرقم الوظيفي" value={e.employee_no} />
@@ -492,7 +692,16 @@ function EmployeeProfileDialog({
               canDelete={isDirector || isHR}
             />
           </TabsContent>
+
+          <TabsContent value="services" className="space-y-3 pt-4">
+            <p className="text-xs text-muted-foreground">
+              انتقل إلى وحدات النظام المرتبطة بالموظف: المهام، الدوام، الإجازات، التقييم، العهد،
+              الطلبات، الجزاءات، دورة الحياة والرواتب.
+            </p>
+            <EmployeeServiceLinks />
+          </TabsContent>
         </Tabs>
+
       </DialogContent>
     </Dialog>
   );

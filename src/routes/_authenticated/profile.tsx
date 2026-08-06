@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { KeyRound, Loader2, Save, UserRound } from "lucide-react";
+import { KeyRound, Loader2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordField } from "@/components/PasswordField";
 import { getMyProfile, updateMyProfile, type MyProfile } from "@/lib/self-profile.functions";
 import { EmployeeDocuments } from "@/components/employees/EmployeeDocuments";
+import { EmployeeServiceLinks } from "@/components/employees/EmployeeServiceLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,25 +164,41 @@ function MyProfilePage() {
     </div>
   );
 
+  const nameInitials = profile.full_name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0] ?? "")
+    .join("");
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <UserRound className="size-5" />
-          </span>
-          <div>
-            <h1 className="font-display text-2xl font-bold">{profile.full_name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {profile.job_title ?? "—"} · رقم الموظف {profile.employee_no}
-            </p>
+      <div className="overflow-hidden rounded-2xl border bg-gradient-to-l from-primary/10 to-card">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 sm:flex sm:flex-wrap sm:justify-between sm:p-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-lg font-bold text-primary">
+              {nameInitials}
+            </span>
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-xl font-bold sm:text-2xl">
+                {profile.full_name}
+              </h1>
+              <p className="truncate text-sm text-muted-foreground">
+                {profile.job_title ?? "—"} · رقم الموظف {profile.employee_no}
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <Badge variant="secondary">{profile.department_name ?? "بدون إدارة"}</Badge>
+                {profile.section_name && <Badge variant="outline">{profile.section_name}</Badge>}
+              </div>
+            </div>
           </div>
+          <Button onClick={() => void save()} disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            <span className="hidden sm:inline">حفظ التعديلات</span>
+          </Button>
         </div>
-        <Button onClick={() => void save()} disabled={saving} className="gap-2">
-          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          حفظ التعديلات
-        </Button>
       </div>
+
 
       <Card>
         <CardHeader>
@@ -255,6 +272,18 @@ function MyProfilePage() {
               />
             </TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">خدماتي في النظام</CardTitle>
+          <CardDescription>انتقل مباشرة إلى مهامك ودوامك وإجازاتك وطلباتك.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmployeeServiceLinks
+            only={["/tasks", "/attendance", "/leaves", "/requests", "/evaluations", "/custody"]}
+          />
         </CardContent>
       </Card>
 

@@ -3,7 +3,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CheckCircle2, Circle, ListChecks, LogOut, Route as RouteIcon, Plus } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  ListChecks,
+  LogOut,
+  Route as RouteIcon,
+  Plus,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +48,10 @@ import {
   saveEmploymentMovement,
   startEmployeeOffboarding,
   toggleLifecycleItem,
+  deleteLifecycleEventFn,
+  deleteLifecycleItemFn,
+  deleteMovementFn,
+  cancelOffboardingFn,
 } from "@/lib/lifecycle.functions";
 
 export const Route = createFileRoute("/_authenticated/lifecycle")({
@@ -181,6 +194,10 @@ function EmployeeLifecycle({
   const confirmFn = useServerFn(confirmEmployeeProbation);
   const offStartFn = useServerFn(startEmployeeOffboarding);
   const offDoneFn = useServerFn(completeEmployeeOffboarding);
+  const delEventFn = useServerFn(deleteLifecycleEventFn);
+  const delItemFn = useServerFn(deleteLifecycleItemFn);
+  const delMoveFn = useServerFn(deleteMovementFn);
+  const cancelOffFn = useServerFn(cancelOffboardingFn);
 
   /* eslint-disable react-hooks/rules-of-hooks */
   const genM = run(
@@ -217,6 +234,13 @@ function EmployeeLifecycle({
   const offDoneM = run(
     (v: { employee_id: string }) => offDoneFn({ data: v }),
     "تم إنهاء الخدمة واستكمال إخلاء الطرف",
+  );
+  const delEventM = run((v: { id: string }) => delEventFn({ data: v }), "تم حذف الحدث");
+  const delItemM = run((v: { id: string }) => delItemFn({ data: v }), "تم حذف البند");
+  const delMoveM = run((v: { id: string }) => delMoveFn({ data: v }), "تم حذف الحركة");
+  const cancelOffM = run(
+    (v: { employee_id: string }) => cancelOffFn({ data: v }),
+    "تم إلغاء إجراءات إنهاء الخدمة",
   );
   /* eslint-enable react-hooks/rules-of-hooks */
 
@@ -265,9 +289,21 @@ function EmployeeLifecycle({
                 <div key={e.id} className="relative rounded-lg border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-semibold">{e.title}</p>
-                    <Badge variant="outline">
-                      {LIFECYCLE_EVENT_LABELS[e.event_type] ?? e.event_type}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {LIFECYCLE_EVENT_LABELS[e.event_type] ?? e.event_type}
+                      </Badge>
+                      {manage && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="حذف الحدث"
+                          onClick={() => delEventM.mutate({ id: e.id })}
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   {e.details && <p className="mt-1 text-sm text-muted-foreground">{e.details}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">{e.event_date}</p>
@@ -289,6 +325,7 @@ function EmployeeLifecycle({
             manage={manage}
             onGenerate={() => genM.mutate({ employee_id: employeeId, kind: "onboarding" })}
             onToggle={(id, done) => toggleM.mutate({ id, done })}
+            onDelete={(id) => delItemM.mutate({ id })}
           />
         </TabsContent>
 
@@ -373,9 +410,21 @@ function EmployeeLifecycle({
                     من {m.from_value ?? "—"} إلى {m.to_value ?? "—"} — نفاذاً من {m.effective_date}
                   </p>
                 </div>
-                <Badge variant={m.applied ? "default" : "outline"}>
-                  {m.applied ? "مطبّقة" : "مسجّلة"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={m.applied ? "default" : "outline"}>
+                    {m.applied ? "مطبّقة" : "مسجّلة"}
+                  </Badge>
+                  {manage && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="حذف الحركة"
+                      onClick={() => delMoveM.mutate({ id: m.id })}
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -449,9 +498,17 @@ function EmployeeLifecycle({
                 </p>
                 {data.offboarding.reason && <p className="text-sm">{data.offboarding.reason}</p>}
                 {manage && data.offboarding.status !== "completed" && (
-                  <Button onClick={() => offDoneM.mutate({ employee_id: employeeId })}>
-                    إنهاء الخدمة بعد اكتمال إخلاء الطرف
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => offDoneM.mutate({ employee_id: employeeId })}>
+                      إنهاء الخدمة بعد اكتمال إخلاء الطرف
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => cancelOffM.mutate({ employee_id: employeeId })}
+                    >
+                      <Undo2 className="ms-1 size-4" /> إلغاء الإجراءات
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -463,6 +520,7 @@ function EmployeeLifecycle({
             manage={manage}
             onGenerate={() => genM.mutate({ employee_id: employeeId, kind: "offboarding" })}
             onToggle={(id, done) => toggleM.mutate({ id, done })}
+            onDelete={(id) => delItemM.mutate({ id })}
           />
         </TabsContent>
       </Tabs>
@@ -476,12 +534,14 @@ function ChecklistBlock({
   manage,
   onGenerate,
   onToggle,
+  onDelete,
 }: {
   kind: "onboarding" | "offboarding";
   items: { id: string; title: string; owner_role: string; due_date: string | null; is_done: boolean }[];
   manage: boolean;
   onGenerate: () => void;
   onToggle: (id: string, done: boolean) => void;
+  onDelete: (id: string) => void;
 }) {
   const done = items.filter((i) => i.is_done).length;
   return (
@@ -521,6 +581,16 @@ function ChecklistBlock({
                     {i.due_date ? ` — الاستحقاق: ${i.due_date}` : ""}
                   </p>
                 </div>
+                {manage && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="حذف البند"
+                    onClick={() => onDelete(i.id)}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

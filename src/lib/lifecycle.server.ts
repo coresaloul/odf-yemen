@@ -404,3 +404,80 @@ export async function completeOffboarding(userId: string, employeeId: string) {
   );
   return { ok: true };
 }
+
+/* ============ حذف/تعديل سجلات دورة الحياة (الموارد البشرية والمدير التنفيذي فقط) ============ */
+
+async function assertAdmin(userId: string) {
+  const actor = await loadActor(userId);
+  if (!(actor.isHr || actor.isDirector))
+    throw new Error("هذه العملية متاحة للموارد البشرية والمدير التنفيذي فقط");
+  return actor;
+}
+
+export async function deleteLifecycleEvent(userId: string, id: string) {
+  await assertAdmin(userId);
+  const { error } = await db().from("employee_lifecycle_events").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function updateLifecycleEvent(
+  userId: string,
+  id: string,
+  input: {
+    title?: string | undefined;
+    details?: string | null | undefined;
+    event_date?: string | undefined;
+    event_type?: string | undefined;
+  },
+) {
+  await assertAdmin(userId);
+  const patch: {
+    title?: string;
+    details?: string | null;
+    event_date?: string;
+    event_type?: string;
+  } = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.details !== undefined) patch.details = input.details;
+  if (input.event_date !== undefined) patch.event_date = input.event_date;
+  if (input.event_type !== undefined) patch.event_type = input.event_type;
+  const { error } = await db().from("employee_lifecycle_events").update(patch).eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function deleteLifecycleItem(userId: string, id: string) {
+  await assertAdmin(userId);
+  const { error } = await db().from("lifecycle_checklist_items").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function deleteMovement(userId: string, id: string) {
+  await assertAdmin(userId);
+  const { error } = await db().from("employment_movements").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+/** إلغاء إجراءات إنهاء خدمة جارية وإعادة الموظف للحالة النشطة */
+export async function cancelOffboarding(userId: string, employeeId: string) {
+  await assertAdmin(userId);
+  const { data: off } = await db()
+    .from("employee_offboarding")
+    .select("id")
+    .eq("employee_id", employeeId)
+    .neq("status", "completed")
+    .maybeSingle();
+  if (!off) throw new Error("لا توجد إجراءات إنهاء خدمة جارية");
+  await db().from("employee_offboarding").delete().eq("id", off.id);
+  await db()
+    .from("lifecycle_checklist_items")
+    .delete()
+    .eq("employee_id", employeeId)
+    .eq("kind", "offboarding");
+  await db().from("employees").update({ status: "active" }).eq("id", employeeId);
+  await addEvent(userId, employeeId, "note", "إلغاء إجراءات إنهاء الخدمة", null);
+  return { ok: true };
+}

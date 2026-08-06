@@ -144,3 +144,54 @@ export const completeEmployeeOffboarding = createServerFn({ method: "POST" })
     const { completeOffboarding } = await import("@/lib/lifecycle.server");
     return completeOffboarding(context.userId, data.employee_id);
   });
+
+export const deleteLifecycleEventFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { deleteLifecycleEvent } = await import("@/lib/lifecycle.server");
+    return deleteLifecycleEvent(context.userId, data.id);
+  });
+
+export const updateLifecycleEventFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: uuid,
+        title: z.string().min(2).max(200).optional(),
+        details: z.string().max(4000).nullable().optional(),
+        event_date: dateStr.optional(),
+        event_type: z.string().min(2).max(40).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { updateLifecycleEvent } = await import("@/lib/lifecycle.server");
+    const { id, ...rest } = data;
+    return updateLifecycleEvent(context.userId, id, rest);
+  });
+
+export const deleteLifecycleItemFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { deleteLifecycleItem } = await import("@/lib/lifecycle.server");
+    return deleteLifecycleItem(context.userId, data.id);
+  });
+
+export const deleteMovementFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { deleteMovement } = await import("@/lib/lifecycle.server");
+    return deleteMovement(context.userId, data.id);
+  });
+
+export const cancelOffboardingFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ employee_id: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { cancelOffboarding } = await import("@/lib/lifecycle.server");
+    return cancelOffboarding(context.userId, data.employee_id);
+  });

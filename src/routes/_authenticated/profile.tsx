@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PasswordField } from "@/components/PasswordField";
 import { getMyProfile, updateMyProfile, type MyProfile } from "@/lib/self-profile.functions";
 import { EmployeeDocuments } from "@/components/employees/EmployeeDocuments";
+import { EmployeeServiceLinks } from "@/components/employees/EmployeeServiceLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

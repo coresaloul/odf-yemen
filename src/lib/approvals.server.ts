@@ -218,7 +218,37 @@ export async function listPending(userId: string): Promise<PendingApproval[]> {
     });
   }
 
+  /* العهد */
+  const { data: custody } = await db()
+    .from("custody_assignments")
+    .select(
+      "id, employee_id, status, kind, purpose, cash_amount, expected_return_date, requested_at, created_at, custody_assignment_items(title, quantity)",
+    )
+    .in("status", ["pending_manager", "pending_hr", "pending_director"]);
+  for (const r of custody ?? []) {
+    if (!(await canDecide(actor, String(r.status), r.employee_id))) continue;
+    const its = (r.custody_assignment_items ?? []) as { title: string; quantity: number }[];
+    items.push({
+      kind: "custody",
+      id: r.id,
+      stage: String(r.status) as ApprovalStage,
+      title: `${APPROVAL_KIND_LABELS.custody}: ${CUSTODY_KIND_LABELS[r.kind as CustodyKind]}`,
+      summary: r.purpose ?? "—",
+      ...base(r.employee_id),
+      since: r.requested_at ?? r.created_at,
+      details: [
+        { label: "النوع", value: CUSTODY_KIND_LABELS[r.kind as CustodyKind] },
+        ...(r.kind === "cash"
+          ? [{ label: "المبلغ", value: `${Number(r.cash_amount ?? 0).toLocaleString("ar-EG-u-nu-latn")}` }]
+          : [{ label: "البنود", value: its.map((i) => `${i.title} ×${i.quantity}`).join("، ") || "—" }]),
+        { label: "الإرجاع المتوقع", value: r.expected_return_date ?? "—" },
+        { label: "الغرض", value: r.purpose ?? "—" },
+      ],
+    });
+  }
+
   return items.sort((a, b) => a.since.localeCompare(b.since));
+
 }
 
 /* ───────────────── المهام ───────────────── */

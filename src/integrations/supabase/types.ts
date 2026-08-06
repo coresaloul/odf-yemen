@@ -1182,6 +1182,170 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_request_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string | null
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          stage?: Database["public"]["Enums"]["approval_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_request_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hr_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_request_types: {
+        Row: {
+          active: boolean
+          approval_flow: string[]
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          is_confidential: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          approval_flow?: string[]
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_confidential?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          approval_flow?: string[]
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_confidential?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_requests: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          created_by: string | null
+          director_approved_at: string | null
+          director_approved_by: string | null
+          employee_id: string
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          return_reason: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+          submitted_at: string | null
+          title: string
+          type_id: string
+          updated_at: string
+          values: Json
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          title: string
+          type_id: string
+          updated_at?: string
+          values?: Json
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id?: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          title?: string
+          type_id?: string
+          updated_at?: string
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_requests_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "hr_request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_approvals: {
         Row: {
           action: string

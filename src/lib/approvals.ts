@@ -5,7 +5,8 @@ export type ApprovalKind =
   | "evaluation"
   | "task"
   | "attendance_correction"
-  | "hr_request";
+  | "hr_request"
+  | "custody";
 
 export const APPROVAL_KIND_LABELS: Record<ApprovalKind, string> = {
   leave: "طلب إجازة",
@@ -13,7 +14,9 @@ export const APPROVAL_KIND_LABELS: Record<ApprovalKind, string> = {
   task: "مهمة منجزة",
   attendance_correction: "تصحيح حضور",
   hr_request: "طلب موارد بشرية",
+  custody: "عهدة",
 };
+
 
 export const CORRECTION_TYPE_LABELS: Record<string, string> = {
   missing_check_in: "نسيان بصمة الدخول",

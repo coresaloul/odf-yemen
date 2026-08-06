@@ -44,6 +44,8 @@ const KINDS: (ApprovalKind | "all")[] = [
   "evaluation",
   "task",
   "attendance_correction",
+  "hr_request",
+  "custody",
 ];
 
 type CorrectionRow = {

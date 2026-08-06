@@ -421,6 +421,354 @@ export type Database = {
           },
         ]
       }
+      custody_approvals: {
+        Row: {
+          actor_id: string | null
+          assignment_id: string
+          created_at: string
+          decision: string
+          id: string
+          note: string | null
+          stage: string
+        }
+        Insert: {
+          actor_id?: string | null
+          assignment_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          note?: string | null
+          stage: string
+        }
+        Update: {
+          actor_id?: string | null
+          assignment_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          note?: string | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_approvals_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "custody_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_assets: {
+        Row: {
+          brand: string | null
+          category_id: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          document_expiry: string | null
+          document_no: string | null
+          id: string
+          insurance_expiry: string | null
+          kind: Database["public"]["Enums"]["custody_kind"]
+          license_expiry: string | null
+          location: string | null
+          manufacture_year: number | null
+          model: string | null
+          name: string
+          notes: string | null
+          odometer: number | null
+          photo_path: string | null
+          plate_no: string | null
+          purchase_date: string | null
+          serial_no: string | null
+          status: Database["public"]["Enums"]["custody_asset_status"]
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          brand?: string | null
+          category_id?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          document_expiry?: string | null
+          document_no?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          kind?: Database["public"]["Enums"]["custody_kind"]
+          license_expiry?: string | null
+          location?: string | null
+          manufacture_year?: number | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          odometer?: number | null
+          photo_path?: string | null
+          plate_no?: string | null
+          purchase_date?: string | null
+          serial_no?: string | null
+          status?: Database["public"]["Enums"]["custody_asset_status"]
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          brand?: string | null
+          category_id?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          document_expiry?: string | null
+          document_no?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          kind?: Database["public"]["Enums"]["custody_kind"]
+          license_expiry?: string | null
+          location?: string | null
+          manufacture_year?: number | null
+          model?: string | null
+          name?: string
+          notes?: string | null
+          odometer?: number | null
+          photo_path?: string | null
+          plate_no?: string | null
+          purchase_date?: string | null
+          serial_no?: string | null
+          status?: Database["public"]["Enums"]["custody_asset_status"]
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_assets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "custody_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_assets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_assignment_items: {
+        Row: {
+          asset_id: string | null
+          assignment_id: string
+          condition_in: string | null
+          condition_out: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          odometer_in: number | null
+          odometer_out: number | null
+          quantity: number
+          return_state: string | null
+          returned_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: string | null
+          assignment_id: string
+          condition_in?: string | null
+          condition_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          odometer_in?: number | null
+          odometer_out?: number | null
+          quantity?: number
+          return_state?: string | null
+          returned_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string | null
+          assignment_id?: string
+          condition_in?: string | null
+          condition_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          odometer_in?: number | null
+          odometer_out?: number | null
+          quantity?: number
+          return_state?: string | null
+          returned_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_assignment_items_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "custody_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_assignment_items_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "custody_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_assignments: {
+        Row: {
+          acknowledged_at: string | null
+          cash_amount: number
+          cash_settled: number
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          expected_return_date: string | null
+          handed_over_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["custody_kind"]
+          notes: string | null
+          purpose: string | null
+          receipt_path: string | null
+          requested_at: string
+          returned_at: string | null
+          status: Database["public"]["Enums"]["custody_assignment_status"]
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          cash_amount?: number
+          cash_settled?: number
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          expected_return_date?: string | null
+          handed_over_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["custody_kind"]
+          notes?: string | null
+          purpose?: string | null
+          receipt_path?: string | null
+          requested_at?: string
+          returned_at?: string | null
+          status?: Database["public"]["Enums"]["custody_assignment_status"]
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          cash_amount?: number
+          cash_settled?: number
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          expected_return_date?: string | null
+          handed_over_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["custody_kind"]
+          notes?: string | null
+          purpose?: string | null
+          receipt_path?: string | null
+          requested_at?: string
+          returned_at?: string | null
+          status?: Database["public"]["Enums"]["custody_assignment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["custody_kind"]
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["custody_kind"]
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["custody_kind"]
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      custody_transactions: {
+        Row: {
+          amount: number
+          assignment_id: string
+          attachment_path: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          tx_date: string
+          tx_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          assignment_id: string
+          attachment_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          tx_date?: string
+          tx_type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          assignment_id?: string
+          attachment_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          tx_date?: string
+          tx_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_transactions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "custody_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -2947,6 +3295,24 @@ export type Database = {
         | "leave"
         | "holiday"
         | "permission"
+      custody_asset_status:
+        | "available"
+        | "assigned"
+        | "maintenance"
+        | "damaged"
+        | "written_off"
+        | "lost"
+      custody_assignment_status:
+        | "draft"
+        | "pending_manager"
+        | "pending_hr"
+        | "pending_director"
+        | "approved"
+        | "handed_over"
+        | "returned"
+        | "rejected"
+        | "cancelled"
+      custody_kind: "asset" | "vehicle" | "document" | "cash"
       employee_status: "active" | "on_leave" | "terminated"
       period_type:
         | "daily"
@@ -3105,6 +3471,26 @@ export const Constants = {
         "holiday",
         "permission",
       ],
+      custody_asset_status: [
+        "available",
+        "assigned",
+        "maintenance",
+        "damaged",
+        "written_off",
+        "lost",
+      ],
+      custody_assignment_status: [
+        "draft",
+        "pending_manager",
+        "pending_hr",
+        "pending_director",
+        "approved",
+        "handed_over",
+        "returned",
+        "rejected",
+        "cancelled",
+      ],
+      custody_kind: ["asset", "vehicle", "document", "cash"],
       employee_status: ["active", "on_leave", "terminated"],
       period_type: [
         "daily",

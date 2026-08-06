@@ -1,12 +1,18 @@
 import type { ApprovalStage } from "@/lib/evaluation-approval";
 
-export type ApprovalKind = "leave" | "evaluation" | "task" | "attendance_correction";
+export type ApprovalKind =
+  | "leave"
+  | "evaluation"
+  | "task"
+  | "attendance_correction"
+  | "hr_request";
 
 export const APPROVAL_KIND_LABELS: Record<ApprovalKind, string> = {
   leave: "طلب إجازة",
   evaluation: "تقرير تقييم أداء",
   task: "مهمة منجزة",
   attendance_correction: "تصحيح حضور",
+  hr_request: "طلب موارد بشرية",
 };
 
 export const CORRECTION_TYPE_LABELS: Record<string, string> = {

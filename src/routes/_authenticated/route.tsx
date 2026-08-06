@@ -20,7 +20,7 @@ function AuthenticatedLayout() {
   useEffect(() => {
     if (!loading && !user) {
       const next = pathname.startsWith("/auth") ? undefined : pathname;
-      void navigate({ to: "/auth", search: next ? { next } : {}, replace: true });
+      void navigate({ to: "/auth", search: { next }, replace: true });
     }
   }, [loading, user, navigate, pathname]);
 

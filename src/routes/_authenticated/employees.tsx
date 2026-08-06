@@ -870,37 +870,62 @@ function EmployeeDialog({
           </div>
         </TabsContent>
 
-        <TabsContent value="official" className="grid gap-4 pt-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>رقم الهوية / الإقامة</Label>
-            <Input value={form.national_id} onChange={(e) => set("national_id", e.target.value)} />
+        <TabsContent value="official" className="space-y-4 pt-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>رقم الهوية / الإقامة</Label>
+              <Input
+                value={form.national_id}
+                onChange={(e) => set("national_id", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تاريخ انتهاء الهوية</Label>
+              <Input
+                type="date"
+                value={form.national_id_expiry}
+                onChange={(e) => set("national_id_expiry", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>رقم جواز السفر</Label>
+              <Input
+                value={form.passport_no}
+                onChange={(e) => set("passport_no", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تاريخ انتهاء الجواز</Label>
+              <Input
+                type="date"
+                value={form.passport_expiry}
+                onChange={(e) => set("passport_expiry", e.target.value)}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>تاريخ انتهاء الهوية</Label>
-            <Input
-              type="date"
-              value={form.national_id_expiry}
-              onChange={(e) => set("national_id_expiry", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>رقم جواز السفر</Label>
-            <Input value={form.passport_no} onChange={(e) => set("passport_no", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>تاريخ انتهاء الجواز</Label>
-            <Input
-              type="date"
-              value={form.passport_expiry}
-              onChange={(e) => set("passport_expiry", e.target.value)}
-            />
-          </div>
-          {isEdit && (
-            <p className="text-xs text-muted-foreground sm:col-span-2">
-              الشهادات والوثائق تُدار من زر «الملف» في بطاقة الموظف.
+
+          {isEdit && employee ? (
+            <>
+              <Separator />
+              <EmployeeDocuments
+                employeeId={employee.id}
+                national={{
+                  national_id: form.national_id,
+                  national_id_expiry: form.national_id_expiry,
+                  passport_no: form.passport_no,
+                  passport_expiry: form.passport_expiry,
+                }}
+                canUpload={isDirector || isHR}
+                canDelete={isDirector || isHR}
+              />
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              رفع الوثائق وملفاتها يتاح بعد حفظ بيانات الموظف.
             </p>
           )}
         </TabsContent>
+
 
         <TabsContent value="contract" className="grid gap-4 pt-4 sm:grid-cols-2">
           <div className="space-y-2">

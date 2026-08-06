@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { KeyRound, Loader2, Save, UserRound } from "lucide-react";
+import { KeyRound, Loader2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordField } from "@/components/PasswordField";
 import { getMyProfile, updateMyProfile, type MyProfile } from "@/lib/self-profile.functions";

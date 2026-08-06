@@ -59,7 +59,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/employees", label: "الموظفون", icon: Users },
       { to: "/org", label: "المخطط التنظيمي", icon: Network },
-      { to: "/lifecycle", label: "دورة حياة الموظف", icon: Route },
+      { to: "/lifecycle", label: "دورة حياة الموظف", icon: RouteIcon },
       { to: "/discipline", label: "التكريم والجزاءات", icon: Gavel },
       { to: "/evaluations", label: "التقييم", icon: Star },
       { to: "/payroll", label: "الرواتب", icon: Wallet },

@@ -644,7 +644,7 @@ function EmployeeDialog({
         <TabsList className="flex-wrap">
           <TabsTrigger value="job">وظيفية</TabsTrigger>
           <TabsTrigger value="personal">شخصية وصحية</TabsTrigger>
-          <TabsTrigger value="official">وثائق رسمية</TabsTrigger>
+          <TabsTrigger value="official">وثائق الموظف</TabsTrigger>
           <TabsTrigger value="contract">تعاقد ومالية</TabsTrigger>
         </TabsList>
 

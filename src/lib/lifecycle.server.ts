@@ -424,14 +424,24 @@ export async function deleteLifecycleEvent(userId: string, id: string) {
 export async function updateLifecycleEvent(
   userId: string,
   id: string,
-  input: { title?: string; details?: string | null; event_date?: string; event_type?: string },
+  input: {
+    title?: string | undefined;
+    details?: string | null | undefined;
+    event_date?: string | undefined;
+    event_type?: string | undefined;
+  },
 ) {
   await assertAdmin(userId);
-  const patch: Record<string, unknown> = {};
-  if (input.title !== undefined) patch['title'] = input.title;
-  if (input.details !== undefined) patch['details'] = input.details;
-  if (input.event_date !== undefined) patch['event_date'] = input.event_date;
-  if (input.event_type !== undefined) patch['event_type'] = input.event_type;
+  const patch: {
+    title?: string;
+    details?: string | null;
+    event_date?: string;
+    event_type?: string;
+  } = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.details !== undefined) patch.details = input.details;
+  if (input.event_date !== undefined) patch.event_date = input.event_date;
+  if (input.event_type !== undefined) patch.event_type = input.event_type;
   const { error } = await db().from("employee_lifecycle_events").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };

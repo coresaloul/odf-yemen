@@ -6,6 +6,7 @@ import { KeyRound, Loader2, Save, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordField } from "@/components/PasswordField";
 import { getMyProfile, updateMyProfile, type MyProfile } from "@/lib/self-profile.functions";
+import { EmployeeDocuments } from "@/components/employees/EmployeeDocuments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -227,6 +228,7 @@ function MyProfilePage() {
               <TabsTrigger value="docs">الوثائق والمؤهلات</TabsTrigger>
               <TabsTrigger value="health">صحية</TabsTrigger>
               <TabsTrigger value="emergency">الطوارئ</TabsTrigger>
+              <TabsTrigger value="files">وثائق الموظف</TabsTrigger>
             </TabsList>
             <TabsContent value="personal" className="mt-4">
               {renderFields(PERSONAL)}
@@ -239,6 +241,18 @@ function MyProfilePage() {
             </TabsContent>
             <TabsContent value="emergency" className="mt-4">
               {renderFields(EMERGENCY)}
+            </TabsContent>
+            <TabsContent value="files" className="mt-4">
+              <EmployeeDocuments
+                employeeId={profile.id}
+                national={{
+                  national_id: form["national_id"] ?? profile.national_id,
+                  national_id_expiry: form["national_id_expiry"] ?? profile.national_id_expiry,
+                  passport_no: form["passport_no"] ?? profile.passport_no,
+                  passport_expiry: form["passport_expiry"] ?? profile.passport_expiry,
+                }}
+                canUpload
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

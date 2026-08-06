@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileText, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { Eye, FileText, Loader2, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/LoadingState";
 import { supabase } from "@/integrations/supabase/client";
@@ -447,6 +447,39 @@ function EmployeeProfileDialog({
   };
   const [doc, setDoc] = useState(emptyDoc);
   const setD = (k: keyof typeof emptyDoc, v: string) => setDoc((d) => ({ ...d, [k]: v }));
+  const [uploading, setUploading] = useState(false);
+
+  const uploadDocFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${e.id}/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from("employee-documents").upload(path, file);
+      if (error) throw error;
+      setD("file_url", path);
+      if (!doc.title) setD("title", file.name.replace(/\.[^.]+$/, ""));
+      toast.success("تم رفع الملف");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openDocFile = async (fileRef: string) => {
+    if (/^https?:\/\//i.test(fileRef)) {
+      window.open(fileRef, "_blank", "noopener");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("employee-documents")
+      .createSignedUrl(fileRef, 60 * 10);
+    if (error || !data) {
+      toast.error(error?.message ?? "تعذر فتح الملف");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
 
   const addDoc = useMutation({
     mutationFn: async () => {
@@ -583,14 +616,14 @@ function EmployeeProfileDialog({
                         {d.expiry_date ? formatDate(d.expiry_date) : "—"}
                       </p>
                       {d.file_url && (
-                        <a
-                          href={d.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-primary underline"
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => void openDocFile(d.file_url as string)}
                         >
-                          فتح الملف
-                        </a>
+                          <Eye className="size-3.5" /> مشاهدة الوثيقة
+                        </Button>
                       )}
                       {d.notes && <p className="text-xs text-muted-foreground">{d.notes}</p>}
                     </div>
@@ -660,11 +693,28 @@ function EmployeeProfileDialog({
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>رابط الملف</Label>
+                    <Label>ملف الوثيقة</Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        type="file"
+                        className="max-w-xs"
+                        accept="image/*,application/pdf,.doc,.docx"
+                        disabled={uploading}
+                        onChange={(ev) => {
+                          const file = ev.target.files?.[0];
+                          ev.target.value = "";
+                          if (file) void uploadDocFile(file);
+                        }}
+                      />
+                      {uploading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+                      {doc.file_url && !uploading && (
+                        <span className="text-xs text-muted-foreground">تم إرفاق الملف ✓</span>
+                      )}
+                    </div>
                     <Input
                       value={doc.file_url}
                       onChange={(ev) => setD("file_url", ev.target.value)}
-                      placeholder="https://"
+                      placeholder="أو الصق رابطاً https://"
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">

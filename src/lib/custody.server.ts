@@ -110,7 +110,7 @@ export async function deleteAsset(userId: string, id: string) {
     .from("custody_assignment_items")
     .select("id, custody_assignments!inner(status)")
     .eq("asset_id", id)
-    .in("custody_assignments.status", OPEN_ASSIGNMENT_STATUSES as unknown as string[])
+    .in("custody_assignments.status", OPEN_ASSIGNMENT_STATUSES)
     .limit(1);
   if (used && used.length) throw new Error("لا يمكن حذف أصل مرتبط بعهدة نشطة");
   const { error } = await db().from("custody_assets").delete().eq("id", id);
@@ -547,6 +547,6 @@ export async function openCustodyForEmployee(employeeId: string) {
     .from("custody_assignments")
     .select("id, kind, status, expected_return_date, cash_amount, cash_settled")
     .eq("employee_id", employeeId)
-    .in("status", OPEN_ASSIGNMENT_STATUSES as unknown as string[]);
+    .in("status", OPEN_ASSIGNMENT_STATUSES);
   return data ?? [];
 }

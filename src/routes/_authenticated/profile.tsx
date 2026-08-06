@@ -274,6 +274,18 @@ function MyProfilePage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">خدماتي في النظام</CardTitle>
+          <CardDescription>انتقل مباشرة إلى مهامك ودوامك وإجازاتك وطلباتك.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmployeeServiceLinks
+            only={["/tasks", "/attendance", "/leaves", "/requests", "/evaluations", "/custody"]}
+          />
+        </CardContent>
+      </Card>
+
       <ChangePasswordCard />
     </div>
   );

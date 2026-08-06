@@ -180,6 +180,44 @@ export async function listPending(userId: string): Promise<PendingApproval[]> {
     });
   }
 
+  /* طلبات ونماذج الموارد البشرية */
+  const { data: hrRequests } = await db()
+    .from("hr_requests")
+    .select(
+      "id, employee_id, stage, values, submitted_at, created_at, hr_request_types(name, category, fields, is_confidential)",
+    )
+    .in("stage", PENDING_STAGES);
+  for (const r of hrRequests ?? []) {
+    const type = r.hr_request_types as unknown as {
+      name: string;
+      category: string;
+      fields: { key: string; label: string; type: string }[];
+      is_confidential: boolean;
+    } | null;
+    if (!type) continue;
+    if (type.is_confidential && !(actor.isHr || actor.isDirector)) continue;
+    if (!(await canDecide(actor, String(r.stage), r.employee_id))) continue;
+    const values = (r.values ?? {}) as Record<string, unknown>;
+    items.push({
+      kind: "hr_request",
+      id: r.id,
+      stage: String(r.stage) as ApprovalStage,
+      title: `${APPROVAL_KIND_LABELS.hr_request}: ${type.name}`,
+      summary: type.category,
+      ...base(r.employee_id),
+      since: r.submitted_at ?? r.created_at,
+      details: (type.fields ?? []).map((f) => ({
+        label: f.label,
+        value:
+          f.type === "boolean"
+            ? values[f.key]
+              ? "نعم"
+              : "لا"
+            : String(values[f.key] ?? "—"),
+      })),
+    });
+  }
+
   return items.sort((a, b) => a.since.localeCompare(b.since));
 }
 

@@ -593,15 +593,39 @@ function EmployeeProfileDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent dir="rtl" className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>ملف الموظف — {e.full_name}</DialogTitle>
+          <DialogTitle className="flex items-center gap-3 text-right">
+            <EmployeeAvatar name={e.full_name} className="size-11 text-base" />
+            <span className="min-w-0">
+              <span className="block truncate">{e.full_name}</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
+                {e.job_title ?? "بدون مسمى"} — رقم {e.employee_no}
+              </span>
+            </span>
+          </DialogTitle>
         </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={e.status === "active" ? "default" : "secondary"}>
+            {EMPLOYEE_STATUS_LABELS[e.status]}
+          </Badge>
+          <Badge variant="outline">
+            {departments.find((d) => d.id === e.department_id)?.name ?? "بدون إدارة"}
+          </Badge>
+          {e.section_id && (
+            <Badge variant="outline">
+              {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
+            </Badge>
+          )}
+        </div>
 
         <Tabs defaultValue="job" dir="rtl">
           <TabsList className="flex-wrap">
             <TabsTrigger value="job">بيانات وظيفية</TabsTrigger>
             <TabsTrigger value="personal">شخصية وصحية</TabsTrigger>
             <TabsTrigger value="docs">وثائق الموظف</TabsTrigger>
+            <TabsTrigger value="services">الخدمات المرتبطة</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="job" className="grid gap-3 pt-4 sm:grid-cols-3">
             <Field label="الرقم الوظيفي" value={e.employee_no} />

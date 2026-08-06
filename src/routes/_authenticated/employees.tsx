@@ -53,6 +53,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { provisionEmployeeAccounts } from "@/lib/admin-users.functions";
 import { deleteEmployee, setEmployeeStatus } from "@/lib/org.functions";
 import { MoveEmployeesDialog } from "@/components/org/MoveEmployeesDialog";
+import { EmployeeServiceLinks } from "@/components/employees/EmployeeServiceLinks";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({

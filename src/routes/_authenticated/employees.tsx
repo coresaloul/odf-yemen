@@ -692,7 +692,16 @@ function EmployeeProfileDialog({
               canDelete={isDirector || isHR}
             />
           </TabsContent>
+
+          <TabsContent value="services" className="space-y-3 pt-4">
+            <p className="text-xs text-muted-foreground">
+              انتقل إلى وحدات النظام المرتبطة بالموظف: المهام، الدوام، الإجازات، التقييم، العهد،
+              الطلبات، الجزاءات، دورة الحياة والرواتب.
+            </p>
+            <EmployeeServiceLinks />
+          </TabsContent>
         </Tabs>
+
       </DialogContent>
     </Dialog>
   );

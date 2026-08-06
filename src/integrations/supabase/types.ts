@@ -456,6 +456,216 @@ export type Database = {
           },
         ]
       }
+      disciplinary_actions: {
+        Row: {
+          amount: number
+          appeal_at: string | null
+          appeal_decided_at: string | null
+          appeal_decided_by: string | null
+          appeal_decision_note: string | null
+          appeal_note: string | null
+          appeal_status: string
+          attachment_url: string | null
+          created_at: string
+          created_by: string | null
+          director_approved_at: string | null
+          director_approved_by: string | null
+          discovered_date: string
+          employee_id: string
+          employee_statement: string | null
+          erase_at: string | null
+          erased: boolean
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          payroll_adjustment_id: string | null
+          penalty_days: number
+          return_reason: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+          statement_date: string | null
+          submitted_at: string | null
+          target_month: string | null
+          type_id: string
+          updated_at: string
+          violation_date: string
+          violation_description: string
+        }
+        Insert: {
+          amount?: number
+          appeal_at?: string | null
+          appeal_decided_at?: string | null
+          appeal_decided_by?: string | null
+          appeal_decision_note?: string | null
+          appeal_note?: string | null
+          appeal_status?: string
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          discovered_date?: string
+          employee_id: string
+          employee_statement?: string | null
+          erase_at?: string | null
+          erased?: boolean
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          payroll_adjustment_id?: string | null
+          penalty_days?: number
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          statement_date?: string | null
+          submitted_at?: string | null
+          target_month?: string | null
+          type_id: string
+          updated_at?: string
+          violation_date: string
+          violation_description: string
+        }
+        Update: {
+          amount?: number
+          appeal_at?: string | null
+          appeal_decided_at?: string | null
+          appeal_decided_by?: string | null
+          appeal_decision_note?: string | null
+          appeal_note?: string | null
+          appeal_status?: string
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          discovered_date?: string
+          employee_id?: string
+          employee_statement?: string | null
+          erase_at?: string | null
+          erased?: boolean
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          payroll_adjustment_id?: string | null
+          penalty_days?: number
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          statement_date?: string | null
+          submitted_at?: string | null
+          target_month?: string | null
+          type_id?: string
+          updated_at?: string
+          violation_date?: string
+          violation_description?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_actions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disciplinary_actions_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinary_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disciplinary_types: {
+        Row: {
+          active: boolean
+          approval_flow: string[]
+          code: string
+          created_at: string
+          degree: number
+          description: string | null
+          erase_months: number
+          id: string
+          kind: string
+          max_days: number
+          name: string
+          requires_amount: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          approval_flow?: string[]
+          code: string
+          created_at?: string
+          degree?: number
+          description?: string | null
+          erase_months?: number
+          id?: string
+          kind: string
+          max_days?: number
+          name: string
+          requires_amount?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          approval_flow?: string[]
+          code?: string
+          created_at?: string
+          degree?: number
+          description?: string | null
+          erase_months?: number
+          id?: string
+          kind?: string
+          max_days?: number
+          name?: string
+          requires_amount?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discipline_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string | null
+          created_at: string
+          id: string
+          note: string | null
+          record_id: string
+          record_kind: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          record_id: string
+          record_kind: string
+          stage: Database["public"]["Enums"]["approval_stage"]
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          record_id?: string
+          record_kind?: string
+          stage?: Database["public"]["Enums"]["approval_stage"]
+        }
+        Relationships: []
+      }
       employee_advances: {
         Row: {
           created_at: string
@@ -557,6 +767,106 @@ export type Database = {
             foreignKeyName: "employee_documents_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_lifecycle_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          details: string | null
+          employee_id: string
+          event_date: string
+          event_type: string
+          id: string
+          ref_id: string | null
+          ref_table: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          employee_id: string
+          event_date?: string
+          event_type: string
+          id?: string
+          ref_id?: string | null
+          ref_table?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          employee_id?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          ref_id?: string | null
+          ref_table?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_lifecycle_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_offboarding: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          last_working_day: string
+          notice_date: string | null
+          reason: string | null
+          settlement_amount: number
+          status: string
+          termination_type: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          last_working_day: string
+          notice_date?: string | null
+          reason?: string | null
+          settlement_amount?: number
+          status?: string
+          termination_type: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          last_working_day?: string
+          notice_date?: string | null
+          reason?: string | null
+          settlement_amount?: number
+          status?: string
+          termination_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_offboarding_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -675,6 +985,96 @@ export type Database = {
           },
         ]
       }
+      employee_recognitions: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          award_date: string
+          created_at: string
+          created_by: string | null
+          director_approved_at: string | null
+          director_approved_by: string | null
+          employee_id: string
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          payroll_adjustment_id: string | null
+          reason: string | null
+          return_reason: string | null
+          stage: Database["public"]["Enums"]["approval_stage"]
+          submitted_at: string | null
+          target_month: string | null
+          title: string
+          type_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          attachment_url?: string | null
+          award_date?: string
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          payroll_adjustment_id?: string | null
+          reason?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          target_month?: string | null
+          title: string
+          type_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          award_date?: string
+          created_at?: string
+          created_by?: string | null
+          director_approved_at?: string | null
+          director_approved_by?: string | null
+          employee_id?: string
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
+          id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          payroll_adjustment_id?: string | null
+          reason?: string | null
+          return_reason?: string | null
+          stage?: Database["public"]["Enums"]["approval_stage"]
+          submitted_at?: string | null
+          target_month?: string | null
+          title?: string
+          type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_recognitions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_recognitions_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinary_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address: string | null
@@ -709,6 +1109,9 @@ export type Database = {
           passport_expiry: string | null
           passport_no: string | null
           phone: string | null
+          probation_end: string | null
+          probation_start: string | null
+          probation_status: string
           section_id: string | null
           specialization: string | null
           status: Database["public"]["Enums"]["employee_status"]
@@ -748,6 +1151,9 @@ export type Database = {
           passport_expiry?: string | null
           passport_no?: string | null
           phone?: string | null
+          probation_end?: string | null
+          probation_start?: string | null
+          probation_status?: string
           section_id?: string | null
           specialization?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
@@ -787,6 +1193,9 @@ export type Database = {
           passport_expiry?: string | null
           passport_no?: string | null
           phone?: string | null
+          probation_end?: string | null
+          probation_start?: string | null
+          probation_status?: string
           section_id?: string | null
           specialization?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
@@ -813,6 +1222,59 @@ export type Database = {
             columns: ["section_id"]
             isOneToOne: false
             referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employment_movements: {
+        Row: {
+          applied: boolean
+          attachment_url: string | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          employee_id: string
+          from_value: string | null
+          id: string
+          movement_type: string
+          note: string | null
+          to_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          applied?: boolean
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date: string
+          employee_id: string
+          from_value?: string | null
+          id?: string
+          movement_type: string
+          note?: string | null
+          to_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applied?: boolean
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id?: string
+          from_value?: string | null
+          id?: string
+          movement_type?: string
+          note?: string | null
+          to_value?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employment_movements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -1572,6 +2034,98 @@ export type Database = {
           name?: string
           position?: number
           requires_attachment?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lifecycle_checklist_items: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          due_date: string | null
+          employee_id: string
+          id: string
+          is_done: boolean
+          kind: string
+          note: string | null
+          owner_role: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_date?: string | null
+          employee_id: string
+          id?: string
+          is_done?: boolean
+          kind: string
+          note?: string | null
+          owner_role?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_date?: string | null
+          employee_id?: string
+          id?: string
+          is_done?: boolean
+          kind?: string
+          note?: string | null
+          owner_role?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_checklist_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lifecycle_checklist_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          kind: string
+          offset_days: number
+          owner_role: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind: string
+          offset_days?: number
+          owner_role?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          offset_days?: number
+          owner_role?: string
+          sort_order?: number
+          title?: string
           updated_at?: string
         }
         Relationships: []

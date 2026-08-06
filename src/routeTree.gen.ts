@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDisciplineRouteImport } from './routes/_authenticated/discipline'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedEvaluationsRouteImport } from './routes/_authenticated/evaluations'
 import { Route as AuthenticatedLeavesRouteImport } from './routes/_authenticated/leaves'
@@ -58,6 +59,11 @@ const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDisciplineRoute = AuthenticatedDisciplineRouteImport.update({
+  id: '/discipline',
+  path: '/discipline',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/discipline': typeof AuthenticatedDisciplineRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/discipline': typeof AuthenticatedDisciplineRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/evaluations': typeof AuthenticatedEvaluationsRoute
   '/leaves': typeof AuthenticatedLeavesRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/discipline': typeof AuthenticatedDisciplineRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/evaluations': typeof AuthenticatedEvaluationsRoute
   '/_authenticated/leaves': typeof AuthenticatedLeavesRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/attendance'
     | '/dashboard'
+    | '/discipline'
     | '/employees'
     | '/evaluations'
     | '/leaves'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/attendance'
     | '/dashboard'
+    | '/discipline'
     | '/employees'
     | '/evaluations'
     | '/leaves'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/attendance'
     | '/_authenticated/dashboard'
+    | '/_authenticated/discipline'
     | '/_authenticated/employees'
     | '/_authenticated/evaluations'
     | '/_authenticated/leaves'
@@ -328,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/discipline': {
+      id: '/_authenticated/discipline'
+      path: '/discipline'
+      fullPath: '/discipline'
+      preLoaderRoute: typeof AuthenticatedDisciplineRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employees': {
@@ -442,6 +461,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDisciplineRoute: typeof AuthenticatedDisciplineRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedEvaluationsRoute: typeof AuthenticatedEvaluationsRoute
   AuthenticatedLeavesRoute: typeof AuthenticatedLeavesRoute
@@ -459,6 +479,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDisciplineRoute: AuthenticatedDisciplineRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedEvaluationsRoute: AuthenticatedEvaluationsRoute,
   AuthenticatedLeavesRoute: AuthenticatedLeavesRoute,
@@ -487,13 +508,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -125,6 +125,34 @@ const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const EDUCATION = ["ثانوية", "دبلوم", "بكالوريوس", "ماجستير", "دكتوراه"];
 const CONTRACTS = ["دوام كامل", "دوام جزئي", "مؤقت", "متعاون", "تحت التجربة"];
 
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0] ?? "")
+    .join("");
+}
+
+function EmployeeAvatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full bg-primary/10 font-semibold text-primary ${className ?? "size-10 text-sm"}`}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border bg-card px-3 py-2.5">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-display text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
 function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
@@ -132,6 +160,7 @@ function EmployeesPage() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [accountFilter, setAccountFilter] = useState("all");
+  const [view, setView] = useState<"cards" | "table">("table");
   const [editing, setEditing] = useState<Employee | null>(null);
   const [profile, setProfile] = useState<Employee | null>(null);
   const removeEmployee = useServerFn(deleteEmployee);

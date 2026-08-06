@@ -92,11 +92,12 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     }
     if (Object.keys(patch).length === 0) return { ok: true };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    // يتم التحديث بهوية المستخدم نفسه (RLS + مُشغِّل الحماية يمنعان تعديل الحقول الحساسة)
+    const { error } = await context.supabase
       .from("employees")
       .update(patch as never)
-      .eq("id", me.id);
+      .eq("id", me.id)
+      .eq("user_id", context.userId);
 
     if (error) throw new Error(error.message);
 

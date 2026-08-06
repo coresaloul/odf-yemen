@@ -660,11 +660,28 @@ function EmployeeProfileDialog({
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>رابط الملف</Label>
+                    <Label>ملف الوثيقة</Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        type="file"
+                        className="max-w-xs"
+                        accept="image/*,application/pdf,.doc,.docx"
+                        disabled={uploading}
+                        onChange={(ev) => {
+                          const file = ev.target.files?.[0];
+                          ev.target.value = "";
+                          if (file) void uploadDocFile(file);
+                        }}
+                      />
+                      {uploading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+                      {doc.file_url && !uploading && (
+                        <span className="text-xs text-muted-foreground">تم إرفاق الملف ✓</span>
+                      )}
+                    </div>
                     <Input
                       value={doc.file_url}
                       onChange={(ev) => setD("file_url", ev.target.value)}
-                      placeholder="https://"
+                      placeholder="أو الصق رابطاً https://"
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">

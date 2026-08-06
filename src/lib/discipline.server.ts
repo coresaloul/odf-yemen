@@ -337,11 +337,11 @@ async function upsert(
     if (!existing) throw new Error("السجل غير موجود");
     if (!["draft", "returned"].includes(String(existing.stage)))
       throw new Error("لا يمكن تعديل سجل قيد الاعتماد أو معتمد");
-    const { error } = await db().from(table).update(payload).eq("id", id);
+    const { error } = await db().from(table).update(payload as never).eq("id", id);
     if (error) throw new Error(error.message);
     return id;
   }
-  const { data, error } = await db().from(table).insert(payload).select("id").single();
+  const { data, error } = await db().from(table).insert(payload as never).select("id").single();
   if (error) throw new Error(error.message);
   return data.id as string;
 }
@@ -437,7 +437,7 @@ export async function decideRecord(
     patch["erase_at"] = d.toISOString().slice(0, 10);
   }
 
-  const { error } = await db().from(table).update(patch).eq("id", id);
+  const { error } = await db().from(table).update(patch as never).eq("id", id);
   if (error) throw new Error(error.message);
 
   const { data: profile } = await db()
@@ -581,7 +581,7 @@ export async function decideAppeal(
     appeal_decided_at: new Date().toISOString(),
   };
   if (decision === "accepted") patch["erased"] = true;
-  const { error } = await db().from("disciplinary_actions").update(patch).eq("id", id);
+  const { error } = await db().from("disciplinary_actions").update(patch as never).eq("id", id);
   if (error) throw new Error(error.message);
 
   if (decision === "accepted" && r.payroll_adjustment_id) {

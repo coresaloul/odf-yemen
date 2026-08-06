@@ -204,6 +204,19 @@ function EmployeesPage() {
     });
   }, [employees, q, deptFilter, statusFilter, accountFilter]);
 
+  const stats = useMemo(
+    () => ({
+      active: employees.filter((e) => e.status === "active").length,
+      onLeave: employees.filter((e) => e.status === "on_leave").length,
+      noAccount: employees.filter((e) => !e.user_id).length,
+    }),
+    [employees],
+  );
+
+  const deptName = (id?: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
+  const secName = (id?: string | null) => sections.find((s) => s.id === id)?.name ?? "—";
+
+
   const remove = useMutation({
     mutationFn: async (id: string) => {
       await removeEmployee({ data: { id } });

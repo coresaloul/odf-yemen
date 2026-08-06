@@ -550,3 +550,17 @@ export async function openCustodyForEmployee(employeeId: string) {
     .in("status", OPEN_ASSIGNMENT_STATUSES);
   return data ?? [];
 }
+
+/* ═════════ مراجع (موظفون/إدارات) ═════════ */
+
+export async function listRefs() {
+  const [{ data: emps }, { data: deps }] = await Promise.all([
+    db()
+      .from("employees")
+      .select("id, full_name, employee_no, department_id")
+      .eq("status", "active")
+      .order("full_name"),
+    db().from("departments").select("id, name").order("name"),
+  ]);
+  return { employees: emps ?? [], departments: deps ?? [] };
+}

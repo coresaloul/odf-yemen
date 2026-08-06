@@ -190,3 +190,10 @@ export const listCustodyTrail = createServerFn({ method: "POST" })
     const { listApprovalTrail } = await import("@/lib/custody.server");
     return listApprovalTrail(data.assignmentId);
   });
+
+export const listCustodyRefs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { listRefs } = await import("@/lib/custody.server");
+    return listRefs();
+  });

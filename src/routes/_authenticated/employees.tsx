@@ -607,8 +607,8 @@ function EmployeeProfileDialog({
     docType,
   }: {
     label: string;
-    number?: string | null;
-    expiry?: string | null;
+    number?: string | null | undefined;
+    expiry?: string | null | undefined;
     docType: string;
   }) => {
     const linked = docs.find((d) => d.doc_type === docType && d.file_url);
@@ -999,7 +999,7 @@ function EmployeeProfileDialog({
   );
 }
 
-function ExpiryBadge({ expiry }: { expiry?: string | null }) {
+function ExpiryBadge({ expiry }: { expiry?: string | null | undefined }) {
   if (!expiry) return null;
   const days = Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
   if (Number.isNaN(days)) return null;

@@ -7,7 +7,12 @@ export const notifyTaskAssigned = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { assertTaskParticipant, sendTaskAssignedEmail } = await import('./task-emails.server')
     await assertTaskParticipant(context.userId, data.taskId)
-    return sendTaskAssignedEmail(data.taskId)
+    try {
+      return await sendTaskAssignedEmail(data.taskId)
+    } catch (error) {
+      console.error('[task-emails] assigned email failed:', error)
+      return { sent: false, reason: 'email_failed' as const }
+    }
   })
 
 export const notifyTaskStatusChanged = createServerFn({ method: 'POST' })
@@ -18,5 +23,10 @@ export const notifyTaskStatusChanged = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { assertTaskParticipant, sendTaskStatusEmail } = await import('./task-emails.server')
     await assertTaskParticipant(context.userId, data.taskId)
-    return sendTaskStatusEmail(data.taskId, data.progress)
+    try {
+      return await sendTaskStatusEmail(data.taskId, data.progress)
+    } catch (error) {
+      console.error('[task-emails] status email failed:', error)
+      return { sent: false, reason: 'email_failed' as const }
+    }
   })

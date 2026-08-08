@@ -3207,6 +3207,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tasks_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_assignee_id_fkey"
             columns: ["assignee_id"]
             isOneToOne: false

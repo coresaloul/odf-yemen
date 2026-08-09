@@ -25,6 +25,7 @@ export type TaskFormValues = {
   due_date: string;
   weight: string;
   recurrence: string;
+  supervisor_id: string;
 };
 
 export const EMPTY_TASK_FORM: TaskFormValues = {
@@ -37,6 +38,7 @@ export const EMPTY_TASK_FORM: TaskFormValues = {
   due_date: "",
   weight: "1",
   recurrence: "none",
+  supervisor_id: "",
 };
 
 export const TASK_TEMPLATES: { label: string; values: Partial<TaskFormValues> }[] = [
@@ -80,6 +82,7 @@ export function TaskFormDialog({
         due_date: editing.due_date ?? "",
         weight: String(editing.weight ?? 1),
         recurrence: editing.recurrence ?? "none",
+        supervisor_id: editing.supervisor_id ?? "",
       });
     } else {
       setForm({ ...EMPTY_TASK_FORM, ...initial });
@@ -91,12 +94,16 @@ export function TaskFormDialog({
     setForm((f) => ({ ...f, [k]: v }));
 
   const toggleAssignee = (id: string) =>
-    setForm((f) => ({
-      ...f,
-      assignee_ids: f.assignee_ids.includes(id)
+    setForm((f) => {
+      const assignee_ids = f.assignee_ids.includes(id)
         ? f.assignee_ids.filter((x) => x !== id)
-        : [...f.assignee_ids, id],
-    }));
+        : [...f.assignee_ids, id];
+      return {
+        ...f,
+        assignee_ids,
+        supervisor_id: assignee_ids.includes(f.supervisor_id) ? f.supervisor_id : "",
+      };
+    });
 
   const submit = () => {
     if (!form.title.trim()) return setError("عنوان المهمة مطلوب");
@@ -171,6 +178,29 @@ export function TaskFormDialog({
               </div>
             )}
           </div>
+
+          {(form.assignee_ids.length > 1 || form.supervisor_id) && (
+            <div className="space-y-2">
+              <Label>المشرف على المهمة</Label>
+              <Select
+                value={form.supervisor_id || "none"}
+                onValueChange={(v) => set("supervisor_id", v === "none" ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="اختر المشرف" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون مشرف</SelectItem>
+                  {employees
+                    .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id)
+                    .map((e) => (
+                      <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                عند تكليف أكثر من موظف بنفس المهمة، حدّد من يشرف على تنفيذها.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

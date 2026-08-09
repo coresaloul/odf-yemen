@@ -3155,6 +3155,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at: string | null
+          supervisor_id: string | null
           title: string
           updated_at: string
           weight: number
@@ -3178,6 +3179,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at?: string | null
+          supervisor_id?: string | null
           title: string
           updated_at?: string
           weight?: number
@@ -3201,6 +3203,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at?: string | null
+          supervisor_id?: string | null
           title?: string
           updated_at?: string
           weight?: number
@@ -3225,6 +3228,13 @@ export type Database = {
             columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]

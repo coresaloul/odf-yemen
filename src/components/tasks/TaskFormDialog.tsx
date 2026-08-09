@@ -25,6 +25,7 @@ export type TaskFormValues = {
   due_date: string;
   weight: string;
   recurrence: string;
+  supervisor_id: string;
 };
 
 export const EMPTY_TASK_FORM: TaskFormValues = {

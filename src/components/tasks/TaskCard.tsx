@@ -18,6 +18,7 @@ export function TaskCard({
   task,
   assigneeName,
   assignerName,
+  supervisorName,
   canManage,
   canUpdateProgress,
   onOpen,
@@ -28,6 +29,7 @@ export function TaskCard({
   task: TaskRow;
   assigneeName: string;
   assignerName: string;
+  supervisorName?: string | null;
   canManage: boolean;
   canUpdateProgress: boolean;
   onOpen: () => void;
@@ -55,6 +57,11 @@ export function TaskCard({
             <p className="mt-1 text-xs text-muted-foreground">
               المكلّف: {assigneeName} — المكلِّف: {assignerName} — الاستحقاق: {formatDate(task.due_date)}
             </p>
+            {supervisorName && (
+              <p className="mt-1 text-xs font-medium text-primary">
+                المشرف على المهمة: {supervisorName}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {overdue && (

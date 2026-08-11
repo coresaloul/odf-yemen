@@ -41,15 +41,15 @@ export function useDeviceNotifications() {
     async (title: string, options?: { body?: string | null; url?: string; tag?: string }) => {
       if (typeof window === "undefined" || !("Notification" in window)) return;
       if (Notification.permission !== "granted") return;
-      const payload: NotificationOptions & { data?: unknown } = {
-        body: options?.body ?? undefined,
+      const payload = {
         icon: "/favicon.png",
         badge: "/favicon.png",
-        tag: options?.tag,
         dir: "rtl",
         lang: "ar",
         data: { url: options?.url ?? "/dashboard" },
-      };
+        ...(options?.body ? { body: options.body } : {}),
+        ...(options?.tag ? { tag: options.tag } : {}),
+      } as NotificationOptions;
       const reg = await ensureServiceWorker();
       if (reg) {
         await reg.showNotification(title, payload);

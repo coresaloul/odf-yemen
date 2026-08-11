@@ -126,6 +126,22 @@ export function NotificationsBell() {
             تعليم الكل كمقروء
           </Button>
         </div>
+        {isSupported && permission !== "granted" && (
+          <div className="flex items-center justify-between gap-2 border-b bg-primary/5 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {permission === "denied"
+                ? "الإشعارات محظورة من إعدادات المتصفح — فعّلها من إعدادات الموقع."
+                : "فعّل إشعارات الجهاز لتصلك التنبيهات فوراً."}
+            </p>
+            {permission !== "denied" && (
+              <Button size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={() => void request()}>
+                <BellRing className="size-3.5" />
+                تفعيل
+              </Button>
+            )}
+          </div>
+        )}
+
         <ScrollArea className="max-h-80">
           {items.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">لا توجد إشعارات بعد</p>

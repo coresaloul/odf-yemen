@@ -90,13 +90,14 @@ const TYPES: {
 ];
 
 function DeviceNotificationsCard() {
-  const { permission, request, notify, isSupported } = useDeviceNotifications();
+  const { permission, request, notify, pushReady, isSupported } = useDeviceNotifications();
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">إشعارات الجهاز (الموبايل والويب)</CardTitle>
         <CardDescription>
-          تظهر التنبيهات على شاشة جهازك عند تكليفك بمهمة أو وجود طلب أو تعديل جديد.
+          تظهر التنبيهات على شاشة جهازك عند تكليفك بمهمة أو وجود طلب أو تعديل جديد — حتى لو كان
+          التطبيق في الخلفية أو مغلقاً.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -104,7 +105,12 @@ function DeviceNotificationsCard() {
           <p className="text-sm text-muted-foreground">متصفحك الحالي لا يدعم إشعارات الجهاز.</p>
         ) : permission === "granted" ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-primary">إشعارات الجهاز مفعّلة على هذا الجهاز ✓</p>
+            <p className="text-sm text-primary">
+              {pushReady
+                ? "إشعارات الجهاز مفعّلة ✓ وتصلك حتى والتطبيق مغلق"
+                : "إشعارات الجهاز مفعّلة ✓ (تظهر أثناء فتح التطبيق)"}
+            </p>
+
             <Button
               variant="outline"
               size="sm"

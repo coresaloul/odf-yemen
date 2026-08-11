@@ -1,12 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeviceNotifications } from "@/hooks/useDeviceNotifications";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+
+const TYPE_URL: Record<string, string> = {
+  task: "/tasks",
+  leave: "/leaves",
+  attendance: "/attendance",
+  evaluation: "/evaluations",
+  approval: "/approvals",
+  request: "/requests",
+  payroll: "/payroll",
+  custody: "/custody",
+  discipline: "/discipline",
+  lifecycle: "/lifecycle",
+};
 
 type NotificationRow = {
   id: string;

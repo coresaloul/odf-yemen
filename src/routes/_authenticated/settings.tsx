@@ -144,6 +144,8 @@ function SettingsPage() {
         </p>
       </div>
 
+      <DeviceNotificationsCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">القنوات</CardTitle>

@@ -86,7 +86,11 @@ export const Route = createFileRoute("/api/public/push/dispatch")({
             };
             try {
               const payload = await buildPushPayload(message, subscription, vapid);
-              const res = await fetch(sub.endpoint, payload);
+              const res = await fetch(sub.endpoint, {
+                method: payload.method,
+                headers: payload.headers as Record<string, string>,
+                body: payload.body as unknown as BodyInit,
+              });
               if (res.status === 404 || res.status === 410) {
                 stale.push(sub.id);
               } else if (res.ok) {

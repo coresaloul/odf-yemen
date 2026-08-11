@@ -43,6 +43,7 @@ function formatWhen(iso: string) {
 
 export function NotificationsBell() {
   const { user } = useAuth();
+  const { permission, request, notify, isSupported } = useDeviceNotifications();
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -76,6 +77,11 @@ export function NotificationsBell() {
           const row = payload.new as NotificationRow;
           setItems((prev) => [row, ...prev].slice(0, 30));
           toast(row.title, { description: row.body ?? undefined });
+          void notify(row.title, {
+            body: row.body,
+            url: TYPE_URL[row.type] ?? "/dashboard",
+            tag: row.id,
+          });
         },
       )
       .subscribe();
@@ -83,7 +89,8 @@ export function NotificationsBell() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, notify]);
+
 
   const unread = items.filter((i) => !i.is_read).length;
 

@@ -1,12 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeviceNotifications } from "@/hooks/useDeviceNotifications";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+
+const TYPE_URL: Record<string, string> = {
+  task: "/tasks",
+  leave: "/leaves",
+  attendance: "/attendance",
+  evaluation: "/evaluations",
+  approval: "/approvals",
+  request: "/requests",
+  payroll: "/payroll",
+  custody: "/custody",
+  discipline: "/discipline",
+  lifecycle: "/lifecycle",
+};
 
 type NotificationRow = {
   id: string;
@@ -29,6 +43,7 @@ function formatWhen(iso: string) {
 
 export function NotificationsBell() {
   const { user } = useAuth();
+  const { permission, request, notify, isSupported } = useDeviceNotifications();
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -62,6 +77,11 @@ export function NotificationsBell() {
           const row = payload.new as NotificationRow;
           setItems((prev) => [row, ...prev].slice(0, 30));
           toast(row.title, { description: row.body ?? undefined });
+          void notify(row.title, {
+            body: row.body,
+            url: TYPE_URL[row.type] ?? "/dashboard",
+            tag: row.id,
+          });
         },
       )
       .subscribe();
@@ -69,7 +89,8 @@ export function NotificationsBell() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, notify]);
+
 
   const unread = items.filter((i) => !i.is_read).length;
 
@@ -105,6 +126,22 @@ export function NotificationsBell() {
             تعليم الكل كمقروء
           </Button>
         </div>
+        {isSupported && permission !== "granted" && (
+          <div className="flex items-center justify-between gap-2 border-b bg-primary/5 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {permission === "denied"
+                ? "الإشعارات محظورة من إعدادات المتصفح — فعّلها من إعدادات الموقع."
+                : "فعّل إشعارات الجهاز لتصلك التنبيهات فوراً."}
+            </p>
+            {permission !== "denied" && (
+              <Button size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={() => void request()}>
+                <BellRing className="size-3.5" />
+                تفعيل
+              </Button>
+            )}
+          </div>
+        )}
+
         <ScrollArea className="max-h-80">
           {items.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">لا توجد إشعارات بعد</p>

@@ -48,7 +48,6 @@ export function TaskCard({
 }) {
   const overdue = isOverdue(task);
   const [draft, setDraft] = useState<number | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   return (
     <Card className={overdue ? "border-destructive/50" : undefined}>

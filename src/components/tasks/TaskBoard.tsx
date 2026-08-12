@@ -2,10 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { isOverdue, STATUS_ORDER, type TaskRow, type TaskStatus } from "./task-utils";
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max) + "…" : text;
-}
-
 export function TaskBoard({
   tasks,
   nameOf,
@@ -54,8 +50,8 @@ export function TaskBoard({
                 >
                   <span className="block font-medium">{t.title}</span>
                   {t.description && (
-                    <span className="mt-1 block text-xs text-foreground/80 line-clamp-2">
-                      {truncate(t.description, 90)}
+                    <span className="mt-1 block whitespace-pre-wrap text-xs text-foreground/80">
+                      {t.description}
                     </span>
                   )}
                   <span className="mt-1 block text-xs text-muted-foreground">

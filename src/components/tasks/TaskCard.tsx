@@ -106,37 +106,13 @@ export function TaskCard({
         </div>
 
         {task.description && (
-          <div className="rounded-md bg-muted/50 p-2">
-            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <div className="rounded-md border border-border/50 bg-card p-3 shadow-sm">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
               <AlignRight className="size-3.5" /> الوصف
             </div>
-            <p
-              className={`text-sm leading-relaxed text-foreground/90 ${
-                expanded ? "" : "line-clamp-2"
-              }`}
-            >
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
               {task.description}
             </p>
-            {task.description.length > 120 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpanded((v) => !v);
-                }}
-                className="mt-1 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              >
-                {expanded ? (
-                  <>
-                    <ChevronUp className="size-3.5" /> إخفاء
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="size-3.5" /> عرض المزيد
-                  </>
-                )}
-              </button>
-            )}
           </div>
         )}
 

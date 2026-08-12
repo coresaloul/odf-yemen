@@ -50,8 +50,8 @@ export function TaskBoard({
                 >
                   <span className="block font-medium">{t.title}</span>
                   {t.description && (
-                    <span className="mt-1 block text-xs text-foreground/80 line-clamp-2">
-                      {truncate(t.description, 90)}
+                    <span className="mt-1 block whitespace-pre-wrap text-xs text-foreground/80">
+                      {t.description}
                     </span>
                   )}
                   <span className="mt-1 block text-xs text-muted-foreground">

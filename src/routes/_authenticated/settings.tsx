@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Bell, Mail, Loader2 } from "lucide-react";
+import { Bell, BellRing, Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeviceNotifications } from "@/hooks/useDeviceNotifications";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -88,6 +89,60 @@ const TYPES: {
   },
 ];
 
+function DeviceNotificationsCard() {
+  const { permission, request, notify, pushReady, isSupported } = useDeviceNotifications();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">إشعارات الجهاز (الموبايل والويب)</CardTitle>
+        <CardDescription>
+          تظهر التنبيهات على شاشة جهازك عند تكليفك بمهمة أو وجود طلب أو تعديل جديد — حتى لو كان
+          التطبيق في الخلفية أو مغلقاً.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!isSupported ? (
+          <p className="text-sm text-muted-foreground">متصفحك الحالي لا يدعم إشعارات الجهاز.</p>
+        ) : permission === "granted" ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-primary">
+              {pushReady
+                ? "إشعارات الجهاز مفعّلة ✓ وتصلك حتى والتطبيق مغلق"
+                : "إشعارات الجهاز مفعّلة ✓ (تظهر أثناء فتح التطبيق)"}
+            </p>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                void notify("تجربة إشعار", {
+                  body: "هكذا ستصلك تنبيهات النظام على هذا الجهاز.",
+                })
+              }
+            >
+              إرسال إشعار تجريبي
+            </Button>
+          </div>
+        ) : permission === "denied" ? (
+          <p className="text-sm text-muted-foreground">
+            الإشعارات محظورة لهذا الموقع. فعّلها من إعدادات المتصفح (إعدادات الموقع ← الإشعارات) ثم
+            أعد تحميل الصفحة.
+          </p>
+        ) : (
+          <Button onClick={() => void request()} className="gap-2">
+            <BellRing className="size-4" />
+            تفعيل إشعارات هذا الجهاز
+          </Button>
+        )}
+        <p className="text-xs text-muted-foreground">
+          على الهاتف: افتح النظام من المتصفح ثم اختر «إضافة إلى الشاشة الرئيسية» لتصلك الإشعارات
+          بشكل أفضل.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function SettingsPage() {
   const { user } = useAuth();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
@@ -143,6 +198,8 @@ function SettingsPage() {
           اختر القنوات وأنواع الإشعارات التي تريد استلامها.
         </p>
       </div>
+
+      <DeviceNotificationsCard />
 
       <Card>
         <CardHeader>

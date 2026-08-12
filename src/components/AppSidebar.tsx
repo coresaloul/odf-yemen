@@ -19,7 +19,7 @@ import {
   Route as RouteIcon,
   LogOut,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ORG_NAME, ROLE_LABELS } from "@/lib/hr";
 import { Logo } from "@/components/Logo";
@@ -42,6 +42,7 @@ type NavItem = {
   label: string;
   icon: typeof Settings;
   adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -50,36 +51,36 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard },
       { to: "/tasks", label: "المهام", icon: ListChecks },
-      { to: "/attendance", label: "الدوام", icon: CalendarClock },
-      { to: "/leaves", label: "الإجازات", icon: CalendarDays },
-      { to: "/requests", label: "الطلبات والنماذج", icon: FileText },
+      { to: "/attendance", label: "الدوام", icon: CalendarClock, roles: ["manager", "hr", "executive_director"] },
+      { to: "/leaves", label: "الإجازات", icon: CalendarDays, roles: ["manager", "hr", "executive_director"] },
+      { to: "/requests", label: "الطلبات والنماذج", icon: FileText, roles: ["manager", "hr", "executive_director"] },
     ],
   },
   {
     label: "الموارد البشرية",
     items: [
-      { to: "/employees", label: "الموظفون", icon: Users },
-      { to: "/org", label: "المخطط التنظيمي", icon: Network },
+      { to: "/employees", label: "الموظفون", icon: Users, roles: ["hr", "executive_director"] },
+      { to: "/org", label: "المخطط التنظيمي", icon: Network, roles: ["hr", "executive_director"] },
       { to: "/lifecycle", label: "دورة حياة الموظف", icon: RouteIcon },
-      { to: "/discipline", label: "التكريم والجزاءات", icon: Gavel },
-      { to: "/evaluations", label: "التقييم", icon: Star },
-      { to: "/custody", label: "العهد", icon: Package },
-      { to: "/payroll", label: "الرواتب", icon: Wallet },
+      { to: "/discipline", label: "التكريم والجزاءات", icon: Gavel, roles: ["hr", "executive_director"] },
+      { to: "/evaluations", label: "التقييم", icon: Star, roles: ["manager", "hr", "executive_director"] },
+      { to: "/custody", label: "العهد", icon: Package, roles: ["hr", "executive_director"] },
+      { to: "/payroll", label: "الرواتب", icon: Wallet, roles: ["hr", "executive_director"] },
     ],
   },
   {
     label: "الإدارة والمتابعة",
     items: [
       { to: "/approvals", label: "الموافقات", icon: ClipboardCheck },
-      { to: "/reports", label: "التقارير", icon: FileBarChart },
-      { to: "/users", label: "المستخدمون", icon: ShieldCheck, adminOnly: true },
+      { to: "/reports", label: "التقارير", icon: FileBarChart, roles: ["hr", "executive_director"] },
+      { to: "/users", label: "المستخدمون", icon: ShieldCheck, roles: ["hr", "executive_director"] },
     ],
   },
   {
     label: "حسابي",
     items: [
       { to: "/profile", label: "ملفي الشخصي", icon: UserRound },
-      { to: "/settings", label: "الإشعارات", icon: Settings },
+      { to: "/settings", label: "الإشعارات", icon: Settings, roles: ["manager", "hr", "executive_director"] },
     ],
   },
 ];
@@ -91,7 +92,11 @@ export function AppSidebar() {
   const collapsed = state === "collapsed" && !isMobile;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const canSee = (i: NavItem) => !i.adminOnly || isDirector || isHR;
+  const canSee = (i: NavItem) => {
+    if (i.roles && !i.roles.some((r) => roles.includes(r))) return false;
+    if (i.adminOnly && !(isDirector || isHR)) return false;
+    return true;
+  };
   const roleLabel = roles.map((r) => ROLE_LABELS[r]).join(" / ") || "بدون صلاحية";
 
   return (

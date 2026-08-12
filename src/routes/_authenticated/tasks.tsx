@@ -184,6 +184,7 @@ function TasksPage() {
             due_date: v.due_date || null,
             weight: Number(v.weight) || 1,
             recurrence: v.recurrence === "none" ? null : v.recurrence,
+            supervisor_id: v.supervisor_id || null,
             completed_at: v.status === "completed" ? new Date().toISOString() : null,
           })
           .eq("id", editing.id);
@@ -208,6 +209,7 @@ function TasksPage() {
         weight: Number(v.weight) || 1,
         recurrence: v.recurrence === "none" ? null : v.recurrence,
         assigned_by: employee?.id ?? null,
+        supervisor_id: v.assignee_ids.length > 1 ? v.supervisor_id || null : null,
         created_via_voice: viaVoice,
       }));
       const { data: inserted, error } = await supabase.from("tasks").insert(rows).select("id");
@@ -473,6 +475,7 @@ function TasksPage() {
               task={t}
               assigneeName={nameOf(t.assignee_id)}
               assignerName={nameOf(t.assigned_by)}
+              supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
               canManage={canManageTask(t)}
               canUpdateProgress={canUpdateProgress(t)}
               onOpen={() => setDetailTask(t)}
@@ -505,6 +508,7 @@ function TasksPage() {
         onOpenChange={(v) => !v && setDetailTask(null)}
         assigneeName={nameOf(detailTask?.assignee_id ?? null)}
         assignerName={nameOf(detailTask?.assigned_by ?? null)}
+        supervisorName={detailTask?.supervisor_id ? nameOf(detailTask.supervisor_id) : null}
         canManage={detailTask ? canManageTask(detailTask) : false}
         onProgress={(progress) =>
           detailTask && applyProgress.mutate({ id: detailTask.id, progress })

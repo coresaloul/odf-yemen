@@ -31,6 +31,7 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as IclockSplatRouteImport } from './routes/iclock/$'
+import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
 import { Route as ApiPublicZktecoSplatRouteImport } from './routes/api/public/zkteco/$'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
@@ -144,6 +145,11 @@ const IclockSplatRoute = IclockSplatRouteImport.update({
   path: '/iclock/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
+  id: '/api/public/push/dispatch',
+  path: '/api/public/push/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicZktecoSplatRoute = ApiPublicZktecoSplatRouteImport.update({
   id: '/api/public/zkteco/$',
   path: '/api/public/zkteco/$',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   id:
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   IclockSplatRoute: typeof IclockSplatRoute
+  ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicZktecoSplatRoute: typeof ApiPublicZktecoSplatRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IclockSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/dispatch': {
+      id: '/api/public/push/dispatch'
+      path: '/api/public/push/dispatch'
+      fullPath: '/api/public/push/dispatch'
+      preLoaderRoute: typeof ApiPublicPushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/zkteco/$': {
       id: '/api/public/zkteco/$'
       path: '/api/public/zkteco/$'
@@ -544,19 +564,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   IclockSplatRoute: IclockSplatRoute,
+  ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicZktecoSplatRoute: ApiPublicZktecoSplatRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

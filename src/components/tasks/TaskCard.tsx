@@ -1,4 +1,13 @@
-import { Mic, MoreVertical, Pencil, Trash2, AlertTriangle, Repeat, Paperclip } from "lucide-react";
+import {
+  Mic,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  Repeat,
+  Paperclip,
+  AlignRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +27,7 @@ export function TaskCard({
   task,
   assigneeName,
   assignerName,
+  supervisorName,
   canManage,
   canUpdateProgress,
   onOpen,
@@ -28,6 +38,7 @@ export function TaskCard({
   task: TaskRow;
   assigneeName: string;
   assignerName: string;
+  supervisorName?: string | null;
   canManage: boolean;
   canUpdateProgress: boolean;
   onOpen: () => void;
@@ -55,6 +66,11 @@ export function TaskCard({
             <p className="mt-1 text-xs text-muted-foreground">
               المكلّف: {assigneeName} — المكلِّف: {assignerName} — الاستحقاق: {formatDate(task.due_date)}
             </p>
+            {supervisorName && (
+              <p className="mt-1 text-xs font-medium text-primary">
+                المشرف على المهمة: {supervisorName}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {overdue && (
@@ -86,7 +102,16 @@ export function TaskCard({
           </div>
         </div>
 
-        {task.description && <p className="text-sm text-foreground/80">{task.description}</p>}
+        {task.description && (
+          <div className="rounded-md border border-border/50 bg-card p-3 shadow-sm">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <AlignRight className="size-3.5" /> الوصف
+            </div>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {task.description}
+            </p>
+          </div>
+        )}
 
         <Progress value={task.progress} />
         <div className="flex flex-wrap items-center gap-3">

@@ -21,6 +21,7 @@ export function TaskDetailsDialog({
   onOpenChange,
   assigneeName,
   assignerName,
+  supervisorName,
   canManage,
   onProgress,
 }: {
@@ -28,6 +29,7 @@ export function TaskDetailsDialog({
   onOpenChange: (v: boolean) => void;
   assigneeName: string;
   assignerName: string;
+  supervisorName?: string | null;
   canManage: boolean;
   onProgress: (progress: number) => void;
 }) {
@@ -192,6 +194,7 @@ export function TaskDetailsDialog({
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
               <Row label="الموظف المكلّف" value={assigneeName} />
               <Row label="المكلِّف" value={assignerName} />
+              {supervisorName && <Row label="المشرف على المهمة" value={supervisorName} />}
               <Row label="تاريخ البدء" value={formatDate(task.start_date)} />
               <Row label="تاريخ الاستحقاق" value={formatDate(task.due_date)} />
               <Row label="وزن المهمة" value={String(task.weight)} />

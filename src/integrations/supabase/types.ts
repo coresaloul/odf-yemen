@@ -2976,6 +2976,39 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_success_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_success_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sections: {
         Row: {
           created_at: string
@@ -3155,6 +3188,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at: string | null
+          supervisor_id: string | null
           title: string
           updated_at: string
           weight: number
@@ -3178,6 +3212,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at?: string | null
+          supervisor_id?: string | null
           title: string
           updated_at?: string
           weight?: number
@@ -3201,11 +3236,19 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["task_status"]
           submitted_for_approval_at?: string | null
+          supervisor_id?: string | null
           title?: string
           updated_at?: string
           weight?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_assignee_id_fkey"
             columns: ["assignee_id"]
@@ -3218,6 +3261,13 @@ export type Database = {
             columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]

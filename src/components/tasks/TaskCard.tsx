@@ -1,4 +1,15 @@
-import { Mic, MoreVertical, Pencil, Trash2, AlertTriangle, Repeat, Paperclip } from "lucide-react";
+import {
+  Mic,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  Repeat,
+  Paperclip,
+  ChevronDown,
+  ChevronUp,
+  AlignRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +50,7 @@ export function TaskCard({
 }) {
   const overdue = isOverdue(task);
   const [draft, setDraft] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <Card className={overdue ? "border-destructive/50" : undefined}>
@@ -93,7 +105,40 @@ export function TaskCard({
           </div>
         </div>
 
-        {task.description && <p className="text-sm text-foreground/80">{task.description}</p>}
+        {task.description && (
+          <div className="rounded-md bg-muted/50 p-2">
+            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <AlignRight className="size-3.5" /> الوصف
+            </div>
+            <p
+              className={`text-sm leading-relaxed text-foreground/90 ${
+                expanded ? "" : "line-clamp-2"
+              }`}
+            >
+              {task.description}
+            </p>
+            {task.description.length > 120 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded((v) => !v);
+                }}
+                className="mt-1 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="size-3.5" /> إخفاء
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-3.5" /> عرض المزيد
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
 
         <Progress value={task.progress} />
         <div className="flex flex-wrap items-center gap-3">

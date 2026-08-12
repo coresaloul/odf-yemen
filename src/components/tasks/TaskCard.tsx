@@ -1,4 +1,15 @@
-import { Mic, MoreVertical, Pencil, Trash2, AlertTriangle, Repeat, Paperclip } from "lucide-react";
+import {
+  Mic,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  Repeat,
+  Paperclip,
+  ChevronDown,
+  ChevronUp,
+  AlignRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

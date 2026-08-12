@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Repeat,
   Paperclip,
-  AlignRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,17 +100,6 @@ export function TaskCard({
             )}
           </div>
         </div>
-
-        {task.description && (
-          <div className="rounded-md border border-border/50 bg-card p-3 shadow-sm">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
-              <AlignRight className="size-3.5" /> الوصف
-            </div>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-              {task.description}
-            </p>
-          </div>
-        )}
 
         <Progress value={task.progress} />
         <div className="flex flex-wrap items-center gap-3">

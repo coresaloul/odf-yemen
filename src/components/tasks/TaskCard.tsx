@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   Repeat,
   Paperclip,
-  ChevronDown,
-  ChevronUp,
   AlignRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

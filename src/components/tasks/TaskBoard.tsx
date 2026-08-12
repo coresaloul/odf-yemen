@@ -53,6 +53,11 @@ export function TaskBoard({
                   }`}
                 >
                   <span className="block font-medium">{t.title}</span>
+                  {t.description && (
+                    <span className="mt-1 block text-xs text-foreground/80 line-clamp-2">
+                      {truncate(t.description, 90)}
+                    </span>
+                  )}
                   <span className="mt-1 block text-xs text-muted-foreground">
                     {nameOf(t.assignee_id)} — {formatDate(t.due_date)} — {t.progress}%
                   </span>

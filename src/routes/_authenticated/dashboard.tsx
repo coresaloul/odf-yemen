@@ -289,11 +289,16 @@ function Dashboard() {
       <PageHeader
         title={`أهلاً ${employee?.full_name ?? ""}`}
         description={
-          orgWide
-            ? "لوحة قيادة شاملة لكل إدارات وأقسام المؤسسة"
-            : isManager
-              ? "أداء نطاق إدارتك ومؤشرات فريقك"
-              : "متابعة أدائك ومهامك والتزامك بالدوام"
+          <div className="space-y-1">
+            {employee?.job_title ? <p>{employee.job_title}</p> : null}
+            <p>
+              {orgWide
+                ? "لوحة قيادة شاملة لكل إدارات وأقسام المؤسسة"
+                : isManager
+                  ? "أداء نطاق إدارتك ومؤشرات فريقك"
+                  : "متابعة أدائك ومهامك والتزامك بالدوام"}
+            </p>
+          </div>
         }
         action={
           <div className="flex items-center gap-2">

@@ -2,10 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { isOverdue, STATUS_ORDER, type TaskRow, type TaskStatus } from "./task-utils";
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max) + "…" : text;
-}
-
 export function TaskBoard({
   tasks,
   nameOf,

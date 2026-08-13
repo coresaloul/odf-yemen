@@ -41,6 +41,7 @@ export function TaskBoard({
               {column.map((t) => (
                 <button
                   key={t.id}
+                  type="button"
                   draggable={canManage}
                   onDragStart={(e) => e.dataTransfer.setData("text/task-id", t.id)}
                   onClick={() => onOpen(t)}

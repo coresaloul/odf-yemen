@@ -53,7 +53,11 @@ export function TaskCard({
       <CardContent className="space-y-3 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <button className="text-right font-semibold hover:underline" onClick={onOpen}>
+            <button
+              type="button"
+              className="text-right font-semibold hover:underline"
+              onClick={onOpen}
+            >
               {task.title}
             </button>
             {task.created_via_voice && (
@@ -118,13 +122,13 @@ export function TaskCard({
                 }}
               />
               {[25, 50, 75, 100].map((p) => (
-                <Button key={p} size="sm" variant="outline" onClick={() => onProgress(p)}>
+                <Button key={p} size="sm" variant="outline" type="button" onClick={() => onProgress(p)}>
                   {p}%
                 </Button>
               ))}
             </>
           )}
-          <Button size="sm" variant="ghost" onClick={onOpen}>
+          <Button size="sm" variant="ghost" type="button" onClick={onOpen}>
             <Paperclip className="size-4" /> التفاصيل
           </Button>
         </div>

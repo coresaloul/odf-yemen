@@ -29,7 +29,6 @@ export function TaskCard({
   supervisorName,
   canManage,
   canUpdateProgress,
-  onOpen,
   onEdit,
   onDelete,
   onProgress,
@@ -40,7 +39,6 @@ export function TaskCard({
   supervisorName?: string | null;
   canManage: boolean;
   canUpdateProgress: boolean;
-  onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onProgress: (progress: number) => void;
@@ -53,13 +51,7 @@ export function TaskCard({
       <CardContent className="space-y-3 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <button
-              type="button"
-              className="text-right font-semibold hover:underline"
-              onClick={onOpen}
-            >
-              {task.title}
-            </button>
+            <span className="block text-right font-semibold">{task.title}</span>
             {task.created_via_voice && (
               <Mic className="mr-2 inline size-3.5 text-accent" aria-label="أُضيفت صوتياً" />
             )}
@@ -128,7 +120,7 @@ export function TaskCard({
               ))}
             </>
           )}
-          <Button size="sm" variant="ghost" type="button" onClick={onOpen}>
+          <Button size="sm" variant="ghost" type="button" disabled>
             <Paperclip className="size-4" /> التفاصيل
           </Button>
         </div>

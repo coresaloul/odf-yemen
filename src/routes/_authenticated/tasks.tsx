@@ -42,7 +42,6 @@ import { TaskFilters, EMPTY_FILTERS, type TaskFiltersState } from "@/components/
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskFormDialog, type TaskFormValues } from "@/components/tasks/TaskFormDialog";
-import { TaskDetailsDialog } from "@/components/tasks/TaskDetailsDialog";
 import {
   PRIORITY_RANK,
   isOverdue,
@@ -89,7 +88,6 @@ function TasksPage() {
   const [editing, setEditing] = useState<TaskRow | null>(null);
   const [initialForm, setInitialForm] = useState<Partial<TaskFormValues> | undefined>(undefined);
   const [viaVoice, setViaVoice] = useState(false);
-  const [detailTask, setDetailTask] = useState<TaskRow | null>(null);
   const [deleteTask, setDeleteTask] = useState<TaskRow | null>(null);
   const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
   const [scope, setScope] = useState<"all" | "mine" | "assigned">("all");
@@ -209,7 +207,7 @@ function TasksPage() {
         weight: Number(v.weight) || 1,
         recurrence: v.recurrence === "none" ? null : v.recurrence,
         assigned_by: employee?.id ?? null,
-        supervisor_id: v.assignee_ids.length > 1 ? v.supervisor_id || null : null,
+        supervisor_id: v.supervisor_id || null,
         created_via_voice: viaVoice,
       }));
       const { data: inserted, error } = await supabase.from("tasks").insert(rows).select("id");
@@ -462,7 +460,6 @@ function TasksPage() {
           tasks={filtered}
           nameOf={nameOf}
           canManage={isManager}
-          onOpen={setDetailTask}
           onStatusChange={(task, status) => changeStatus.mutate({ task, status })}
         />
       )}
@@ -478,7 +475,6 @@ function TasksPage() {
               supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
               canManage={canManageTask(t)}
               canUpdateProgress={canUpdateProgress(t)}
-              onOpen={() => setDetailTask(t)}
               onEdit={() => {
                 setEditing(t);
                 setFormOpen(true);
@@ -501,18 +497,6 @@ function TasksPage() {
         {...(initialForm ? { initial: initialForm } : {})}
         saving={save.isPending}
         onSubmit={(values) => save.mutate(values)}
-      />
-
-      <TaskDetailsDialog
-        task={detailTask}
-        onOpenChange={(v) => !v && setDetailTask(null)}
-        assigneeName={nameOf(detailTask?.assignee_id ?? null)}
-        assignerName={nameOf(detailTask?.assigned_by ?? null)}
-        supervisorName={detailTask?.supervisor_id ? nameOf(detailTask.supervisor_id) : null}
-        canManage={detailTask ? canManageTask(detailTask) : false}
-        onProgress={(progress) =>
-          detailTask && applyProgress.mutate({ id: detailTask.id, progress })
-        }
       />
 
       <AlertDialog open={!!deleteTask} onOpenChange={(v) => !v && setDeleteTask(null)}>

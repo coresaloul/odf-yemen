@@ -179,28 +179,26 @@ export function TaskFormDialog({
             )}
           </div>
 
-          {(form.assignee_ids.length > 1 || form.supervisor_id) && (
-            <div className="space-y-2">
-              <Label>المشرف على المهمة</Label>
-              <Select
-                value={form.supervisor_id || "none"}
-                onValueChange={(v) => set("supervisor_id", v === "none" ? "" : v)}
-              >
-                <SelectTrigger><SelectValue placeholder="اختر المشرف" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">بدون مشرف</SelectItem>
-                  {employees
-                    .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id)
-                    .map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                عند تكليف أكثر من موظف بنفس المهمة، حدّد من يشرف على تنفيذها.
-              </p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label>المشرف على المهمة</Label>
+            <Select
+              value={form.supervisor_id || "none"}
+              onValueChange={(v) => set("supervisor_id", v === "none" ? "" : v)}
+            >
+              <SelectTrigger><SelectValue placeholder="اختر المشرف" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">بدون مشرف</SelectItem>
+                {employees
+                  .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id)
+                  .map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              يمكن تحديد مشرف واحد للمهمة، سواء كانت مكلّفة لموظف واحد أو أكثر.
+            </p>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

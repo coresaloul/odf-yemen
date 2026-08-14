@@ -7,11 +7,13 @@ export function TaskBoard({
   nameOf,
   canManage,
   onStatusChange,
+  onOpen,
 }: {
   tasks: TaskRow[];
   nameOf: (id: string | null) => string;
   canManage: boolean;
   onStatusChange: (task: TaskRow, status: TaskStatus) => void;
+  onOpen?: (task: TaskRow) => void;
 }) {
   return (
     <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-4">
@@ -43,7 +45,8 @@ export function TaskBoard({
                     key={t.id}
                     draggable={canManage}
                     onDragStart={(e) => e.dataTransfer.setData("text/task-id", t.id)}
-                    className={`w-full rounded-md border bg-card p-2 text-right text-sm shadow-sm transition ${
+                    onClick={() => onOpen?.(t)}
+                    className={`cursor-pointer w-full rounded-md border bg-card p-2 text-right text-sm shadow-sm transition ${
                       isOverdue(t) ? "border-destructive/50" : ""
                     }`}
                   >

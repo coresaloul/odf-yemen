@@ -57,8 +57,29 @@ export function TaskDetailsPanel({
           .eq("task_id", taskId)
           .order("created_at", { ascending: false }),
       ]);
+
+      const creatorIds = [...new Set((updates.data ?? []).map((u) => u.created_by).filter(Boolean))] as string[];
+      const creatorMap: Record<string, string> = {};
+
+      if (creatorIds.length > 0) {
+        const [{ data: profileRows }, { data: employeeRows }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name").in("id", creatorIds),
+          supabase.from("employees").select("user_id, full_name").in("user_id", creatorIds),
+        ]);
+
+        for (const row of profileRows ?? []) {
+          creatorMap[row.id] = row.full_name || "مستخدم";
+        }
+        for (const row of employeeRows ?? []) {
+          creatorMap[row.user_id] = row.full_name || creatorMap[row.user_id] || "مستخدم";
+        }
+      }
+
       return {
-        updates: updates.data ?? [],
+        updates: (updates.data ?? []).map((u) => ({
+          ...u,
+          creator_name: u.created_by ? creatorMap[u.created_by] ?? "مستخدم" : "النظام",
+        })),
         subtasks: subtasks.data ?? [],
         attachments: attachments.data ?? [],
       };
@@ -215,22 +236,22 @@ export function TaskDetailsPanel({
         </div>
       </div>
 
-      <Tabs defaultValue="details">
-        <TabsList className="w-full">
+      <Tabs defaultValue="details" dir="rtl">
+        <TabsList className="w-full" dir="rtl">
           <TabsTrigger value="details" className="flex-1">التفاصيل</TabsTrigger>
           <TabsTrigger value="updates" className="flex-1">سجل المتابعة</TabsTrigger>
           <TabsTrigger value="subtasks" className="flex-1">المهام الفرعية</TabsTrigger>
           <TabsTrigger value="files" className="flex-1">المرفقات</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="space-y-3 pt-4">
+        <TabsContent value="details" className="space-y-3 pt-4 text-right" dir="rtl">
           {task.description && (
-            <div className="rounded-md border bg-muted/30 p-3">
+            <div className="rounded-md border bg-muted/30 p-3 text-right">
               <p className="mb-1 text-xs font-semibold text-muted-foreground">الوصف</p>
               <p className="whitespace-pre-wrap text-sm text-foreground/90">{task.description}</p>
             </div>
           )}
-          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="grid gap-2 text-sm sm:grid-cols-2" dir="rtl">
             <Row label="الموظف المكلّف" value={assigneeName} />
             <Row label="المكلِّف" value={assignerName} />
             <Row label="المشرف على المهمة" value={supervisorName || "—"} />
@@ -243,20 +264,25 @@ export function TaskDetailsPanel({
           </dl>
         </TabsContent>
 
-        <TabsContent value="updates" className="space-y-4 pt-4">
+        <TabsContent value="updates" className="space-y-4 pt-4 text-right" dir="rtl">
           <div className="space-y-2">
-            <Label>إضافة ملاحظة/تحديث</Label>
-            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
-            <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
-              <Plus className="size-4" /> إضافة
-            </Button>
+            <Label className="block text-right">إضافة ملاحظة/تحديث</Label>
+            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className="text-right" />
+            <div className="flex justify-end">
+              <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+                <Plus className="size-4" /> إضافة
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
             {(detail.data?.updates ?? []).map((u) => (
-              <div key={u.id} className="rounded-md border p-3 text-sm">
-                <p>{u.note || "تحديث نسبة الإنجاز"}</p>
+              <div key={u.id} className="rounded-md border p-3 text-sm text-right" dir="rtl">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">{u.creator_name}</span>
+                  {u.progress !== null && <span className="text-xs text-muted-foreground">{u.progress}%</span>}
+                </div>
+                <p className="whitespace-pre-wrap">{u.note || "تحديث نسبة الإنجاز"}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {u.progress !== null ? `النسبة ${u.progress}% — ` : ""}
                   {new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}
                 </p>
               </div>
@@ -267,12 +293,13 @@ export function TaskDetailsPanel({
           </div>
         </TabsContent>
 
-        <TabsContent value="subtasks" className="space-y-4 pt-4">
-          <div className="flex gap-2">
+        <TabsContent value="subtasks" className="space-y-4 pt-4 text-right" dir="rtl">
+          <div className="flex flex-row-reverse gap-2">
             <Input
               placeholder="عنوان المهمة الفرعية"
               value={subtaskTitle}
               onChange={(e) => setSubtaskTitle(e.target.value)}
+              className="text-right"
             />
             <Button
               size="sm"
@@ -284,7 +311,7 @@ export function TaskDetailsPanel({
           </div>
           <div className="space-y-2">
             {(detail.data?.subtasks ?? []).map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border p-2">
+              <div key={s.id} className="flex flex-row-reverse items-center justify-between rounded-md border p-2">
                 <label className="flex cursor-pointer items-center gap-2 text-sm">
                   <Checkbox
                     checked={s.is_done}
@@ -305,8 +332,8 @@ export function TaskDetailsPanel({
           </div>
         </TabsContent>
 
-        <TabsContent value="files" className="space-y-4 pt-4">
-          <div className="flex items-center gap-2">
+        <TabsContent value="files" className="space-y-4 pt-4 text-right" dir="rtl">
+          <div className="flex flex-row-reverse items-center gap-2">
             <Input
               type="file"
               disabled={uploading}
@@ -320,7 +347,7 @@ export function TaskDetailsPanel({
           </div>
           <div className="space-y-2">
             {(detail.data?.attachments ?? []).map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
+              <div key={a.id} className="flex flex-row-reverse items-center justify-between rounded-md border p-2 text-sm">
                 <span className="truncate">{a.file_name}</span>
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" onClick={() => void download(a.file_path)} aria-label="تنزيل">
@@ -349,7 +376,7 @@ export function TaskDetailsPanel({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between rounded-md bg-muted/40 px-3 py-2">
+    <div className="flex flex-row-reverse items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-right" dir="rtl">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
     </div>

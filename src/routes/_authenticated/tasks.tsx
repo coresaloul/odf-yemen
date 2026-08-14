@@ -161,6 +161,8 @@ function TasksPage() {
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
+    void qc.invalidateQueries({ queryKey: ["task-page"] });
+    void qc.invalidateQueries({ queryKey: ["task-detail"] });
     void qc.invalidateQueries({ queryKey: ["dashboard"] });
     void qc.invalidateQueries({ queryKey: ["pending-approvals"] });
   };

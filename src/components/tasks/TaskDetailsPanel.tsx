@@ -95,6 +95,8 @@ export function TaskDetailsPanel({
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["task-detail"] });
+    void qc.invalidateQueries({ queryKey: ["task-page"] });
     void qc.invalidateQueries({ queryKey: ["task-detail", taskId] });
     void qc.invalidateQueries({ queryKey: ["task-page", taskId] });
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });

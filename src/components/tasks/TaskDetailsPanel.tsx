@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, Printer, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
+import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 import { RECURRENCE_LABELS, isOverdue, type TaskRow } from "./task-utils";
 
 export function TaskDetailsPanel({
@@ -176,16 +177,98 @@ export function TaskDetailsPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const buildTaskReport = (): ReportDoc => {
+    const updates = (detail.data?.updates ?? []).map((u) => {
+      const details = [u.note ? `ملاحظة: ${u.note}` : "تحديث النسبة"].join(" ");
+      const progressSuffix = u.progress !== null ? ` | النسبة ${u.progress}%` : "";
+      return `${new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}${progressSuffix} — ${details}`;
+    });
+
+    const subtasks = (detail.data?.subtasks ?? []).map((s) => [s.title, s.is_done ? "مكتملة" : "قيد التنفيذ"]);
+    const attachments = (detail.data?.attachments ?? []).map((a) => {
+      const size = a.file_size ? `${Math.max(1, Math.round(a.file_size / 1024))} KB` : "غير محدد";
+      return `${a.file_name} (${size})`;
+    });
+
+    return {
+      title: `مهمة: ${task.title}`,
+      subtitle: `الموظف المكلف: ${assigneeName} | المكلّف: ${assignerName}`,
+      periodLabel: `التاريخ: ${formatDate(task.start_date)} - ${formatDate(task.due_date)}`,
+      meta: [
+        { label: "الحالة", value: TASK_STATUS_LABELS[task.status] },
+        { label: "الأولوية", value: PRIORITY_LABELS[task.priority] },
+        { label: "المشرف", value: supervisorName || "—" },
+        { label: "نسبة الإنجاز", value: `${task.progress}%` },
+        { label: "الوزن", value: String(task.weight) },
+        { label: "التكرار", value: RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار" },
+      ],
+      sections: [
+        {
+          heading: "الوصف",
+          paragraphs: [task.description?.trim() || "لا يوجد وصف مضاف لهذه المهمة."],
+        },
+        {
+          heading: "معلومات المهمة",
+          paragraphs: [
+            `تاريخ الإنشاء: ${formatDate(task.created_at)}`,
+            `تاريخ البداية: ${formatDate(task.start_date)}`,
+            `تاريخ الاستحقاق: ${formatDate(task.due_date)}`,
+            `تاريخ الإكمال: ${formatDate(task.completed_at)}`,
+          ],
+        },
+        {
+          heading: "المهام الفرعية",
+          table: {
+            columns: ["العنوان", "الحالة"],
+            rows: subtasks.length > 0 ? subtasks : [["—", "لا توجد مهام فرعية"]],
+          },
+        },
+        {
+          heading: "سجل المتابعة",
+          paragraphs: updates.length > 0 ? updates : ["لا توجد تحديثات متاحة حتى الآن."],
+        },
+        {
+          heading: "المرفقات",
+          paragraphs: attachments.length > 0 ? attachments : ["لا توجد مرفقات مرتبطة بهذه المهمة."],
+        },
+      ],
+    };
+  };
+
+  const exportTask = (type: "word" | "pdf") => {
+    const doc = buildTaskReport();
+    const fileName = `مهمة-${task.title}`.replace(/[^\w\u0600-\u06FF\s-]/g, "").trim();
+
+    if (type === "word") {
+      exportWord(doc, fileName || "مهمة");
+      return;
+    }
+
+    const ok = exportPdf(doc);
+    if (!ok) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
+  };
+
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">{PRIORITY_LABELS[task.priority]}</Badge>
-        <Badge variant={task.status === "completed" ? "default" : "secondary"}>
-          {TASK_STATUS_LABELS[task.status]}
-        </Badge>
-        {isOverdue(task) && <Badge variant="destructive">متأخرة</Badge>}
-        {task.created_via_voice && <Badge variant="secondary">أُضيفت صوتياً</Badge>}
-        <Badge variant="outline">{RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار"}</Badge>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline">{PRIORITY_LABELS[task.priority]}</Badge>
+          <Badge variant={task.status === "completed" ? "default" : "secondary"}>
+            {TASK_STATUS_LABELS[task.status]}
+          </Badge>
+          {isOverdue(task) && <Badge variant="destructive">متأخرة</Badge>}
+          {task.created_via_voice && <Badge variant="secondary">أُضيفت صوتياً</Badge>}
+          <Badge variant="outline">{RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار"}</Badge>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => exportTask("word")}>
+            <FileDown className="size-4" /> Word
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => exportTask("pdf")}>
+            <Printer className="size-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-2 rounded-lg border p-4">

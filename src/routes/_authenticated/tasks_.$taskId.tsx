@@ -69,7 +69,7 @@ function TaskDetailsPage() {
       <PageHeader
         title={task?.title ?? "تفاصيل المهمة"}
         description="متابعة تفاصيل المهمة والمشرف عليها ونسبة الإنجاز."
-        actions={
+        action={
           <Button variant="outline" onClick={() => void navigate({ to: "/tasks" })}>
             <ArrowRight className="size-4" /> رجوع إلى المهام
           </Button>

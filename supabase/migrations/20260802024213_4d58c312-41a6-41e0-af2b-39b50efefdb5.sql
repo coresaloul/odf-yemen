@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.task_subtasks (
   title text NOT NULL,
   is_done boolean NOT NULL DEFAULT false,
   position integer NOT NULL DEFAULT 0,
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

@@ -58,7 +58,12 @@ export function TaskDetailsPanel({
           .order("created_at", { ascending: false }),
       ]);
 
-      const creatorIds = [...new Set((updates.data ?? []).map((u) => u.created_by).filter(Boolean))] as string[];
+      const creatorIds = [
+        ...new Set([
+          ...(updates.data ?? []).map((u) => u.created_by).filter(Boolean),
+          ...(subtasks.data ?? []).map((s) => s.created_by).filter(Boolean),
+        ]),
+      ] as string[];
       const creatorMap: Record<string, string> = {};
 
       if (creatorIds.length > 0) {
@@ -80,7 +85,10 @@ export function TaskDetailsPanel({
           ...u,
           creator_name: u.created_by ? creatorMap[u.created_by] ?? "مستخدم" : "النظام",
         })),
-        subtasks: subtasks.data ?? [],
+        subtasks: (subtasks.data ?? []).map((s) => ({
+          ...s,
+          creator_name: s.created_by ? creatorMap[s.created_by] ?? "مستخدم" : "النظام",
+        })),
         attachments: attachments.data ?? [],
       };
     },
@@ -116,6 +124,7 @@ export function TaskDetailsPanel({
         task_id: taskId,
         title: subtaskTitle.trim(),
         position: detail.data?.subtasks.length ?? 0,
+        created_by: user?.id ?? null,
       });
       if (error) throw error;
     },
@@ -311,19 +320,22 @@ export function TaskDetailsPanel({
           </div>
           <div className="space-y-2">
             {(detail.data?.subtasks ?? []).map((s) => (
-              <div key={s.id} className="flex flex-row-reverse items-center justify-between rounded-md border p-2">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <div key={s.id} className="rounded-md border p-2 text-right" dir="rtl">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">{s.creator_name}</span>
+                  {canManage && (
+                    <Button size="icon" variant="ghost" onClick={() => removeSubtask.mutate(s.id)} aria-label="حذف">
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+                <label className="flex cursor-pointer items-center justify-end gap-2 text-sm">
+                  <span className={s.is_done ? "text-muted-foreground line-through" : ""}>{s.title}</span>
                   <Checkbox
                     checked={s.is_done}
                     onCheckedChange={(v) => toggleSubtask.mutate({ id: s.id, is_done: !!v })}
                   />
-                  <span className={s.is_done ? "text-muted-foreground line-through" : ""}>{s.title}</span>
                 </label>
-                {canManage && (
-                  <Button size="icon" variant="ghost" onClick={() => removeSubtask.mutate(s.id)} aria-label="حذف">
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                )}
               </div>
             ))}
             {(detail.data?.subtasks.length ?? 0) === 0 && (

@@ -67,16 +67,12 @@ export function TaskDetailsPanel({
         title: string;
         is_done: boolean;
         position: number;
-        created_by?: string | null;
         created_at?: string;
         updated_at?: string;
       }>;
 
       const creatorIds = [
-        ...new Set([
-          ...(updates.data ?? []).map((u) => u.created_by).filter(Boolean),
-          ...rawSubtasks.map((s) => s.created_by).filter(Boolean),
-        ]),
+        ...new Set((updates.data ?? []).map((u) => u.created_by).filter(Boolean)),
       ] as string[];
 
       const creatorMap: Record<string, string> = {};
@@ -105,7 +101,7 @@ export function TaskDetailsPanel({
         })),
         subtasks: rawSubtasks.map((s) => ({
           ...s,
-          creator_name: s.created_by ? creatorMap[s.created_by] ?? "مستخدم" : "النظام",
+          creator_name: "غير محدد",
         })),
         attachments: attachments.data ?? [],
       };
@@ -142,8 +138,7 @@ export function TaskDetailsPanel({
         task_id: taskId,
         title: subtaskTitle.trim(),
         position: detail.data?.subtasks.length ?? 0,
-        created_by: user?.id ?? null,
-      } as never);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -437,7 +432,7 @@ export function TaskDetailsPanel({
           </div>
           <div className="space-y-2">
             {(detail.data?.subtasks ?? []).map((s) => {
-              const canManageSubtask = canManage || s.created_by === user?.id;
+              const canManageSubtask = canManage;
               const isEditing = editingSubtaskId === s.id;
 
               return (

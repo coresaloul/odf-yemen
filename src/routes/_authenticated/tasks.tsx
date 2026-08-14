@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -81,6 +81,8 @@ function TasksPage() {
   const needsApproval = (task?: TaskRow | null) =>
     !!task && !isManager && task.assigned_by !== employee?.id;
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const openTask = (t: TaskRow) => void navigate({ to: "/tasks/$taskId", params: { taskId: t.id } });
   const sendAssignedEmail = useServerFn(notifyTaskAssigned);
   const sendStatusEmail = useServerFn(notifyTaskStatusChanged);
 
@@ -460,6 +462,7 @@ function TasksPage() {
           tasks={filtered}
           nameOf={nameOf}
           canManage={isManager}
+          onOpen={openTask}
           onStatusChange={(task, status) => changeStatus.mutate({ task, status })}
         />
       )}
@@ -475,6 +478,7 @@ function TasksPage() {
               supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
               canManage={canManageTask(t)}
               canUpdateProgress={canUpdateProgress(t)}
+              onOpen={() => openTask(t)}
               onEdit={() => {
                 setEditing(t);
                 setFormOpen(true);

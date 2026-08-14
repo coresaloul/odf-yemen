@@ -31,6 +31,7 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as IclockSplatRouteImport } from './routes/iclock/$'
+import { Route as AuthenticatedTasksTaskIdRouteImport } from './routes/_authenticated/tasks_.$taskId'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
 import { Route as ApiPublicZktecoSplatRouteImport } from './routes/api/public/zkteco/$'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -145,6 +146,12 @@ const IclockSplatRoute = IclockSplatRouteImport.update({
   path: '/iclock/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTasksTaskIdRoute =
+  AuthenticatedTasksTaskIdRouteImport.update({
+    id: '/tasks_/$taskId',
+    path: '/tasks/$taskId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   id: '/api/public/push/dispatch',
   path: '/api/public/push/dispatch',
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -210,6 +218,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -238,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
+  '/_authenticated/tasks_/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/tasks/$taskId'
     | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/tasks/$taskId'
     | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
@@ -319,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/api/transcribe'
     | '/iclock/$'
+    | '/_authenticated/tasks_/$taskId'
     | '/api/public/push/dispatch'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
@@ -491,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IclockSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/tasks_/$taskId': {
+      id: '/_authenticated/tasks_/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof AuthenticatedTasksTaskIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/push/dispatch': {
       id: '/api/public/push/dispatch'
       path: '/api/public/push/dispatch'
@@ -533,6 +553,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedTasksTaskIdRoute: typeof AuthenticatedTasksTaskIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -553,6 +574,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedTasksTaskIdRoute: AuthenticatedTasksTaskIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

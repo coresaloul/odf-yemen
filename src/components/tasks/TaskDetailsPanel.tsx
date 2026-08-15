@@ -294,16 +294,32 @@ export function TaskDetailsPanel({
     );
   };
 
-  const sanitizeStorageFileName = (name: string) => {
-    const normalized = name
+  const buildStorageFileName = (name: string) => {
+    const extension = name.includes(".")
+      ? `.${
+          name
+            .split(".")
+            .pop()
+            ?.replace(/[^a-zA-Z0-9]/g, "") || "file"
+        }`
+      : "";
+    const baseName = name
+      .replace(/\.[^/.]+$/, "")
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-+|-+$/g, "")
       .trim();
 
-    return normalized || "file";
+    const safeBase = (baseName || "file").slice(0, 40);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:TZ.]/g, "")
+      .slice(0, 14);
+    const uniqueSuffix = crypto.randomUUID().slice(0, 8);
+
+    return `${taskId}-${timestamp}-${uniqueSuffix}-${safeBase}${extension}`;
   };
 
   const upload = async (file: File) => {
@@ -314,8 +330,8 @@ export function TaskDetailsPanel({
 
     setUploading(true);
     try {
-      const safeFileName = sanitizeStorageFileName(file.name);
-      const path = `${taskId}/${crypto.randomUUID()}-${safeFileName}`;
+      const storageFileName = buildStorageFileName(file.name);
+      const path = `${taskId}/${storageFileName}`;
       const { error: upErr } = await supabase.storage.from("task-files").upload(path, file);
       if (upErr) throw upErr;
 

@@ -10,8 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +44,6 @@ export function TaskCard({
   onProgress: (progress: number) => void;
 }) {
   const overdue = isOverdue(task);
-  const [draft, setDraft] = useState<number | null>(null);
 
   return (
     <Card className={overdue ? "border-destructive/50" : undefined}>
@@ -105,29 +102,7 @@ export function TaskCard({
           </div>
         </div>
 
-        <Progress value={task.progress} />
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs text-muted-foreground">التقدم {draft ?? task.progress}%</span>
-          {canUpdateProgress && (
-            <>
-              <Slider
-                className="w-40"
-                value={[draft ?? task.progress]}
-                max={100}
-                step={5}
-                onValueChange={(v) => setDraft(v[0] ?? 0)}
-                onValueCommit={(v) => {
-                  onProgress(v[0] ?? 0);
-                  setDraft(null);
-                }}
-              />
-              {[25, 50, 75, 100].map((p) => (
-                <Button key={p} size="sm" variant="outline" type="button" onClick={() => onProgress(p)}>
-                  {p}%
-                </Button>
-              ))}
-            </>
-          )}
+        <div className="flex justify-end">
           <Button size="sm" variant="ghost" type="button" onClick={onOpen} disabled={!onOpen}>
             <Paperclip className="size-4" /> التفاصيل
           </Button>

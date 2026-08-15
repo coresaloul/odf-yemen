@@ -52,7 +52,7 @@ export function TaskBoard({
                   >
                     <span className="block font-medium">{t.title}</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {nameOf(t.assignee_id)} — {formatDate(t.due_date)} — {t.progress}%
+                      {nameOf(t.assignee_id)} — {formatDate(t.due_date)}
                     </span>
                     {supervisorName && (
                       <span className="mt-1 block text-[11px] font-medium text-primary">

@@ -1,5 +1,6 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileDown, Loader2, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Download, FileDown, Loader2, Pencil, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { submitTaskForApproval } from "@/lib/approvals.functions";
 import { exportPdf, exportWord } from "@/lib/report-export";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { buildStorageObjectKey } from "@/lib/storage-path";
@@ -40,6 +40,7 @@ export function TaskDetailsPanel({
 }: TaskDetailsPanelProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const requestApproval = useServerFn(submitTaskForApproval);
   const taskId = task.id;
   const [note, setNote] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -48,7 +49,6 @@ export function TaskDetailsPanel({
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [draft, setDraft] = useState<number | null>(null);
 
   const detail = useQuery({
     queryKey: ["task-detail", taskId],
@@ -124,15 +124,32 @@ export function TaskDetailsPanel({
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
   };
 
+  const resetTaskProgress = async () => {
+    if (["completed", "cancelled", "pending_approval"].includes(task.status)) return;
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        status: "in_progress",
+        progress: 0,
+        completed_at: null,
+      })
+      .eq("id", task.id);
+    if (error) throw error;
+  };
+
   const addNote = useMutation({
     mutationFn: async () => {
+      const trimmed = note.trim();
+      if (!trimmed) throw new Error("نص الملاحظة مطلوب");
+
       const { error } = await supabase.from("task_updates").insert({
         task_id: taskId,
-        note: note.trim(),
+        note: trimmed,
         progress: task.progress ?? null,
         created_by: user?.id ?? null,
       });
       if (error) throw error;
+      await resetTaskProgress();
     },
     onSuccess: () => {
       setNote("");
@@ -149,11 +166,23 @@ export function TaskDetailsPanel({
 
       const { error } = await supabase.from("task_updates").update({ note: trimmed }).eq("id", id);
       if (error) throw error;
+      await resetTaskProgress();
     },
     onSuccess: () => {
       setEditingUpdateId(null);
       setEditingUpdateText("");
       toast.success("تم تحديث الملاحظة");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const submitForApproval = useMutation({
+    mutationFn: async () => {
+      await requestApproval({ data: { taskId: task.id } });
+    },
+    onSuccess: () => {
+      toast.success("تم إرسال المهمة إلى الاعتماد");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -180,6 +209,7 @@ export function TaskDetailsPanel({
         created_by: user?.id ?? null,
       });
       if (error) throw error;
+      await resetTaskProgress();
     },
     onSuccess: () => {
       setSubtaskTitle("");
@@ -198,6 +228,7 @@ export function TaskDetailsPanel({
         .update({ title: trimmed })
         .eq("id", id);
       if (error) throw error;
+      await resetTaskProgress();
     },
     onSuccess: () => {
       setEditingSubtaskId(null);
@@ -215,13 +246,7 @@ export function TaskDetailsPanel({
         .update({ is_done: value.is_done })
         .eq("id", value.id);
       if (error) throw error;
-
-      const list = (detail.data?.subtasks ?? []).map((s) =>
-        s.id === value.id ? { ...s, is_done: value.is_done } : s,
-      );
-      if (list.length > 0) {
-        onProgress(Math.round((list.filter((s) => s.is_done).length / list.length) * 100));
-      }
+      await resetTaskProgress();
     },
     onSuccess: () => refresh(),
     onError: (e: Error) => toast.error(e.message),
@@ -428,39 +453,16 @@ export function TaskDetailsPanel({
           <Button size="sm" variant="outline" onClick={() => exportTask("pdf")}>
             <Printer className="size-4" /> PDF
           </Button>
-        </div>
-      </div>
-
-      <div className="space-y-2 rounded-lg border p-4">
-        <Progress value={task.progress} />
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs text-muted-foreground">التقدم {draft ?? task.progress}%</span>
-          {canUpdateProgress && (
-            <>
-              <Slider
-                className="w-40"
-                value={[draft ?? task.progress]}
-                max={100}
-                step={5}
-                onValueChange={(v) => setDraft(v[0] ?? 0)}
-                onValueCommit={(v) => {
-                  onProgress(v[0] ?? 0);
-                  setDraft(null);
-                }}
-              />
-              {[25, 50, 75, 100].map((p) => (
-                <Button
-                  key={p}
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  onClick={() => onProgress(p)}
-                >
-                  {p}%
-                </Button>
-              ))}
-            </>
-          )}
+          {(task.status === "new" || task.status === "in_progress") &&
+            (canManage || task.assignee_id === user?.id || task.supervisor_id === user?.id) && (
+              <Button
+                size="sm"
+                onClick={() => void submitForApproval.mutate()}
+                disabled={submitForApproval.isPending}
+              >
+                <Send className="size-4" /> إرسال إلى الاعتماد
+              </Button>
+            )}
         </div>
       </div>
 

@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDate } from "@/lib/hr";
+import { buildStorageObjectKey } from "@/lib/storage-path";
 
 export const DOC_TYPES = [
   "شهادة علمية",
@@ -224,8 +225,7 @@ export function EmployeeDocuments({
   };
 
   const uploadToStorage = async (file: File) => {
-    const safeName = file.name.replace(/[^\w.-]+/g, "_");
-    const path = `${employeeId}/${Date.now()}-${safeName}`;
+    const path = buildStorageObjectKey(employeeId, file.name);
     const { error } = await supabase.storage.from("employee-documents").upload(path, file);
     if (error) throw new Error(error.message);
     return path;

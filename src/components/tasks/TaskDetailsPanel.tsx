@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { exportPdf, exportWord } from "@/lib/report-export";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
+import { buildStorageObjectKey } from "@/lib/storage-path";
 import { isOverdue, RECURRENCE_LABELS } from "./task-utils";
 import type { TaskRow } from "./task-utils";
 
@@ -294,34 +295,6 @@ export function TaskDetailsPanel({
     );
   };
 
-  const buildStorageFileName = (name: string) => {
-    const extension = name.includes(".")
-      ? `.${
-          name
-            .split(".")
-            .pop()
-            ?.replace(/[^a-zA-Z0-9]/g, "") || "file"
-        }`
-      : "";
-    const baseName = name
-      .replace(/\.[^/.]+$/, "")
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9_-]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .trim();
-
-    const safeBase = (baseName || "file").slice(0, 40);
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[-:TZ.]/g, "")
-      .slice(0, 14);
-    const uniqueSuffix = crypto.randomUUID().slice(0, 8);
-
-    return `${taskId}-${timestamp}-${uniqueSuffix}-${safeBase}${extension}`;
-  };
-
   const upload = async (file: File) => {
     if (!isAllowedAttachment(file)) {
       toast.error("نوع الملف غير مدعوم. يُسمح بـ PDF, Word, Excel, PowerPoint, نصوص وصور شائعة");
@@ -330,8 +303,7 @@ export function TaskDetailsPanel({
 
     setUploading(true);
     try {
-      const storageFileName = buildStorageFileName(file.name);
-      const path = `${taskId}/${storageFileName}`;
+      const path = buildStorageObjectKey(taskId, file.name);
       const { error: upErr } = await supabase.storage.from("task-files").upload(path, file);
       if (upErr) throw upErr;
 

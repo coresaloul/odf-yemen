@@ -53,9 +53,17 @@ export function TaskDetailsPanel({
     queryKey: ["task-detail", taskId],
     queryFn: async () => {
       const [updates, subtasks, attachments] = await Promise.all([
-        supabase.from("task_updates").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
+        supabase
+          .from("task_updates")
+          .select("*")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending: false }),
         supabase.from("task_subtasks").select("*").eq("task_id", taskId).order("position"),
-        supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
+        supabase
+          .from("task_attachments")
+          .select("*")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending: false }),
       ]);
 
       const rawSubtasks = (subtasks.data ?? []) as Array<{
@@ -184,7 +192,10 @@ export function TaskDetailsPanel({
       const trimmed = title.trim();
       if (!trimmed) throw new Error("عنوان المهمة الفرعية مطلوب");
 
-      const { error } = await supabase.from("task_subtasks").update({ title: trimmed }).eq("id", id);
+      const { error } = await supabase
+        .from("task_subtasks")
+        .update({ title: trimmed })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -234,7 +245,61 @@ export function TaskDetailsPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const allowedAttachmentTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/rtf",
+    "text/plain",
+    "text/csv",
+    "application/vnd.oasis.opendocument.text",
+    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/vnd.oasis.opendocument.presentation",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/gif",
+  ] as const;
+
+  const isAllowedAttachment = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    const allowedExtensions = [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+      ".ppt",
+      ".pptx",
+      ".csv",
+      ".txt",
+      ".rtf",
+      ".odt",
+      ".ods",
+      ".odp",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+      ".gif",
+    ];
+
+    return (
+      allowedAttachmentTypes.includes(file.type as (typeof allowedAttachmentTypes)[number]) ||
+      allowedExtensions.some((ext) => fileName.endsWith(ext))
+    );
+  };
+
   const upload = async (file: File) => {
+    if (!isAllowedAttachment(file)) {
+      toast.error("نوع الملف غير مدعوم. يُسمح بـ PDF, Word, Excel, PowerPoint, نصوص وصور شائعة");
+      return;
+    }
+
     setUploading(true);
     try {
       const path = `${taskId}/${crypto.randomUUID()}-${file.name}`;
@@ -276,7 +341,10 @@ export function TaskDetailsPanel({
       return `${new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}${progressSuffix} — ${details}`;
     });
 
-    const subtasks = (detail.data?.subtasks ?? []).map((s) => [s.title, s.is_done ? "مكتملة" : "قيد التنفيذ"]);
+    const subtasks = (detail.data?.subtasks ?? []).map((s) => [
+      s.title,
+      s.is_done ? "مكتملة" : "قيد التنفيذ",
+    ]);
     const attachments = (detail.data?.attachments ?? []).map((a) => {
       const size = a.file_size ? `${Math.max(1, Math.round(a.file_size / 1024))} KB` : "غير محدد";
       return `${a.file_name} (${size})`;
@@ -347,7 +415,9 @@ export function TaskDetailsPanel({
           </Badge>
           {isOverdue(task) && <Badge variant="destructive">متأخرة</Badge>}
           {task.created_via_voice && <Badge variant="secondary">أُضيفت صوتياً</Badge>}
-          <Badge variant="outline">{RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار"}</Badge>
+          <Badge variant="outline">
+            {RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار"}
+          </Badge>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -378,7 +448,13 @@ export function TaskDetailsPanel({
                 }}
               />
               {[25, 50, 75, 100].map((p) => (
-                <Button key={p} size="sm" variant="outline" type="button" onClick={() => onProgress(p)}>
+                <Button
+                  key={p}
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => onProgress(p)}
+                >
                   {p}%
                 </Button>
               ))}
@@ -427,9 +503,18 @@ export function TaskDetailsPanel({
         <TabsContent value="updates" className="space-y-4 pt-4" dir="rtl">
           <div className="space-y-2 text-right">
             <Label>إضافة ملاحظة/تحديث</Label>
-            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className="text-right" />
+            <Textarea
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="text-right"
+            />
             <div className="flex justify-end">
-              <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+              <Button
+                size="sm"
+                disabled={!note.trim() || addNote.isPending}
+                onClick={() => addNote.mutate()}
+              >
                 <Plus className="size-4" /> إضافة
               </Button>
             </div>
@@ -444,7 +529,9 @@ export function TaskDetailsPanel({
                 <div key={u.id} className="rounded-md border p-3 text-sm text-right" dir="rtl">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="font-medium text-foreground">{u.creator_name}</span>
-                    {u.progress !== null && <span className="text-xs text-muted-foreground">{u.progress}%</span>}
+                    {u.progress !== null && (
+                      <span className="text-xs text-muted-foreground">{u.progress}%</span>
+                    )}
                     {canManageUpdate && (
                       <div className="flex items-center gap-1">
                         <Button
@@ -479,7 +566,12 @@ export function TaskDetailsPanel({
                         className="text-right"
                       />
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" onClick={() => updateNote.mutate({ id: u.id, noteText: editingUpdateText })}>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            updateNote.mutate({ id: u.id, noteText: editingUpdateText })
+                          }
+                        >
                           حفظ
                         </Button>
                         <Button
@@ -518,7 +610,11 @@ export function TaskDetailsPanel({
               onChange={(e) => setSubtaskTitle(e.target.value)}
               className="text-right"
             />
-            <Button size="sm" disabled={!subtaskTitle.trim() || addSubtask.isPending} onClick={() => addSubtask.mutate()}>
+            <Button
+              size="sm"
+              disabled={!subtaskTitle.trim() || addSubtask.isPending}
+              onClick={() => addSubtask.mutate()}
+            >
               <Plus className="size-4" /> إضافة
             </Button>
           </div>
@@ -565,7 +661,12 @@ export function TaskDetailsPanel({
                         className="text-right"
                       />
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" onClick={() => updateSubtask.mutate({ id: s.id, title: editingSubtaskTitle })}>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            updateSubtask.mutate({ id: s.id, title: editingSubtaskTitle })
+                          }
+                        >
                           حفظ
                         </Button>
                         <Button
@@ -582,7 +683,9 @@ export function TaskDetailsPanel({
                     </div>
                   ) : (
                     <label className="flex cursor-pointer items-center justify-end gap-2 text-sm">
-                      <span className={s.is_done ? "text-muted-foreground line-through" : ""}>{s.title}</span>
+                      <span className={s.is_done ? "text-muted-foreground line-through" : ""}>
+                        {s.title}
+                      </span>
                       <Checkbox
                         checked={s.is_done}
                         onCheckedChange={(v) => toggleSubtask.mutate({ id: s.id, is_done: !!v })}
@@ -602,6 +705,7 @@ export function TaskDetailsPanel({
           <div className="flex flex-row-reverse items-center gap-2">
             <Input
               type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif"
               disabled={uploading}
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -609,15 +713,28 @@ export function TaskDetailsPanel({
                 e.target.value = "";
               }}
             />
-            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Upload className="size-4" />
+            )}
           </div>
 
           <div className="space-y-2">
             {(detail.data?.attachments ?? []).map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-md border p-2 text-sm" dir="rtl">
+              <div
+                key={a.id}
+                className="flex items-center justify-between rounded-md border p-2 text-sm"
+                dir="rtl"
+              >
                 <span className="truncate">{a.file_name}</span>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => void download(a.file_path)} aria-label="تنزيل">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => void download(a.file_path)}
+                    aria-label="تنزيل"
+                  >
                     <Download className="size-4" />
                   </Button>
                   <Button
@@ -643,10 +760,12 @@ export function TaskDetailsPanel({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-row-reverse items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-right" dir="rtl">
+    <div
+      className="flex flex-row-reverse items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-right"
+      dir="rtl"
+    >
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
     </div>
   );
 }
-

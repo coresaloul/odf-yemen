@@ -179,6 +179,9 @@ export function TaskDetailsPanel({
 
   const submitForApproval = useMutation({
     mutationFn: async () => {
+      if (task.status !== "in_progress") {
+        throw new Error("لا يمكن إرسال المهمة للاعتماد إلا عندما تكون حالة المهمة قيد التنفيذ");
+      }
       await requestApproval({ data: { taskId: task.id } });
     },
     onSuccess: () => {
@@ -453,7 +456,7 @@ export function TaskDetailsPanel({
           <Button size="sm" variant="outline" onClick={() => exportTask("pdf")}>
             <Printer className="size-4" /> PDF
           </Button>
-          {(task.status === "new" || task.status === "in_progress") &&
+          {task.status === "in_progress" &&
             (canManage || task.assignee_id === user?.id || task.supervisor_id === user?.id) && (
               <Button
                 size="sm"

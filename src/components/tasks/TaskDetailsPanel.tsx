@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileDown, Loader2, Plus, Printer, Trash2, Upload } from "lucide-react";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Download, FileDown, Loader2, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,10 @@ export function TaskDetailsPanel({
   const taskId = task.id;
   const [note, setNote] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
+  const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
+  const [editingUpdateText, setEditingUpdateText] = useState("");
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [draft, setDraft] = useState<number | null>(null);
 
@@ -54,9 +58,52 @@ export function TaskDetailsPanel({
         supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
       ]);
 
+      const rawSubtasks = (subtasks.data ?? []) as Array<{
+        id: string;
+        task_id: string;
+        title: string;
+        is_done: boolean;
+        position: number;
+        created_by?: string | null;
+        created_at?: string;
+        updated_at?: string;
+      }>;
+
+      const creatorIds = [
+        ...new Set([
+          ...(updates.data ?? []).map((u) => u.created_by).filter(Boolean),
+          ...rawSubtasks.map((s) => s.created_by).filter(Boolean),
+        ]),
+      ] as string[];
+
+      const creatorMap: Record<string, string> = {};
+
+      if (creatorIds.length > 0) {
+        const [{ data: profileRows }, { data: employeeRows }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name").in("id", creatorIds),
+          supabase.from("employees").select("user_id, full_name").in("user_id", creatorIds),
+        ]);
+
+        for (const row of profileRows ?? []) {
+          creatorMap[row.id] = row.full_name || "مستخدم";
+        }
+
+        for (const row of employeeRows ?? []) {
+          if (row.user_id) {
+            creatorMap[row.user_id] = row.full_name || creatorMap[row.user_id] || "مستخدم";
+          }
+        }
+      }
+
       return {
-        updates: updates.data ?? [],
-        subtasks: subtasks.data ?? [],
+        updates: (updates.data ?? []).map((u) => ({
+          ...u,
+          creator_name: u.created_by ? (creatorMap[u.created_by] ?? "مستخدم") : "النظام",
+        })),
+        subtasks: rawSubtasks.map((s) => ({
+          ...s,
+          creator_name: s.created_by ? (creatorMap[s.created_by] ?? "مستخدم") : "غير محدد",
+        })),
         attachments: attachments.data ?? [],
       };
     },
@@ -86,17 +133,64 @@ export function TaskDetailsPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateNote = useMutation({
+    mutationFn: async ({ id, noteText }: { id: string; noteText: string }) => {
+      const trimmed = noteText.trim();
+      if (!trimmed) throw new Error("نص الملاحظة مطلوب");
+
+      const { error } = await supabase.from("task_updates").update({ note: trimmed }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingUpdateId(null);
+      setEditingUpdateText("");
+      toast.success("تم تحديث الملاحظة");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeNote = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("task_updates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف الملاحظة");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const addSubtask = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("task_subtasks").insert({
         task_id: taskId,
         title: subtaskTitle.trim(),
         position: detail.data?.subtasks.length ?? 0,
+        created_by: user?.id ?? null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setSubtaskTitle("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateSubtask = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const trimmed = title.trim();
+      if (!trimmed) throw new Error("عنوان المهمة الفرعية مطلوب");
+
+      const { error } = await supabase.from("task_subtasks").update({ title: trimmed }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingSubtaskId(null);
+      setEditingSubtaskTitle("");
+      toast.success("تم تحديث المهمة الفرعية");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -109,6 +203,7 @@ export function TaskDetailsPanel({
         .update({ is_done: value.is_done })
         .eq("id", value.id);
       if (error) throw error;
+
       const list = (detail.data?.subtasks ?? []).map((s) =>
         s.id === value.id ? { ...s, is_done: value.is_done } : s,
       );
@@ -180,6 +275,7 @@ export function TaskDetailsPanel({
       const progressSuffix = u.progress !== null ? ` | النسبة ${u.progress}%` : "";
       return `${new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}${progressSuffix} — ${details}`;
     });
+
     const subtasks = (detail.data?.subtasks ?? []).map((s) => [s.title, s.is_done ? "مكتملة" : "قيد التنفيذ"]);
     const attachments = (detail.data?.attachments ?? []).map((a) => {
       const size = a.file_size ? `${Math.max(1, Math.round(a.file_size / 1024))} KB` : "غير محدد";
@@ -191,11 +287,11 @@ export function TaskDetailsPanel({
       subtitle: `الموظف المكلف: ${assigneeName} | المكلّف: ${assignerName}`,
       periodLabel: `التاريخ: ${formatDate(task.start_date)} - ${formatDate(task.due_date)}`,
       meta: [
-        { label: "الحالة", value: TASK_STATUS_LABELS[task.status] },
-        { label: "الأولوية", value: PRIORITY_LABELS[task.priority] },
+        { label: "الحالة", value: TASK_STATUS_LABELS[task.status] ?? "غير محدد" },
+        { label: "الأولوية", value: PRIORITY_LABELS[task.priority] ?? "غير محدد" },
         { label: "المشرف", value: supervisorName || "—" },
         { label: "نسبة الإنجاز", value: `${task.progress}%` },
-        { label: "الوزن", value: String(task.weight) },
+        { label: "الوزن", value: String(task.weight ?? 0) },
         { label: "التكرار", value: RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار" },
       ],
       sections: [
@@ -233,7 +329,7 @@ export function TaskDetailsPanel({
 
   const exportTask = (type: "word" | "pdf") => {
     const doc = buildTaskReport();
-    const fileName = `مهمة-${task.title}`.replace(/[^ -\uFFFF\w\u0600-\u06FF\s-]/g, "").trim();
+    const fileName = `مهمة-${task.title}`.replace(/[^-\uFFFF\w\u0600-\u06FF\s-]/g, "").trim();
     if (type === "word") {
       exportWord(doc, fileName || "مهمة");
       return;
@@ -291,8 +387,8 @@ export function TaskDetailsPanel({
         </div>
       </div>
 
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList className="w-full">
+      <Tabs defaultValue="details" className="w-full" dir="rtl">
+        <TabsList className="w-full" dir="rtl">
           <TabsTrigger value="details" className="flex-1">
             التفاصيل
           </TabsTrigger>
@@ -307,7 +403,7 @@ export function TaskDetailsPanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="space-y-3 pt-4">
+        <TabsContent value="details" className="space-y-3 pt-4 text-right" dir="rtl">
           {task.description && (
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="mb-1 text-xs font-semibold text-muted-foreground">الوصف</p>
@@ -315,7 +411,7 @@ export function TaskDetailsPanel({
             </div>
           )}
 
-          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="grid gap-2 text-sm sm:grid-cols-2" dir="rtl">
             <Row label="الموظف المكلّف" value={assigneeName} />
             <Row label="المكلِّف" value={assignerName} />
             <Row label="المشرف على المهمة" value={supervisorName || "—"} />
@@ -328,37 +424,99 @@ export function TaskDetailsPanel({
           </dl>
         </TabsContent>
 
-        <TabsContent value="updates" className="space-y-4 pt-4">
-          <div className="space-y-2">
+        <TabsContent value="updates" className="space-y-4 pt-4" dir="rtl">
+          <div className="space-y-2 text-right">
             <Label>إضافة ملاحظة/تحديث</Label>
-            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
-            <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
-              <Plus className="size-4" /> إضافة
-            </Button>
+            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className="text-right" />
+            <div className="flex justify-end">
+              <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+                <Plus className="size-4" /> إضافة
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
-            {(detail.data?.updates ?? []).map((u) => (
-              <div key={u.id} className="rounded-md border p-3 text-sm">
-                <p>{u.note || "تحديث نسبة الإنجاز"}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {u.progress !== null ? `النسبة ${u.progress}% — ` : ""}
-                  {new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}
-                </p>
-              </div>
-            ))}
+            {(detail.data?.updates ?? []).map((u) => {
+              const canManageUpdate = canManage || u.created_by === user?.id;
+              const isEditingUpdate = editingUpdateId === u.id;
+
+              return (
+                <div key={u.id} className="rounded-md border p-3 text-sm text-right" dir="rtl">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">{u.creator_name}</span>
+                    {u.progress !== null && <span className="text-xs text-muted-foreground">{u.progress}%</span>}
+                    {canManageUpdate && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingUpdateId(u.id);
+                            setEditingUpdateText(u.note || "");
+                          }}
+                          aria-label="تعديل الملاحظة"
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeNote.mutate(u.id)}
+                          aria-label="حذف الملاحظة"
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditingUpdate ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        rows={3}
+                        value={editingUpdateText}
+                        onChange={(e) => setEditingUpdateText(e.target.value)}
+                        className="text-right"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" onClick={() => updateNote.mutate({ id: u.id, noteText: editingUpdateText })}>
+                          حفظ
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingUpdateId(null);
+                            setEditingUpdateText("");
+                          }}
+                        >
+                          إلغاء
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{u.note || "تحديث نسبة الإنجاز"}</p>
+                  )}
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(u.created_at).toLocaleString("ar-EG-u-nu-latn")}
+                  </p>
+                </div>
+              );
+            })}
             {(detail.data?.updates.length ?? 0) === 0 && (
               <p className="text-sm text-muted-foreground">لا توجد تحديثات بعد.</p>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="subtasks" className="space-y-4 pt-4">
-          <div className="flex gap-2">
+        <TabsContent value="subtasks" className="space-y-4 pt-4" dir="rtl">
+          <div className="flex flex-row-reverse gap-2">
             <Input
               placeholder="عنوان المهمة الفرعية"
               value={subtaskTitle}
               onChange={(e) => setSubtaskTitle(e.target.value)}
+              className="text-right"
             />
             <Button size="sm" disabled={!subtaskTitle.trim() || addSubtask.isPending} onClick={() => addSubtask.mutate()}>
               <Plus className="size-4" /> إضافة
@@ -366,41 +524,88 @@ export function TaskDetailsPanel({
           </div>
 
           <div className="space-y-2">
-            {(detail.data?.subtasks ?? []).map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border p-2">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={s.is_done}
-                    onCheckedChange={(v) => toggleSubtask.mutate({ id: s.id, is_done: !!v })}
-                  />
-                  <span className={s.is_done ? "text-muted-foreground line-through" : ""}>{s.title}</span>
-                </label>
-                {canManage && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => removeSubtask.mutate(s.id)}
-                    aria-label="حذف"
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
-            ))}
+            {(detail.data?.subtasks ?? []).map((s) => {
+              const canManageSubtask = canManage || s.created_by === user?.id;
+              const isEditingSubtask = editingSubtaskId === s.id;
+
+              return (
+                <div key={s.id} className="rounded-md border p-2 text-right" dir="rtl">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">{s.creator_name}</span>
+                    {canManageSubtask && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingSubtaskId(s.id);
+                            setEditingSubtaskTitle(s.title);
+                          }}
+                          aria-label="تعديل المهمة الفرعية"
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeSubtask.mutate(s.id)}
+                          aria-label="حذف المهمة الفرعية"
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditingSubtask ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editingSubtaskTitle}
+                        onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                        className="text-right"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" onClick={() => updateSubtask.mutate({ id: s.id, title: editingSubtaskTitle })}>
+                          حفظ
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingSubtaskId(null);
+                            setEditingSubtaskTitle("");
+                          }}
+                        >
+                          إلغاء
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer items-center justify-end gap-2 text-sm">
+                      <span className={s.is_done ? "text-muted-foreground line-through" : ""}>{s.title}</span>
+                      <Checkbox
+                        checked={s.is_done}
+                        onCheckedChange={(v) => toggleSubtask.mutate({ id: s.id, is_done: !!v })}
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
             {(detail.data?.subtasks.length ?? 0) === 0 && (
               <p className="text-sm text-muted-foreground">لا توجد مهام فرعية.</p>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="files" className="space-y-4 pt-4">
-          <div className="flex items-center gap-2">
+        <TabsContent value="files" className="space-y-4 pt-4" dir="rtl">
+          <div className="flex flex-row-reverse items-center gap-2">
             <Input
               type="file"
               disabled={uploading}
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) upload(f);
+                if (f) void upload(f);
                 e.target.value = "";
               }}
             />
@@ -409,7 +614,7 @@ export function TaskDetailsPanel({
 
           <div className="space-y-2">
             {(detail.data?.attachments ?? []).map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
+              <div key={a.id} className="flex items-center justify-between rounded-md border p-2 text-sm" dir="rtl">
                 <span className="truncate">{a.file_name}</span>
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" onClick={() => void download(a.file_path)} aria-label="تنزيل">
@@ -438,9 +643,10 @@ export function TaskDetailsPanel({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between rounded-md bg-muted/40 px-3 py-2">
+    <div className="flex flex-row-reverse items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-right" dir="rtl">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
     </div>
   );
 }
+

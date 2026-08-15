@@ -3098,6 +3098,7 @@ export type Database = {
       task_subtasks: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           is_done: boolean
           position: number
@@ -3107,6 +3108,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_done?: boolean
           position?: number
@@ -3116,6 +3118,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_done?: boolean
           position?: number

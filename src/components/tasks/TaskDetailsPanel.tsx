@@ -294,6 +294,18 @@ export function TaskDetailsPanel({
     );
   };
 
+  const sanitizeStorageFileName = (name: string) => {
+    const normalized = name
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .trim();
+
+    return normalized || "file";
+  };
+
   const upload = async (file: File) => {
     if (!isAllowedAttachment(file)) {
       toast.error("نوع الملف غير مدعوم. يُسمح بـ PDF, Word, Excel, PowerPoint, نصوص وصور شائعة");
@@ -302,7 +314,8 @@ export function TaskDetailsPanel({
 
     setUploading(true);
     try {
-      const path = `${taskId}/${crypto.randomUUID()}-${file.name}`;
+      const safeFileName = sanitizeStorageFileName(file.name);
+      const path = `${taskId}/${crypto.randomUUID()}-${safeFileName}`;
       const { error: upErr } = await supabase.storage.from("task-files").upload(path, file);
       if (upErr) throw upErr;
 

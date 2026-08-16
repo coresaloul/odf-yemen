@@ -38,7 +38,7 @@ export function TaskDetailsPanel({
   canUpdateProgress,
   onProgress,
 }: TaskDetailsPanelProps) {
-  const { user } = useAuth();
+  const { user, employee } = useAuth();
   const qc = useQueryClient();
   const requestApproval = useServerFn(submitTaskForApproval);
   const taskId = task.id;
@@ -434,6 +434,10 @@ export function TaskDetailsPanel({
     if (!exportPdf(doc)) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
   };
 
+  const canSubmitForApproval =
+    task.status === "in_progress" &&
+    (canManage || task.assignee_id === employee?.id || task.supervisor_id === employee?.id);
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -456,16 +460,15 @@ export function TaskDetailsPanel({
           <Button size="sm" variant="outline" onClick={() => exportTask("pdf")}>
             <Printer className="size-4" /> PDF
           </Button>
-          {task.status === "in_progress" &&
-            (canManage || task.assignee_id === user?.id || task.supervisor_id === user?.id) && (
-              <Button
-                size="sm"
-                onClick={() => void submitForApproval.mutate()}
-                disabled={submitForApproval.isPending}
-              >
-                <Send className="size-4" /> إرسال إلى الاعتماد
-              </Button>
-            )}
+          {canSubmitForApproval && (
+            <Button
+              size="sm"
+              onClick={() => void submitForApproval.mutate()}
+              disabled={submitForApproval.isPending}
+            >
+              <Send className="size-4" /> إرسال إلى الاعتماد
+            </Button>
+          )}
         </div>
       </div>
 

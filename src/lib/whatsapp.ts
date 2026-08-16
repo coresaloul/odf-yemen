@@ -15,13 +15,13 @@ function signature() {
 
 export type TaskMessageInput = {
   title: string;
-  description?: string | null;
-  priority?: string | null;
-  dueDate?: string | null;
-  assigneeName?: string | null;
-  supervisorName?: string | null;
-  statusLabel?: string | null;
-  progress?: number | null;
+  description?: string | null | undefined;
+  priority?: string | null | undefined;
+  dueDate?: string | null | undefined;
+  assigneeName?: string | null | undefined;
+  supervisorName?: string | null | undefined;
+  statusLabel?: string | null | undefined;
+  progress?: number | null | undefined;
 };
 
 export function buildTaskAssignedMessage(t: TaskMessageInput) {

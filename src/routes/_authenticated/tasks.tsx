@@ -38,6 +38,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
+import {
+  buildTaskAssignedMessage,
+  buildTaskUpdatedMessage,
+  openWhatsApp,
+} from "@/lib/whatsapp";
 import { TaskFilters, EMPTY_FILTERS, type TaskFiltersState } from "@/components/tasks/TaskFilters";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
@@ -118,6 +123,20 @@ function TasksPage() {
   const employees = data?.employees ?? [];
   const departments = data?.departments ?? [];
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
+  const phoneOf = (id: string | null) => employees.find((e) => e.id === id)?.phone ?? null;
+
+  /** إشعارات واتساب: تُفتح محادثة لكل موظف برسالة جاهزة من نظام إدارة الموارد والمهام */
+  type WaTarget = { phone: string | null; message: string };
+  const notifyWhatsApp = (targets: WaTarget[]) => {
+    const valid = targets.filter((t) => t.phone);
+    if (valid.length === 0) return;
+    const opened = openWhatsApp(valid);
+    if (opened === 0) {
+      toast.info("اسمح بالنوافذ المنبثقة لإرسال إشعار واتساب", {
+        action: { label: "إرسال واتساب", onClick: () => openWhatsApp(valid) },
+      });
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
@@ -196,7 +215,25 @@ function TasksPage() {
             /* الإشعار داخل النظام يبقى فعّالاً */
           }
         }
-        return;
+        const assigneeId = v.assignee_ids[0]!;
+        const reassigned = assigneeId !== editing.assignee_id;
+        const base = {
+          title: v.title.trim(),
+          description: v.description || null,
+          priority: PRIORITY_LABELS[v.priority as TaskRow["priority"]] ?? v.priority,
+          dueDate: v.due_date || null,
+          assigneeName: nameOf(assigneeId),
+          supervisorName: v.supervisor_id ? nameOf(v.supervisor_id) : null,
+          statusLabel: TASK_STATUS_LABELS[v.status as TaskStatus] ?? v.status,
+        };
+        return [
+          {
+            phone: phoneOf(assigneeId),
+            message: reassigned
+              ? buildTaskAssignedMessage(base)
+              : buildTaskUpdatedMessage(base),
+          },
+        ];
       }
 
       const rows = v.assignee_ids.map((assignee_id) => ({
@@ -221,9 +258,21 @@ function TasksPage() {
           /* تجاهل أخطاء البريد */
         }
       }
+      return v.assignee_ids.map((id) => ({
+        phone: phoneOf(id),
+        message: buildTaskAssignedMessage({
+          title: v.title.trim(),
+          description: v.description || null,
+          priority: PRIORITY_LABELS[v.priority as TaskRow["priority"]] ?? v.priority,
+          dueDate: v.due_date || null,
+          assigneeName: nameOf(id),
+          supervisorName: v.supervisor_id ? nameOf(v.supervisor_id) : null,
+        }),
+      }));
     },
-    onSuccess: () => {
+    onSuccess: (targets) => {
       toast.success(editing ? "تم حفظ التعديلات" : "تم إنشاء المهمة");
+      notifyWhatsApp(targets ?? []);
       setFormOpen(false);
       setEditing(null);
       setInitialForm(undefined);
@@ -280,8 +329,24 @@ function TasksPage() {
       }
       return "done" as const;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, vars) => {
       toast.success(result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تحديث الإنجاز");
+      const task = tasks.find((t) => t.id === vars.id);
+      if (task && result === "done") {
+        notifyWhatsApp([
+          {
+            phone: phoneOf(task.assignee_id),
+            message: buildTaskUpdatedMessage({
+              title: task.title,
+              dueDate: task.due_date,
+              assigneeName: nameOf(task.assignee_id),
+              supervisorName: task.supervisor_id ? nameOf(task.supervisor_id) : null,
+              statusLabel: TASK_STATUS_LABELS[statusForProgress(vars.progress)],
+              progress: vars.progress,
+            }),
+          },
+        ]);
+      }
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -310,8 +375,23 @@ function TasksPage() {
       }
       return "done" as const;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, vars) => {
       toast.success(result === "pending" ? "أُرسلت المهمة لاعتماد المدير" : "تم تغيير حالة المهمة");
+      if (result === "done") {
+        notifyWhatsApp([
+          {
+            phone: phoneOf(vars.task.assignee_id),
+            message: buildTaskUpdatedMessage({
+              title: vars.task.title,
+              dueDate: vars.task.due_date,
+              assigneeName: nameOf(vars.task.assignee_id),
+              supervisorName: vars.task.supervisor_id ? nameOf(vars.task.supervisor_id) : null,
+              statusLabel: TASK_STATUS_LABELS[vars.status],
+              progress: progressForStatus(vars.status, vars.task.progress),
+            }),
+          },
+        ]);
+      }
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -478,6 +558,7 @@ function TasksPage() {
               supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
               canManage={canManageTask(t)}
               canUpdateProgress={canUpdateProgress(t)}
+              assigneePhone={phoneOf(t.assignee_id)}
               onOpen={() => openTask(t)}
               onEdit={() => {
                 setEditing(t);

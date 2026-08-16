@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { ClipboardList } from "lucide-react";
 import { TaskDetailsPanel } from "@/components/tasks/TaskDetailsPanel";
 import { useApplyTaskProgress } from "@/components/tasks/use-task-progress";
 import type { EmployeeLite, TaskRow } from "@/components/tasks/task-utils";
+import { PRIORITY_LABELS } from "@/lib/hr";
+import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/_authenticated/tasks_/$taskId")({
   head: () => ({
@@ -61,6 +63,21 @@ function TaskDetailsPage() {
 
   const applyProgress = useApplyTaskProgress(() => task ?? undefined);
 
+  const assigneePhone = employees.find((e) => e.id === task?.assignee_id)?.phone ?? null;
+  const whatsappHref = task
+    ? waLink(
+        assigneePhone,
+        buildTaskAssignedMessage({
+          title: task.title,
+          description: task.description,
+          priority: PRIORITY_LABELS[task.priority] ?? task.priority,
+          dueDate: task.due_date,
+          assigneeName: nameOf(task.assignee_id),
+          supervisorName: task.supervisor_id ? nameOf(task.supervisor_id) : null,
+        }),
+      )
+    : null;
+
   const canManage = !!task && (isManager || task.assigned_by === employee?.id);
   const canUpdateProgress = !!task && (canManage || task.assignee_id === employee?.id);
 
@@ -70,9 +87,18 @@ function TaskDetailsPage() {
         title={task?.title ?? "تفاصيل المهمة"}
         description="متابعة تفاصيل المهمة والمشرف عليها ونسبة الإنجاز."
         action={
-          <Button variant="outline" onClick={() => void navigate({ to: "/tasks" })}>
-            <ArrowRight className="size-4" /> رجوع إلى المهام
-          </Button>
+          <>
+            {whatsappHref && (
+              <Button variant="outline" asChild>
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="size-4" /> إشعار واتساب
+                </a>
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => void navigate({ to: "/tasks" })}>
+              <ArrowRight className="size-4" /> رجوع إلى المهام
+            </Button>
+          </>
         }
       />
 

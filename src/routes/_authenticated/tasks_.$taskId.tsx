@@ -45,7 +45,7 @@ function TaskDetailsPage() {
         supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
         supabase
           .from("employees")
-          .select("id, full_name, department_id, section_id")
+          .select("id, full_name, department_id, section_id, phone")
           .order("full_name"),
       ]);
       return {

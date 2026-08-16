@@ -102,7 +102,7 @@ function TasksPage() {
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
         supabase
           .from("employees")
-          .select("id, full_name, department_id, section_id")
+          .select("id, full_name, department_id, section_id, phone")
           .order("full_name"),
         supabase.from("departments").select("id, name").order("name"),
       ]);

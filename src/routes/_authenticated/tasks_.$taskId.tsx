@@ -74,6 +74,7 @@ function TaskDetailsPage() {
           dueDate: task.due_date,
           assigneeName: nameOf(task.assignee_id),
           supervisorName: task.supervisor_id ? nameOf(task.supervisor_id) : null,
+          taskId: task.id,
         }),
       )
     : null;

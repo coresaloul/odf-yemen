@@ -230,8 +230,8 @@ function TasksPage() {
           {
             phone: phoneOf(assigneeId),
             message: reassigned
-              ? buildTaskAssignedMessage(base)
-              : buildTaskUpdatedMessage(base),
+              ? buildTaskAssignedMessage({ ...base, taskId: editing.id })
+              : buildTaskUpdatedMessage({ ...base, taskId: editing.id }),
           },
         ];
       }
@@ -258,7 +258,7 @@ function TasksPage() {
           /* تجاهل أخطاء البريد */
         }
       }
-      return v.assignee_ids.map((id) => ({
+      return v.assignee_ids.map((id, index) => ({
         phone: phoneOf(id),
         message: buildTaskAssignedMessage({
           title: v.title.trim(),
@@ -267,6 +267,7 @@ function TasksPage() {
           dueDate: v.due_date || null,
           assigneeName: nameOf(id),
           supervisorName: v.supervisor_id ? nameOf(v.supervisor_id) : null,
+          taskId: inserted?.[index]?.id ?? undefined,
         }),
       }));
     },
@@ -343,6 +344,7 @@ function TasksPage() {
               supervisorName: task.supervisor_id ? nameOf(task.supervisor_id) : null,
               statusLabel: TASK_STATUS_LABELS[statusForProgress(vars.progress)],
               progress: vars.progress,
+              taskId: task.id,
             }),
           },
         ]);
@@ -388,6 +390,7 @@ function TasksPage() {
               supervisorName: vars.task.supervisor_id ? nameOf(vars.task.supervisor_id) : null,
               statusLabel: TASK_STATUS_LABELS[vars.status],
               progress: progressForStatus(vars.status, vars.task.progress),
+              taskId: vars.task.id,
             }),
           },
         ]);

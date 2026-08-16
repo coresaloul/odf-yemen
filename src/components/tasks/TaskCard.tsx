@@ -57,6 +57,7 @@ export function TaskCard({
       dueDate: task.due_date,
       assigneeName: assigneeName,
       supervisorName: supervisorName ?? null,
+      taskId: task.id,
     }),
   );
 

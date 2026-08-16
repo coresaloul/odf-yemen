@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Repeat,
   Paperclip,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,13 +19,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { isOverdue, type TaskRow } from "./task-utils";
-import { useState } from "react";
+import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
+import { PRIORITY_LABELS as PRIORITIES } from "@/lib/hr";
 
 export function TaskCard({
   task,
   assigneeName,
   assignerName,
   supervisorName,
+  assigneePhone,
   canManage,
   canUpdateProgress,
   onOpen,
@@ -36,6 +39,7 @@ export function TaskCard({
   assigneeName: string;
   assignerName: string;
   supervisorName?: string | null;
+  assigneePhone?: string | null;
   canManage: boolean;
   canUpdateProgress: boolean;
   onOpen?: () => void;
@@ -44,6 +48,17 @@ export function TaskCard({
   onProgress: (progress: number) => void;
 }) {
   const overdue = isOverdue(task);
+  const whatsappHref = waLink(
+    assigneePhone,
+    buildTaskAssignedMessage({
+      title: task.title,
+      description: task.description,
+      priority: PRIORITIES[task.priority] ?? task.priority,
+      dueDate: task.due_date,
+      assigneeName: assigneeName,
+      supervisorName: supervisorName ?? null,
+    }),
+  );
 
   return (
     <Card className={overdue ? "border-destructive/50" : undefined}>
@@ -102,7 +117,14 @@ export function TaskCard({
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-1">
+          {whatsappHref && (
+            <Button size="sm" variant="ghost" asChild>
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="size-4" /> واتساب
+              </a>
+            </Button>
+          )}
           <Button size="sm" variant="ghost" type="button" onClick={onOpen} disabled={!onOpen}>
             <Paperclip className="size-4" /> التفاصيل
           </Button>

@@ -9,6 +9,7 @@ export type EmployeeLite = {
   full_name: string;
   department_id: string | null;
   section_id: string | null;
+  phone?: string | null;
 };
 
 export const STATUS_ORDER: TaskStatus[] = [

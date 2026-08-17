@@ -4,6 +4,10 @@ export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskStatus = Database["public"]["Enums"]["task_status"];
 export type TaskPriority = Database["public"]["Enums"]["task_priority"];
 
+export type SubtaskLite = {
+  is_done?: boolean | null;
+};
+
 export type EmployeeLite = {
   id: string;
   full_name: string;
@@ -40,6 +44,18 @@ export function isOverdue(t: Pick<TaskRow, "due_date" | "status">) {
     return false;
   const today = new Date().toISOString().slice(0, 10);
   return t.due_date < today;
+}
+
+export function progressFromSubtasks(subtasks: SubtaskLite[]) {
+  if (!subtasks.length) return 0;
+  const done = subtasks.filter((subtask) => subtask.is_done).length;
+  return Math.round((done / subtasks.length) * 100);
+}
+
+export function statusFromSubtasks(progress: number): TaskStatus {
+  if (progress >= 100) return "pending_approval";
+  if (progress > 0) return "in_progress";
+  return "new";
 }
 
 export function statusForProgress(progress: number): TaskStatus {

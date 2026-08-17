@@ -16,7 +16,12 @@ import { submitTaskForApproval } from "@/lib/approvals.functions";
 import { exportPdf, exportWord } from "@/lib/report-export";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { buildStorageObjectKey } from "@/lib/storage-path";
-import { isOverdue, RECURRENCE_LABELS } from "./task-utils";
+import {
+  isOverdue,
+  progressFromSubtasks,
+  RECURRENCE_LABELS,
+  statusFromSubtasks,
+} from "./task-utils";
 import type { TaskRow } from "./task-utils";
 
 type TaskDetailsPanelProps = {
@@ -124,17 +129,19 @@ export function TaskDetailsPanel({
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
   };
 
-  const resetTaskProgress = async () => {
-    if (["completed", "cancelled", "pending_approval"].includes(task.status)) return;
+  const syncTaskProgressFromSubtasks = async (subtasks: Array<{ is_done: boolean }>) => {
+    const progress = progressFromSubtasks(subtasks);
+    const status = statusFromSubtasks(progress);
     const { error } = await supabase
       .from("tasks")
       .update({
-        status: "in_progress",
-        progress: 0,
-        completed_at: null,
+        status,
+        progress,
+        completed_at: progress >= 100 ? new Date().toISOString() : null,
       })
       .eq("id", task.id);
     if (error) throw error;
+    return { progress, status };
   };
 
   const addNote = useMutation({
@@ -149,7 +156,6 @@ export function TaskDetailsPanel({
         created_by: user?.id ?? null,
       });
       if (error) throw error;
-      await resetTaskProgress();
     },
     onSuccess: () => {
       setNote("");
@@ -166,7 +172,6 @@ export function TaskDetailsPanel({
 
       const { error } = await supabase.from("task_updates").update({ note: trimmed }).eq("id", id);
       if (error) throw error;
-      await resetTaskProgress();
     },
     onSuccess: () => {
       setEditingUpdateId(null);
@@ -205,14 +210,23 @@ export function TaskDetailsPanel({
 
   const addSubtask = useMutation({
     mutationFn: async () => {
+      const trimmed = subtaskTitle.trim();
+      if (!trimmed) throw new Error("عنوان المهمة الفرعية مطلوب");
+
       const { error } = await supabase.from("task_subtasks").insert({
         task_id: taskId,
-        title: subtaskTitle.trim(),
+        title: trimmed,
         position: detail.data?.subtasks.length ?? 0,
         created_by: user?.id ?? null,
       });
       if (error) throw error;
-      await resetTaskProgress();
+
+      const { data: freshSubtasks, error: fetchError } = await supabase
+        .from("task_subtasks")
+        .select("is_done")
+        .eq("task_id", taskId);
+      if (fetchError) throw fetchError;
+      await syncTaskProgressFromSubtasks((freshSubtasks ?? []) as Array<{ is_done: boolean }>);
     },
     onSuccess: () => {
       setSubtaskTitle("");
@@ -231,7 +245,13 @@ export function TaskDetailsPanel({
         .update({ title: trimmed })
         .eq("id", id);
       if (error) throw error;
-      await resetTaskProgress();
+
+      const { data: freshSubtasks, error: fetchError } = await supabase
+        .from("task_subtasks")
+        .select("is_done")
+        .eq("task_id", taskId);
+      if (fetchError) throw fetchError;
+      await syncTaskProgressFromSubtasks((freshSubtasks ?? []) as Array<{ is_done: boolean }>);
     },
     onSuccess: () => {
       setEditingSubtaskId(null);
@@ -249,7 +269,13 @@ export function TaskDetailsPanel({
         .update({ is_done: value.is_done })
         .eq("id", value.id);
       if (error) throw error;
-      await resetTaskProgress();
+
+      const { data: freshSubtasks, error: fetchError } = await supabase
+        .from("task_subtasks")
+        .select("is_done")
+        .eq("task_id", taskId);
+      if (fetchError) throw fetchError;
+      await syncTaskProgressFromSubtasks((freshSubtasks ?? []) as Array<{ is_done: boolean }>);
     },
     onSuccess: () => refresh(),
     onError: (e: Error) => toast.error(e.message),
@@ -259,6 +285,13 @@ export function TaskDetailsPanel({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("task_subtasks").delete().eq("id", id);
       if (error) throw error;
+
+      const { data: freshSubtasks, error: fetchError } = await supabase
+        .from("task_subtasks")
+        .select("is_done")
+        .eq("task_id", taskId);
+      if (fetchError) throw fetchError;
+      await syncTaskProgressFromSubtasks((freshSubtasks ?? []) as Array<{ is_done: boolean }>);
     },
     onSuccess: () => refresh(),
     onError: (e: Error) => toast.error(e.message),
@@ -438,6 +471,11 @@ export function TaskDetailsPanel({
     task.status === "in_progress" &&
     (canManage || task.assignee_id === employee?.id || task.supervisor_id === employee?.id);
 
+  const currentProgress = detail.data
+    ? progressFromSubtasks(detail.data.subtasks)
+    : Number(task.progress ?? 0);
+  const currentStatus = statusFromSubtasks(currentProgress);
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -503,7 +541,8 @@ export function TaskDetailsPanel({
             <Row label="تاريخ البدء" value={formatDate(task.start_date)} />
             <Row label="تاريخ الاستحقاق" value={formatDate(task.due_date)} />
             <Row label="وزن المهمة" value={String(task.weight)} />
-            <Row label="نسبة الإنجاز" value={`${task.progress}%`} />
+            <Row label="نسبة الإنجاز" value={`${currentProgress}%`} />
+            <Row label="حالة الإنجاز" value={TASK_STATUS_LABELS[currentStatus] ?? "غير محدد"} />
             <Row label="تاريخ الإنشاء" value={formatDate(task.created_at)} />
             <Row label="تاريخ الإكمال" value={formatDate(task.completed_at)} />
           </dl>

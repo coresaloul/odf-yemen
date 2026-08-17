@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { isOverdue, type TaskRow } from "./task-utils";
 import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
@@ -48,6 +49,7 @@ export function TaskCard({
   onProgress: (progress: number) => void;
 }) {
   const overdue = isOverdue(task);
+  const progressValue = Number(task.progress ?? 0);
   const whatsappHref = waLink(
     assigneePhone,
     buildTaskAssignedMessage({
@@ -116,6 +118,14 @@ export function TaskCard({
               </DropdownMenu>
             )}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>نسبة الإنجاز</span>
+            <span>{progressValue}%</span>
+          </div>
+          <Progress value={progressValue} className="h-2" />
         </div>
 
         <div className="flex justify-end gap-1">

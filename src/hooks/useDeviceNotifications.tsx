@@ -48,11 +48,21 @@ async function subscribeToPush() {
   const { publicKey } = await getVapidPublicKey();
   if (!publicKey) return false;
 
+  const applicationServerKey = urlBase64ToUint8Array(publicKey);
   let sub = await reg.pushManager.getSubscription();
+
+  // إن كان الاشتراك القديم بمفتاح مختلف نُلغيه ونعيد الاشتراك حتى لا تتوقف الإشعارات
+  if (sub) {
+    const current = bufferToBase64Url(sub.options?.applicationServerKey ?? null);
+    if (current && current !== publicKey) {
+      await sub.unsubscribe().catch(() => false);
+      sub = null;
+    }
+  }
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey,
     });
   }
 
@@ -72,6 +82,7 @@ async function subscribeToPush() {
   );
   return !error;
 }
+
 
 /**
  * إشعارات الجهاز (الويب والموبايل):

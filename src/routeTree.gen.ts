@@ -33,6 +33,8 @@ import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as IclockSplatRouteImport } from './routes/iclock/$'
 import { Route as AuthenticatedTasksTaskIdRouteImport } from './routes/_authenticated/tasks_.$taskId'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
+import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push/resubscribe'
+import { Route as ApiPublicPushVapidRouteImport } from './routes/api/public/push/vapid'
 import { Route as ApiPublicZktecoSplatRouteImport } from './routes/api/public/zkteco/$'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
@@ -157,6 +159,17 @@ const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   path: '/api/public/push/dispatch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushResubscribeRoute =
+  ApiPublicPushResubscribeRouteImport.update({
+    id: '/api/public/push/resubscribe',
+    path: '/api/public/push/resubscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPushVapidRoute = ApiPublicPushVapidRouteImport.update({
+  id: '/api/public/push/vapid',
+  path: '/api/public/push/vapid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicZktecoSplatRoute = ApiPublicZktecoSplatRouteImport.update({
   id: '/api/public/zkteco/$',
   path: '/api/public/zkteco/$',
@@ -193,6 +206,8 @@ export interface FileRoutesByFullPath {
   '/iclock/$': typeof IclockSplatRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
+  '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -220,6 +235,8 @@ export interface FileRoutesByTo {
   '/iclock/$': typeof IclockSplatRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
+  '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -249,6 +266,8 @@ export interface FileRoutesById {
   '/iclock/$': typeof IclockSplatRoute
   '/_authenticated/tasks_/$taskId': typeof AuthenticatedTasksTaskIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
+  '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
   '/api/public/zkteco/$': typeof ApiPublicZktecoSplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -278,6 +297,8 @@ export interface FileRouteTypes {
     | '/iclock/$'
     | '/tasks/$taskId'
     | '/api/public/push/dispatch'
+    | '/api/public/push/resubscribe'
+    | '/api/public/push/vapid'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
@@ -305,6 +326,8 @@ export interface FileRouteTypes {
     | '/iclock/$'
     | '/tasks/$taskId'
     | '/api/public/push/dispatch'
+    | '/api/public/push/resubscribe'
+    | '/api/public/push/vapid'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   id:
@@ -333,6 +356,8 @@ export interface FileRouteTypes {
     | '/iclock/$'
     | '/_authenticated/tasks_/$taskId'
     | '/api/public/push/dispatch'
+    | '/api/public/push/resubscribe'
+    | '/api/public/push/vapid'
     | '/api/public/zkteco/$'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
@@ -344,6 +369,8 @@ export interface RootRouteChildren {
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   IclockSplatRoute: typeof IclockSplatRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
+  ApiPublicPushResubscribeRoute: typeof ApiPublicPushResubscribeRoute
+  ApiPublicPushVapidRoute: typeof ApiPublicPushVapidRoute
   ApiPublicZktecoSplatRoute: typeof ApiPublicZktecoSplatRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -518,6 +545,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPushDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/resubscribe': {
+      id: '/api/public/push/resubscribe'
+      path: '/api/public/push/resubscribe'
+      fullPath: '/api/public/push/resubscribe'
+      preLoaderRoute: typeof ApiPublicPushResubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/push/vapid': {
+      id: '/api/public/push/vapid'
+      path: '/api/public/push/vapid'
+      fullPath: '/api/public/push/vapid'
+      preLoaderRoute: typeof ApiPublicPushVapidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/zkteco/$': {
       id: '/api/public/zkteco/$'
       path: '/api/public/zkteco/$'
@@ -587,6 +628,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTranscribeRoute: ApiTranscribeRoute,
   IclockSplatRoute: IclockSplatRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
+  ApiPublicPushResubscribeRoute: ApiPublicPushResubscribeRoute,
+  ApiPublicPushVapidRoute: ApiPublicPushVapidRoute,
   ApiPublicZktecoSplatRoute: ApiPublicZktecoSplatRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }

@@ -96,10 +96,25 @@ export function useDeviceNotifications() {
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     setPermission(Notification.permission as PermissionState);
-    if (Notification.permission === "granted") {
+
+    const sync = () => {
+      if (Notification.permission !== "granted") return;
       void subscribeToPush().then(setPushReady);
-    }
+    };
+    sync();
+
+    // إعادة التحقق من صلاحية اشتراك الجهاز دورياً وعند العودة للتطبيق
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = window.setInterval(sync, 6 * 60 * 60 * 1000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(timer);
+    };
   }, []);
+
 
   const request = useCallback(async () => {
     if (typeof window === "undefined" || !("Notification" in window)) return "unsupported" as const;

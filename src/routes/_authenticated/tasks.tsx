@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  CalendarRange,
   ClipboardList,
   FileText,
   KanbanSquare,
@@ -98,7 +99,11 @@ function TasksPage() {
   const [deleteTask, setDeleteTask] = useState<TaskRow | null>(null);
   const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
   const [scope, setScope] = useState<"all" | "mine" | "assigned">("all");
-  const [view, setView] = useState<"list" | "board">("list");
+  const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const current = new Date();
+    return new Date(current.getFullYear(), current.getMonth(), 1);
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks-page"],
@@ -168,6 +173,28 @@ function TasksPage() {
     });
     return list;
   }, [tasks, employees, filters, scope, employee?.id]);
+
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - firstDay.getDay());
+    const cells: Date[] = [];
+    for (let index = 0; index < 42; index += 1) {
+      const cell = new Date(start);
+      cell.setDate(start.getDate() + index);
+      cells.push(cell);
+    }
+    return cells;
+  }, [calendarMonth]);
+
+  const tasksForDay = (day: Date) => {
+    const target = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    return filtered.filter((task) => {
+      const taskStart = task.start_date ? new Date(`${task.start_date}T00:00:00`) : new Date(task.created_at);
+      const taskEnd = task.due_date ? new Date(`${task.due_date}T00:00:00`) : taskStart;
+      return target >= taskStart && target <= taskEnd;
+    });
+  };
 
   const stats = useMemo(() => {
     const total = filtered.length;
@@ -521,6 +548,13 @@ function TasksPage() {
           >
             <KanbanSquare className="size-4" /> لوحة
           </Button>
+          <Button
+            size="sm"
+            variant={view === "calendar" ? "default" : "outline"}
+            onClick={() => setView("calendar")}
+          >
+            <CalendarRange className="size-4" /> تقويم
+          </Button>
         </div>
       </div>
 
@@ -548,6 +582,89 @@ function TasksPage() {
           onOpen={openTask}
           onStatusChange={(task, status) => changeStatus.mutate({ task, status })}
         />
+      )}
+
+      {!isLoading && filtered.length > 0 && view === "calendar" && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setCalendarMonth(
+                  new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
+                )
+              }
+            >
+              السابق
+            </Button>
+            <div className="text-sm font-semibold text-foreground">
+              {new Intl.DateTimeFormat("ar-EG", { month: "long", year: "numeric" }).format(
+                calendarMonth,
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setCalendarMonth(
+                  new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1),
+                )
+              }
+            >
+              التالي
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {[
+              "الأحد",
+              "الإثنين",
+              "الثلاثاء",
+              "الأربعاء",
+              "الخميس",
+              "الجمعة",
+              "السبت",
+            ].map((weekday) => (
+              <div key={weekday} className="px-2 py-1 text-center text-xs font-medium text-muted-foreground">
+                {weekday}
+              </div>
+            ))}
+
+            {calendarDays.map((day) => {
+              const dayTasks = tasksForDay(day);
+              const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={[
+                    "min-h-[120px] rounded-md border p-2 text-right",
+                    isCurrentMonth ? "bg-background" : "bg-muted/30 text-muted-foreground",
+                  ].join(" ")}
+                >
+                  <div className="mb-2 text-xs font-medium">{day.getDate()}</div>
+                  <div className="space-y-1">
+                    {dayTasks.slice(0, 3).map((task) => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => openTask(task)}
+                        className="w-full rounded-md bg-primary/10 px-2 py-1 text-right text-[10px] text-primary transition hover:bg-primary/15"
+                        title={`${task.title} (${formatDate(task.start_date)} - ${formatDate(task.due_date)})`}
+                      >
+                        {task.title}
+                      </button>
+                    ))}
+                    {dayTasks.length > 3 && (
+                      <div className="text-[10px] text-muted-foreground">+{dayTasks.length - 3} أخرى</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {view === "list" && (

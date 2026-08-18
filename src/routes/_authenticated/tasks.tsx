@@ -37,6 +37,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 import {
@@ -100,6 +107,7 @@ function TasksPage() {
   const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
   const [scope, setScope] = useState<"all" | "mine" | "assigned">("all");
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const current = new Date();
     return new Date(current.getFullYear(), current.getMonth(), 1);
@@ -200,8 +208,12 @@ function TasksPage() {
       .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
   };
 
-  const taskCalendarTone = (status: TaskStatus) => {
-    switch (status) {
+  const taskCalendarTone = (task: TaskRow) => {
+    if (isOverdue(task)) {
+      return "border-red-600/40 bg-red-500/10 text-red-800 dark:text-red-200";
+    }
+
+    switch (task.status) {
       case "completed":
         return "border-emerald-600/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200";
       case "pending_approval":
@@ -668,14 +680,16 @@ function TasksPage() {
                     isToday ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background" : "",
                   ].join(" ")}
                 >
-                  <div
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDay(day)}
                     className={[
-                      "mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
+                      "mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold transition hover:scale-105",
                       isToday ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                     ].join(" ")}
                   >
                     {day.getDate()}
-                  </div>
+                  </button>
 
                   <div className="space-y-1.5">
                     {dayTasks.slice(0, 3).map((task) => (
@@ -685,7 +699,7 @@ function TasksPage() {
                         onClick={() => openTask(task)}
                         className={[
                           "w-full rounded-md border px-2 py-1.5 text-right text-[10px] shadow-sm transition hover:opacity-90",
-                          taskCalendarTone(task.status),
+                          taskCalendarTone(task),
                         ].join(" ")}
                         title={`${task.title} (${formatDate(task.start_date)} - ${formatDate(task.due_date)})`}
                       >
@@ -708,6 +722,49 @@ function TasksPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
+        <DialogContent dir="rtl" className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDay
+                ? `المهام في ${new Intl.DateTimeFormat("ar-EG", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }).format(selectedDay)}`
+                : "المهام"}
+            </DialogTitle>
+            <DialogDescription>جميع المهام المرتبطة بهذا اليوم، مع حالة كل مهمة وتاريخها.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            {selectedDay && tasksForDay(selectedDay).length > 0 ? (
+              tasksForDay(selectedDay).map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDay(null);
+                    openTask(task);
+                  }}
+                  className={[
+                    "flex w-full flex-col rounded-md border px-3 py-2 text-right transition hover:bg-muted/50",
+                    taskCalendarTone(task),
+                  ].join(" ")}
+                >
+                  <span className="font-medium">{task.title}</span>
+                  <span className="mt-1 text-[10px] opacity-80">
+                    {TASK_STATUS_LABELS[task.status] ?? task.status} • {formatDate(task.start_date)} → {formatDate(task.due_date)}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">لا توجد مهام لهذا اليوم.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {view === "list" && (
         <div className="space-y-3">

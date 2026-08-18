@@ -189,11 +189,30 @@ function TasksPage() {
 
   const tasksForDay = (day: Date) => {
     const target = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-    return filtered.filter((task) => {
-      const taskStart = task.start_date ? new Date(`${task.start_date}T00:00:00`) : new Date(task.created_at);
-      const taskEnd = task.due_date ? new Date(`${task.due_date}T00:00:00`) : taskStart;
-      return target >= taskStart && target <= taskEnd;
-    });
+    return filtered
+      .filter((task) => {
+        const taskStart = task.start_date
+          ? new Date(`${task.start_date}T00:00:00`)
+          : new Date(task.created_at);
+        const taskEnd = task.due_date ? new Date(`${task.due_date}T00:00:00`) : taskStart;
+        return target >= taskStart && target <= taskEnd;
+      })
+      .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
+  };
+
+  const taskCalendarTone = (status: TaskStatus) => {
+    switch (status) {
+      case "completed":
+        return "border-emerald-600/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200";
+      case "pending_approval":
+        return "border-amber-600/40 bg-amber-500/10 text-amber-800 dark:text-amber-200";
+      case "in_progress":
+        return "border-sky-600/40 bg-sky-500/10 text-sky-800 dark:text-sky-200";
+      case "cancelled":
+        return "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-200";
+      default:
+        return "border-violet-600/40 bg-violet-500/10 text-violet-800 dark:text-violet-200";
+    }
   };
 
   const stats = useMemo(() => {
@@ -585,7 +604,7 @@ function TasksPage() {
       )}
 
       {!isLoading && filtered.length > 0 && view === "calendar" && (
-        <div className="space-y-3">
+        <div className="space-y-4 rounded-xl border bg-card p-3 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <Button
               size="sm"
@@ -626,7 +645,10 @@ function TasksPage() {
               "الجمعة",
               "السبت",
             ].map((weekday) => (
-              <div key={weekday} className="px-2 py-1 text-center text-xs font-medium text-muted-foreground">
+              <div
+                key={weekday}
+                className="rounded-md bg-muted/60 px-2 py-2 text-center text-[11px] font-semibold text-muted-foreground"
+              >
                 {weekday}
               </div>
             ))}
@@ -634,30 +656,50 @@ function TasksPage() {
             {calendarDays.map((day) => {
               const dayTasks = tasksForDay(day);
               const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
+              const isToday =
+                day.toDateString() === new Date().toDateString();
 
               return (
                 <div
                   key={day.toISOString()}
                   className={[
-                    "min-h-[120px] rounded-md border p-2 text-right",
-                    isCurrentMonth ? "bg-background" : "bg-muted/30 text-muted-foreground",
+                    "min-h-[150px] rounded-lg border p-2 text-right transition-colors",
+                    isCurrentMonth ? "border-border bg-background" : "border-muted bg-muted/20",
+                    isToday ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background" : "",
                   ].join(" ")}
                 >
-                  <div className="mb-2 text-xs font-medium">{day.getDate()}</div>
-                  <div className="space-y-1">
+                  <div
+                    className={[
+                      "mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
+                      isToday ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                    ].join(" ")}
+                  >
+                    {day.getDate()}
+                  </div>
+
+                  <div className="space-y-1.5">
                     {dayTasks.slice(0, 3).map((task) => (
                       <button
                         key={task.id}
                         type="button"
                         onClick={() => openTask(task)}
-                        className="w-full rounded-md bg-primary/10 px-2 py-1 text-right text-[10px] text-primary transition hover:bg-primary/15"
+                        className={[
+                          "w-full rounded-md border px-2 py-1.5 text-right text-[10px] shadow-sm transition hover:opacity-90",
+                          taskCalendarTone(task.status),
+                        ].join(" ")}
                         title={`${task.title} (${formatDate(task.start_date)} - ${formatDate(task.due_date)})`}
                       >
-                        {task.title}
+                        <div className="truncate font-medium">{task.title}</div>
+                        <div className="mt-0.5 text-[9px] opacity-80">
+                          {formatDate(task.start_date)} → {formatDate(task.due_date)}
+                        </div>
                       </button>
                     ))}
+
                     {dayTasks.length > 3 && (
-                      <div className="text-[10px] text-muted-foreground">+{dayTasks.length - 3} أخرى</div>
+                      <div className="px-1 text-[10px] text-muted-foreground">
+                        +{dayTasks.length - 3} مهام إضافية
+                      </div>
                     )}
                   </div>
                 </div>

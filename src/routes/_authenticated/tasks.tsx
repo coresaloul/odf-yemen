@@ -151,6 +151,12 @@ function TasksPage() {
     }
   };
 
+  const sortTasksByPriorityThenDue = (a: TaskRow, b: TaskRow) => {
+    const priorityDelta = (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9);
+    if (priorityDelta !== 0) return priorityDelta;
+    return (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999");
+  };
+
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
     let list = tasks.filter((t) => {
@@ -175,7 +181,7 @@ function TasksPage() {
         return (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999");
       }
       if (filters.sort === "priority") {
-        return (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9);
+        return sortTasksByPriorityThenDue(a, b);
       }
       return b.created_at.localeCompare(a.created_at);
     });
@@ -205,7 +211,7 @@ function TasksPage() {
         const taskEnd = task.due_date ? new Date(`${task.due_date}T00:00:00`) : taskStart;
         return target >= taskStart && target <= taskEnd;
       })
-      .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
+      .sort((a, b) => sortTasksByPriorityThenDue(a, b));
   };
 
   const taskCalendarTone = (task: TaskRow) => {
@@ -711,9 +717,13 @@ function TasksPage() {
                     ))}
 
                     {dayTasks.length > 3 && (
-                      <div className="px-1 text-[10px] text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDay(day)}
+                        className="w-full rounded-md px-1 py-1 text-right text-[10px] text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
+                      >
                         +{dayTasks.length - 3} مهام إضافية
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>

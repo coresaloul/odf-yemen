@@ -242,6 +242,34 @@ function TasksPage() {
     return { total, done, running, late, avg };
   }, [filtered]);
 
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
+  const isSameDay = (value: string | null, day: Date) => {
+    if (!value) return false;
+    return new Date(`${value}T00:00:00`).toDateString() === day.toDateString();
+  };
+  const todayTasks = useMemo(
+    () =>
+      filtered.filter(
+        (task) =>
+          (task.due_date && isSameDay(task.due_date, today)) ||
+          (task.start_date && isSameDay(task.start_date, today)) ||
+          (!task.start_date && !task.due_date && task.created_at.slice(0, 10) === todayIso),
+      ),
+    [filtered, todayIso],
+  );
+  const upcomingTasks = useMemo(
+    () =>
+      filtered.filter(
+        (task) =>
+          !!task.due_date &&
+          task.due_date > todayIso &&
+          task.status !== "completed" &&
+          task.status !== "cancelled",
+      ),
+    [filtered, todayIso],
+  );
+
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["tasks-page"] });
     void qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -562,6 +590,39 @@ function TasksPage() {
         <StatCard label="متوسط الإنجاز" value={`${stats.avg}%`} />
       </div>
 
+      <div className="rounded-xl border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">لوحة المدير التنفيذي</h3>
+            <p className="text-xs text-muted-foreground">نظرة سريعة على المهام الحرجة والتقدم اليومي</p>
+          </div>
+          <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
+            {new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long" }).format(today)}
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <QuickSummaryCard
+            title="مهام اليوم"
+            count={todayTasks.length}
+            tone="primary"
+            tasks={todayTasks.slice(0, 3)}
+          />
+          <QuickSummaryCard
+            title="المهام المتأخرة"
+            count={stats.late}
+            tone="danger"
+            tasks={filtered.filter(isOverdue).slice(0, 3)}
+          />
+          <QuickSummaryCard
+            title="المهام القادمة"
+            count={upcomingTasks.length}
+            tone="success"
+            tasks={upcomingTasks.slice(0, 3)}
+          />
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Tabs value={scope} onValueChange={(v) => setScope(v as typeof scope)}>
           <TabsList>
@@ -851,6 +912,50 @@ function StatCard({
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function QuickSummaryCard({
+  title,
+  count,
+  tone,
+  tasks,
+}: {
+  title: string;
+  count: number;
+  tone: "primary" | "danger" | "success";
+  tasks: TaskRow[];
+}) {
+  const toneStyles = {
+    primary: "border-primary/20 bg-primary/5 text-primary",
+    danger: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300",
+  };
+
+  return (
+    <div className={`rounded-lg border p-3 ${toneStyles[tone]}`}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{title}</span>
+        <span className="rounded-full bg-background/70 px-2 py-0.5 text-xs font-bold">{count}</span>
+      </div>
+
+      <div className="space-y-1.5">
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <div key={task.id} className="rounded-md bg-background/60 px-2 py-1 text-[11px] text-foreground/80">
+              <div className="truncate font-medium">{task.title}</div>
+              <div className="mt-0.5 text-[10px] opacity-80">
+                {formatDate(task.due_date ?? task.start_date ?? task.created_at)}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-md bg-background/50 px-2 py-2 text-[11px] text-foreground/60">
+            لا توجد مهام
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

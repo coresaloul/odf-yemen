@@ -57,9 +57,12 @@ ALTER TABLE public.correspondence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correspondence_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correspondence_attachments ENABLE ROW LEVEL SECURITY;
 
+CREATE TRIGGER trg_correspondence_updated BEFORE UPDATE ON public.correspondence
+FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
 CREATE POLICY correspondence_read ON public.correspondence FOR SELECT TO authenticated
 USING (
-  public.is_director() OR public.is_hr()
+  private.is_director() OR private.is_hr()
   OR created_by = auth.uid()
   OR assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
 );
@@ -68,11 +71,11 @@ CREATE POLICY correspondence_insert ON public.correspondence FOR INSERT TO authe
 WITH CHECK (created_by = auth.uid());
 
 CREATE POLICY correspondence_update ON public.correspondence FOR UPDATE TO authenticated
-USING (public.is_director() OR public.is_hr() OR created_by = auth.uid() OR assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
-WITH CHECK (public.is_director() OR public.is_hr() OR created_by = auth.uid() OR assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()));
+USING (private.is_director() OR private.is_hr() OR created_by = auth.uid() OR assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
+WITH CHECK (private.is_director() OR private.is_hr() OR created_by = auth.uid() OR assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()));
 
 CREATE POLICY correspondence_delete ON public.correspondence FOR DELETE TO authenticated
-USING (public.is_director() OR public.is_hr() OR (created_by = auth.uid() AND status = 'draft'));
+USING (private.is_director() OR private.is_hr() OR (created_by = auth.uid() AND status = 'draft'));
 
 CREATE POLICY correspondence_actions_read ON public.correspondence_actions FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id));
@@ -82,18 +85,18 @@ WITH CHECK (actor_id = auth.uid());
 
 CREATE POLICY correspondence_attachments_read ON public.correspondence_attachments FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id AND (
-  public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+  private.is_director() OR private.is_hr() OR c.created_by = auth.uid()
   OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
 )));
 
 CREATE POLICY correspondence_attachments_insert ON public.correspondence_attachments FOR INSERT TO authenticated
 WITH CHECK (uploaded_by = auth.uid() AND EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id AND (
-  public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+  private.is_director() OR private.is_hr() OR c.created_by = auth.uid()
   OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
 )));
 
 CREATE POLICY correspondence_attachments_delete ON public.correspondence_attachments FOR DELETE TO authenticated
-USING (uploaded_by = auth.uid() OR public.is_director() OR public.is_hr());
+USING (uploaded_by = auth.uid() OR private.is_director() OR private.is_hr());
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('correspondence-files', 'correspondence-files', false)
@@ -105,7 +108,7 @@ USING (
   AND EXISTS (
     SELECT 1 FROM public.correspondence c
     WHERE c.id::text = (storage.foldername(name))[1]
-    AND (public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+    AND (private.is_director() OR private.is_hr() OR c.created_by = auth.uid()
       OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
   )
 );
@@ -117,10 +120,10 @@ WITH CHECK (
   AND EXISTS (
     SELECT 1 FROM public.correspondence c
     WHERE c.id::text = (storage.foldername(name))[1]
-    AND (public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+    AND (private.is_director() OR private.is_hr() OR c.created_by = auth.uid()
       OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
   )
 );
 
 CREATE POLICY correspondence_files_delete ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id = 'correspondence-files' AND (owner = auth.uid() OR public.is_director() OR public.is_hr()));
+USING (bucket_id = 'correspondence-files' AND (owner = auth.uid() OR private.is_director() OR private.is_hr()));

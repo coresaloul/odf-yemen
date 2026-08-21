@@ -51,8 +51,10 @@ CREATE INDEX IF NOT EXISTS correspondence_attachments_correspondence_idx ON publ
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.correspondence TO authenticated;
 GRANT SELECT, INSERT ON public.correspondence_actions TO authenticated;
 GRANT SELECT, INSERT, DELETE ON public.correspondence_attachments TO authenticated;
-GRANT ALL ON public.correspondence, public.correspondence_actions TO service_role;
+GRANT ALL ON public.correspondence TO service_role;
+GRANT ALL ON public.correspondence_actions TO service_role;
 GRANT ALL ON public.correspondence_attachments TO service_role;
+
 ALTER TABLE public.correspondence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correspondence_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correspondence_attachments ENABLE ROW LEVEL SECURITY;
@@ -81,7 +83,7 @@ CREATE POLICY correspondence_actions_read ON public.correspondence_actions FOR S
 USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id));
 
 CREATE POLICY correspondence_actions_insert ON public.correspondence_actions FOR INSERT TO authenticated
-WITH CHECK (actor_id = auth.uid());
+WITH CHECK (actor_id = auth.uid() AND EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id));
 
 CREATE POLICY correspondence_attachments_read ON public.correspondence_attachments FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id AND (
@@ -97,10 +99,6 @@ WITH CHECK (uploaded_by = auth.uid() AND EXISTS (SELECT 1 FROM public.correspond
 
 CREATE POLICY correspondence_attachments_delete ON public.correspondence_attachments FOR DELETE TO authenticated
 USING (uploaded_by = auth.uid() OR private.is_director() OR private.is_hr());
-
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('correspondence-files', 'correspondence-files', false)
-ON CONFLICT (id) DO NOTHING;
 
 CREATE POLICY correspondence_files_read ON storage.objects FOR SELECT TO authenticated
 USING (

@@ -44,6 +44,7 @@ import {
   CORRESPONDENCE_STATUS_LABELS,
   type CorrespondenceAction,
   type CorrespondenceDirection,
+  type CorrespondencePriority,
   type CorrespondenceRow,
 } from "@/lib/correspondence";
 import {
@@ -68,9 +69,25 @@ export const Route = createFileRoute("/_authenticated/correspondence")({
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const initialForm = {
+type CorrespondenceFormState = {
+  id: string;
+  direction: CorrespondenceDirection;
+  subject: string;
+  body: string;
+  sender_name: string;
+  recipient_name: string;
+  external_reference: string;
+  correspondence_date: string;
+  due_date: string;
+  priority: CorrespondencePriority;
+  confidentiality: string;
+  assigned_to: string;
+  notes: string;
+};
+
+const initialForm: CorrespondenceFormState = {
   id: "",
-  direction: "incoming" as CorrespondenceDirection,
+  direction: "incoming",
   subject: "",
   body: "",
   sender_name: "",
@@ -78,7 +95,7 @@ const initialForm = {
   external_reference: "",
   correspondence_date: today(),
   due_date: "",
-  priority: "normal" as const,
+  priority: "normal",
   confidentiality: "internal",
   assigned_to: "",
   notes: "",
@@ -138,7 +155,7 @@ function CorrespondencePage() {
       });
       for (const file of files) {
         if (file.size > 50 * 1024 * 1024) throw new Error("حجم المرفق يتجاوز 50 ميجابايت");
-        const path = buildStorageObjectKey(saved.id, file.name);
+        const path = buildStorageObjectKey(String(saved.id), file.name);
         const { error } = await supabase.storage.from("correspondence-files").upload(path, file);
         if (error) throw new Error(error.message);
         await registerAttachment({
@@ -315,7 +332,10 @@ function CorrespondencePage() {
                   const { data, error } = await supabase.storage
                     .from("correspondence-files")
                     .createSignedUrl(attachment.file_path, 60);
-                  if (error || !data) return toast.error("تعذر فتح المرفق");
+                  if (error || !data) {
+                    toast.error("تعذر فتح المرفق");
+                    return;
+                  }
                   window.open(data.signedUrl, "_blank", "noopener,noreferrer");
                 }}
                 onAttachmentDelete={(attachment) => deleteAttachmentMutation.mutate(attachment)}

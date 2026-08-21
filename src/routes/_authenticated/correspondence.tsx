@@ -68,9 +68,25 @@ export const Route = createFileRoute("/_authenticated/correspondence")({
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const initialForm = {
+type CorrespondenceFormState = {
+  id: string;
+  direction: CorrespondenceDirection;
+  subject: string;
+  body: string;
+  sender_name: string;
+  recipient_name: string;
+  external_reference: string;
+  correspondence_date: string;
+  due_date: string;
+  priority: CorrespondencePriority;
+  confidentiality: string;
+  assigned_to: string;
+  notes: string;
+};
+
+const initialForm: CorrespondenceFormState = {
   id: "",
-  direction: "incoming" as CorrespondenceDirection,
+  direction: "incoming",
   subject: "",
   body: "",
   sender_name: "",
@@ -78,7 +94,7 @@ const initialForm = {
   external_reference: "",
   correspondence_date: today(),
   due_date: "",
-  priority: "normal" as const,
+  priority: "normal",
   confidentiality: "internal",
   assigned_to: "",
   notes: "",

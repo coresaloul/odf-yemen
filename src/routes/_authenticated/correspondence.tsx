@@ -44,6 +44,7 @@ import {
   CORRESPONDENCE_STATUS_LABELS,
   type CorrespondenceAction,
   type CorrespondenceDirection,
+  type CorrespondencePriority,
   type CorrespondenceRow,
 } from "@/lib/correspondence";
 import {

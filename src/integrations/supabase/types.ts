@@ -421,6 +421,169 @@ export type Database = {
           },
         ]
       }
+      correspondence: {
+        Row: {
+          assigned_to: string | null
+          body: string | null
+          completed_at: string | null
+          confidentiality: string
+          correspondence_date: string
+          created_at: string
+          created_by: string
+          direction: string
+          due_date: string | null
+          external_reference: string | null
+          id: string
+          notes: string | null
+          priority: string
+          recipient_name: string | null
+          reference_no: string | null
+          sender_name: string | null
+          status: string
+          subject: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          body?: string | null
+          completed_at?: string | null
+          confidentiality?: string
+          correspondence_date?: string
+          created_at?: string
+          created_by?: string
+          direction: string
+          due_date?: string | null
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          recipient_name?: string | null
+          reference_no?: string | null
+          sender_name?: string | null
+          status?: string
+          subject: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          body?: string | null
+          completed_at?: string | null
+          confidentiality?: string
+          correspondence_date?: string
+          created_at?: string
+          created_by?: string
+          direction?: string
+          due_date?: string | null
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          recipient_name?: string | null
+          reference_no?: string | null
+          sender_name?: string | null
+          status?: string
+          subject?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correspondence_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      correspondence_actions: {
+        Row: {
+          action: string
+          actor_id: string
+          assignee_id: string | null
+          correspondence_id: string
+          created_at: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          assignee_id?: string | null
+          correspondence_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          assignee_id?: string | null
+          correspondence_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correspondence_actions_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correspondence_actions_correspondence_id_fkey"
+            columns: ["correspondence_id"]
+            isOneToOne: false
+            referencedRelation: "correspondence"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      correspondence_attachments: {
+        Row: {
+          correspondence_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          correspondence_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Update: {
+          correspondence_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correspondence_attachments_correspondence_id_fkey"
+            columns: ["correspondence_id"]
+            isOneToOne: false
+            referencedRelation: "correspondence"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custody_approvals: {
         Row: {
           actor_id: string | null

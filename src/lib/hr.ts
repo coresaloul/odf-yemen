@@ -15,7 +15,6 @@ export const EVALUATION_PERIOD_LABELS: Record<string, string> = {
   annual: "سنوي",
 };
 
-
 export const TASK_STATUS_LABELS: Record<string, string> = {
   new: "جديدة",
   in_progress: "قيد التنفيذ",
@@ -49,6 +48,7 @@ export const ROLE_LABELS: Record<string, string> = {
   manager: "مدير مباشر",
   employee: "موظف",
   hr: "الموارد البشرية",
+  secretariat: "السكرتارية",
 };
 
 export const ORG_NAME = "مؤسسة اليتيم التنموية";

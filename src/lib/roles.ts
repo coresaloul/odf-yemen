@@ -1,4 +1,10 @@
-export const APP_ROLES = ["executive_director", "manager", "hr", "employee"] as const;
+export const APP_ROLES = [
+  "executive_director",
+  "manager",
+  "hr",
+  "secretariat",
+  "employee",
+] as const;
 export type AppRoleValue = (typeof APP_ROLES)[number];
 
 type RoleQueryClient = {
@@ -10,10 +16,7 @@ type RoleQueryClient = {
 };
 
 /** يقرأ أدوار المستخدم الحالي من جدول الأدوار (لا يعتمد على دوال RPC عامة) */
-export async function getRolesOf(
-  supabase: unknown,
-  userId: string,
-): Promise<AppRoleValue[]> {
+export async function getRolesOf(supabase: unknown, userId: string): Promise<AppRoleValue[]> {
   const client = supabase as RoleQueryClient;
   const { data, error } = await client.from("user_roles").select("role").eq("user_id", userId);
   if (error) return [];

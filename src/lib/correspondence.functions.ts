@@ -32,7 +32,10 @@ async function loadActor(admin: any, userId: string) {
   return {
     userId,
     employeeId: employee?.id ?? null,
-    canManage: roles.includes("executive_director") || roles.includes("hr"),
+    canManage:
+      roles.includes("executive_director") || roles.includes("hr") || roles.includes("secretariat"),
+    isSecretariat: roles.includes("secretariat"),
+    isDirector: roles.includes("executive_director"),
   };
 }
 
@@ -191,7 +194,7 @@ export const saveCorrespondence = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!current) throw new Error("المعاملة غير موجودة");
       if (!canAccess(current, actor)) throw new Error("لا تملك صلاحية تعديل هذه المعاملة");
-      if (!["draft", "registered"].includes(String(current.status)))
+      if (!["draft", "registered", "returned"].includes(String(current.status)))
         throw new Error("لا يمكن تعديل معاملة قيد الإجراء أو مغلقة");
       const { error } = await (admin.from("correspondence" as never) as any)
         .update(payload)
@@ -238,12 +241,17 @@ export const submitCorrespondence = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!accessRow || !canAccess(accessRow, actor))
       throw new Error("لا تملك صلاحية تسجيل هذه المعاملة");
-    if (row.status !== "draft") throw new Error("المعاملة مرسلة مسبقاً");
+    if (!["draft", "returned"].includes(String(row.status)))
+      throw new Error("المعاملة مرسلة مسبقاً");
     const referenceNo = `${row.direction === "incoming" ? "IN" : "OUT"}-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+    const outgoing = row.direction === "outgoing";
+    const approvalStage = outgoing ? "pending_manager" : "approved";
     const { error } = await (admin.from("correspondence" as never) as any)
       .update({
         reference_no: referenceNo,
-        status: "registered",
+        status: outgoing ? "pending_approval" : "registered",
+        approval_stage: approvalStage,
+        return_reason: null,
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -254,7 +262,98 @@ export const submitCorrespondence = createServerFn({ method: "POST" })
       action: "submitted",
       actor_id: context.userId,
     });
+    if (outgoing) {
+      await (admin.from("correspondence_approvals" as never) as any).insert({
+        correspondence_id: data.id,
+        stage: "pending_manager",
+        action: "submitted",
+        actor_id: context.userId,
+      });
+    }
     return { referenceNo };
+  });
+
+export const decideCorrespondence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id,
+        action: z.enum(["approved", "returned"]),
+        note: z.string().trim().max(1000).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { getAdmin } = await import("@/lib/org.server");
+    const admin = getAdmin();
+    const actor = await loadActor(admin, context.userId);
+    const { data: row } = await (admin.from("correspondence" as never) as any)
+      .select("id, direction, assigned_to, created_by, approval_stage, status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!row) throw new Error("المعاملة غير موجودة");
+    if (row.direction !== "outgoing") throw new Error("الوارد لا يحتاج مسار اعتماد الصادر");
+
+    const stage = String(row.approval_stage);
+    let allowed = false;
+    let nextStage: "pending_secretariat" | "pending_director" | "approved" = "approved";
+    if (stage === "pending_manager") {
+      const { loadActor, canSupervise } = await import("@/lib/attendance.server");
+      const supervisor = await loadActor(context.userId);
+      allowed =
+        supervisor.isDirector ||
+        (row.assigned_to ? await canSupervise(supervisor, row.assigned_to) : false);
+      nextStage = "pending_hr";
+    } else if (stage === "pending_secretariat") {
+      allowed = actor.isSecretariat || actor.isDirector;
+      nextStage = "pending_director";
+    } else if (stage === "pending_director") {
+      allowed = actor.isDirector;
+      nextStage = "approved";
+    } else {
+      throw new Error("لا توجد مرحلة اعتماد قائمة لهذه المعاملة");
+    }
+    if (!allowed) throw new Error("لا تملك صلاحية الاعتماد في هذه المرحلة");
+
+    await (admin.from("correspondence_approvals" as never) as any).insert({
+      correspondence_id: data.id,
+      stage,
+      action: data.action,
+      actor_id: context.userId,
+      note: data.note ?? null,
+    });
+    const now = new Date().toISOString();
+    if (data.action === "returned") {
+      const { error } = await (admin.from("correspondence" as never) as any)
+        .update({
+          approval_stage: "returned",
+          status: "returned",
+          return_reason: data.note ?? null,
+          updated_at: now,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    const stamp =
+      stage === "pending_manager"
+        ? { manager_approved_by: context.userId, manager_approved_at: now }
+        : stage === "pending_secretariat"
+          ? { secretariat_approved_by: context.userId, secretariat_approved_at: now }
+          : { director_approved_by: context.userId, director_approved_at: now };
+    const { error } = await (admin.from("correspondence" as never) as any)
+      .update({
+        ...stamp,
+        approval_stage: nextStage,
+        status: nextStage === "approved" ? "registered" : "pending_approval",
+        return_reason: null,
+        updated_at: now,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const updateCorrespondenceStatus = createServerFn({ method: "POST" })

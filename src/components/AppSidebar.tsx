@@ -52,10 +52,30 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard },
       { to: "/tasks", label: "المهام", icon: ListChecks },
-      { to: "/attendance", label: "الدوام", icon: CalendarClock, roles: ["manager", "hr", "executive_director"] },
-      { to: "/leaves", label: "الإجازات", icon: CalendarDays, roles: ["manager", "hr", "executive_director"] },
-      { to: "/requests", label: "الطلبات والنماذج", icon: FileText, roles: ["manager", "hr", "executive_director"] },
-      { to: "/correspondence", label: "الصادر والوارد", icon: Archive, roles: ["manager", "hr", "executive_director"] },
+      {
+        to: "/attendance",
+        label: "الدوام",
+        icon: CalendarClock,
+        roles: ["manager", "hr", "executive_director"],
+      },
+      {
+        to: "/leaves",
+        label: "الإجازات",
+        icon: CalendarDays,
+        roles: ["manager", "hr", "executive_director"],
+      },
+      {
+        to: "/requests",
+        label: "الطلبات والنماذج",
+        icon: FileText,
+        roles: ["manager", "hr", "executive_director"],
+      },
+      {
+        to: "/correspondence",
+        label: "الصادر والوارد",
+        icon: Archive,
+        roles: ["manager", "hr", "secretariat", "executive_director"],
+      },
     ],
   },
   {
@@ -64,8 +84,18 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/employees", label: "الموظفون", icon: Users, roles: ["hr", "executive_director"] },
       { to: "/org", label: "المخطط التنظيمي", icon: Network, roles: ["hr", "executive_director"] },
       { to: "/lifecycle", label: "دورة حياة الموظف", icon: RouteIcon },
-      { to: "/discipline", label: "التكريم والجزاءات", icon: Gavel, roles: ["hr", "executive_director"] },
-      { to: "/evaluations", label: "التقييم", icon: Star, roles: ["manager", "hr", "executive_director"] },
+      {
+        to: "/discipline",
+        label: "التكريم والجزاءات",
+        icon: Gavel,
+        roles: ["hr", "executive_director"],
+      },
+      {
+        to: "/evaluations",
+        label: "التقييم",
+        icon: Star,
+        roles: ["manager", "hr", "executive_director"],
+      },
       { to: "/custody", label: "العهد", icon: Package, roles: ["hr", "executive_director"] },
       { to: "/payroll", label: "الرواتب", icon: Wallet, roles: ["hr", "executive_director"] },
     ],
@@ -74,7 +104,12 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "الإدارة والمتابعة",
     items: [
       { to: "/approvals", label: "الموافقات", icon: ClipboardCheck },
-      { to: "/reports", label: "التقارير", icon: FileBarChart, roles: ["hr", "executive_director"] },
+      {
+        to: "/reports",
+        label: "التقارير",
+        icon: FileBarChart,
+        roles: ["hr", "executive_director"],
+      },
       { to: "/users", label: "المستخدمون", icon: ShieldCheck, roles: ["hr", "executive_director"] },
     ],
   },
@@ -82,7 +117,12 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "حسابي",
     items: [
       { to: "/profile", label: "ملفي الشخصي", icon: UserRound },
-      { to: "/settings", label: "الإشعارات", icon: Settings, roles: ["manager", "hr", "executive_director"] },
+      {
+        to: "/settings",
+        label: "الإشعارات",
+        icon: Settings,
+        roles: ["manager", "hr", "executive_director"],
+      },
     ],
   },
 ];

@@ -41,6 +41,7 @@ import {
   type CorrespondenceAttachment,
   CORRESPONDENCE_PRIORITY_LABELS,
   CORRESPONDENCE_ACTION_LABELS,
+  CORRESPONDENCE_APPROVAL_LABELS,
   CORRESPONDENCE_STATUS_LABELS,
   type CorrespondenceAction,
   type CorrespondenceDirection,
@@ -56,6 +57,7 @@ import {
   saveCorrespondence,
   submitCorrespondence,
   updateCorrespondenceStatus,
+  decideCorrespondence,
 } from "@/lib/correspondence.functions";
 
 export const Route = createFileRoute("/_authenticated/correspondence")({
@@ -102,7 +104,7 @@ const initialForm: CorrespondenceFormState = {
 };
 
 function CorrespondencePage() {
-  const { isDirector, isHR } = useAuth();
+  const { isDirector, isHR, isSecretariat } = useAuth();
   const qc = useQueryClient();
   const [form, setForm] = useState(initialForm);
   const [editing, setEditing] = useState(false);
@@ -115,6 +117,7 @@ function CorrespondencePage() {
   const save = useServerFn(saveCorrespondence);
   const submit = useServerFn(submitCorrespondence);
   const changeStatus = useServerFn(updateCorrespondenceStatus);
+  const decide = useServerFn(decideCorrespondence);
   const remove = useServerFn(deleteCorrespondence);
   const registerAttachment = useServerFn(registerCorrespondenceAttachment);
   const removeAttachment = useServerFn(deleteCorrespondenceAttachment);
@@ -194,6 +197,20 @@ function CorrespondencePage() {
     }) => changeStatus({ data: { ...v, note: null } }),
     onSuccess: () => {
       toast.success("تم تحديث الحالة");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const decideMutation = useMutation({
+    mutationFn: (value: { id: string; action: "approved" | "returned" }) =>
+      decide({
+        data: {
+          ...value,
+          note: value.action === "returned" ? "يرجى مراجعة المعاملة وتعديلها" : undefined,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("تم تسجيل قرار الاعتماد");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -305,7 +322,14 @@ function CorrespondencePage() {
               <CorrespondenceCard
                 key={row.id}
                 row={row}
-                canManage={isDirector || isHR}
+                canManage={isDirector || isHR || isSecretariat}
+                canApprove={
+                  row.approval_stage === "pending_secretariat"
+                    ? isSecretariat || isDirector
+                    : row.approval_stage === "pending_director"
+                      ? isDirector
+                      : row.approval_stage === "pending_manager"
+                }
                 onEdit={() => {
                   setForm({
                     ...initialForm,
@@ -339,6 +363,7 @@ function CorrespondencePage() {
                   window.open(data.signedUrl, "_blank", "noopener,noreferrer");
                 }}
                 onAttachmentDelete={(attachment) => deleteAttachmentMutation.mutate(attachment)}
+                onDecide={(action) => decideMutation.mutate({ id: row.id, action })}
                 onStatus={(status) => statusMutation.mutate({ id: row.id, status })}
               />
             ))
@@ -543,6 +568,7 @@ function CorrespondenceForm({
 function CorrespondenceCard({
   row,
   canManage,
+  canApprove,
   attachments,
   onEdit,
   onSubmit,
@@ -550,10 +576,12 @@ function CorrespondenceCard({
   onTrail,
   onAttachmentOpen,
   onAttachmentDelete,
+  onDecide,
   onStatus,
 }: {
   row: CorrespondenceRow;
   canManage: boolean;
+  canApprove: boolean;
   attachments: CorrespondenceAttachment[];
   onEdit: () => void;
   onSubmit: () => void;
@@ -561,6 +589,7 @@ function CorrespondenceCard({
   onTrail: () => void;
   onAttachmentOpen: (attachment: CorrespondenceAttachment) => void;
   onAttachmentDelete: (attachment: CorrespondenceAttachment) => void;
+  onDecide: (action: "approved" | "returned") => void;
   onStatus: (
     status: "in_progress" | "waiting_response" | "completed" | "closed" | "cancelled",
   ) => void;
@@ -587,6 +616,11 @@ function CorrespondenceCard({
                 {CORRESPONDENCE_STATUS_LABELS[row.status]}
               </Badge>
               <Badge variant="outline">{CORRESPONDENCE_PRIORITY_LABELS[row.priority]}</Badge>
+              {row.direction === "outgoing" && row.approval_stage !== "approved" && (
+                <Badge variant="outline">
+                  {CORRESPONDENCE_APPROVAL_LABELS[row.approval_stage]}
+                </Badge>
+              )}
               {overdue && (
                 <Badge variant="destructive" className="gap-1">
                   <Clock3 className="size-3" /> متأخرة
@@ -640,6 +674,20 @@ function CorrespondenceCard({
           </div>
         )}
         <div className="flex flex-wrap gap-2">
+          {canApprove &&
+            row.direction === "outgoing" &&
+            ["pending_manager", "pending_secretariat", "pending_director"].includes(
+              row.approval_stage,
+            ) && (
+              <>
+                <Button size="sm" onClick={() => onDecide("approved")}>
+                  اعتماد
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => onDecide("returned")}>
+                  إعادة للتعديل
+                </Button>
+              </>
+            )}
           {row.status === "draft" && (
             <Button size="sm" className="gap-1.5" onClick={onSubmit}>
               <Send className="size-3.5" /> تسجيل وإصدار الرقم

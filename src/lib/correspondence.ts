@@ -2,12 +2,22 @@ export type CorrespondenceDirection = "incoming" | "outgoing";
 export type CorrespondenceStatus =
   | "draft"
   | "registered"
+  | "pending_approval"
   | "in_progress"
   | "waiting_response"
   | "completed"
   | "closed"
-  | "cancelled";
+  | "cancelled"
+  | "returned";
+
 export type CorrespondencePriority = "low" | "normal" | "high" | "urgent";
+export type CorrespondenceApprovalStage =
+  | "draft"
+  | "pending_manager"
+  | "pending_secretariat"
+  | "pending_director"
+  | "approved"
+  | "returned";
 
 export type CorrespondenceRow = {
   id: string;
@@ -23,6 +33,8 @@ export type CorrespondenceRow = {
   priority: CorrespondencePriority;
   confidentiality: string;
   status: CorrespondenceStatus;
+  approval_stage: CorrespondenceApprovalStage;
+  return_reason: string | null;
   assigned_to: string | null;
   assigned_name?: string | null;
   creator_name?: string | null;
@@ -70,6 +82,17 @@ export const CORRESPONDENCE_STATUS_LABELS: Record<CorrespondenceStatus, string> 
   completed: "منجزة",
   closed: "مغلقة",
   cancelled: "ملغاة",
+  pending_approval: "بانتظار الاعتماد",
+  returned: "معادة للتعديل",
+};
+
+export const CORRESPONDENCE_APPROVAL_LABELS: Record<CorrespondenceApprovalStage, string> = {
+  draft: "مسودة",
+  pending_manager: "بانتظار المدير المباشر",
+  pending_secretariat: "بانتظار السكرتارية",
+  pending_director: "بانتظار المدير التنفيذي",
+  approved: "معتمد",
+  returned: "معاد للتعديل",
 };
 
 export const CORRESPONDENCE_PRIORITY_LABELS: Record<CorrespondencePriority, string> = {

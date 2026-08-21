@@ -16,6 +16,7 @@ import {
   Wallet,
   Package,
   Gavel,
+  Archive,
   Route as RouteIcon,
   LogOut,
 } from "lucide-react";
@@ -54,6 +55,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/attendance", label: "الدوام", icon: CalendarClock, roles: ["manager", "hr", "executive_director"] },
       { to: "/leaves", label: "الإجازات", icon: CalendarDays, roles: ["manager", "hr", "executive_director"] },
       { to: "/requests", label: "الطلبات والنماذج", icon: FileText, roles: ["manager", "hr", "executive_director"] },
+      { to: "/correspondence", label: "الصادر والوارد", icon: Archive, roles: ["manager", "hr", "executive_director"] },
     ],
   },
   {

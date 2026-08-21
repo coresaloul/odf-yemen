@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
+import { Route as AuthenticatedCorrespondenceRouteImport } from './routes/_authenticated/correspondence'
 import { Route as AuthenticatedCustodyRouteImport } from './routes/_authenticated/custody'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDisciplineRouteImport } from './routes/_authenticated/discipline'
@@ -62,6 +63,12 @@ const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCorrespondenceRoute =
+  AuthenticatedCorrespondenceRouteImport.update({
+    id: '/correspondence',
+    path: '/correspondence',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCustodyRoute = AuthenticatedCustodyRouteImport.update({
   id: '/custody',
   path: '/custody',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
+  '/correspondence': typeof AuthenticatedCorrespondenceRoute
   '/custody': typeof AuthenticatedCustodyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/discipline': typeof AuthenticatedDisciplineRoute
@@ -216,6 +224,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
+  '/correspondence': typeof AuthenticatedCorrespondenceRoute
   '/custody': typeof AuthenticatedCustodyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/discipline': typeof AuthenticatedDisciplineRoute
@@ -247,6 +256,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
+  '/_authenticated/correspondence': typeof AuthenticatedCorrespondenceRoute
   '/_authenticated/custody': typeof AuthenticatedCustodyRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/discipline': typeof AuthenticatedDisciplineRoute
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/approvals'
     | '/attendance'
+    | '/correspondence'
     | '/custody'
     | '/dashboard'
     | '/discipline'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/approvals'
     | '/attendance'
+    | '/correspondence'
     | '/custody'
     | '/dashboard'
     | '/discipline'
@@ -337,6 +349,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/approvals'
     | '/_authenticated/attendance'
+    | '/_authenticated/correspondence'
     | '/_authenticated/custody'
     | '/_authenticated/dashboard'
     | '/_authenticated/discipline'
@@ -410,6 +423,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/attendance'
       preLoaderRoute: typeof AuthenticatedAttendanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/correspondence': {
+      id: '/_authenticated/correspondence'
+      path: '/correspondence'
+      fullPath: '/correspondence'
+      preLoaderRoute: typeof AuthenticatedCorrespondenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/custody': {
@@ -579,6 +599,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
+  AuthenticatedCorrespondenceRoute: typeof AuthenticatedCorrespondenceRoute
   AuthenticatedCustodyRoute: typeof AuthenticatedCustodyRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDisciplineRoute: typeof AuthenticatedDisciplineRoute
@@ -600,6 +621,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
+  AuthenticatedCorrespondenceRoute: AuthenticatedCorrespondenceRoute,
   AuthenticatedCustodyRoute: AuthenticatedCustodyRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDisciplineRoute: AuthenticatedDisciplineRoute,

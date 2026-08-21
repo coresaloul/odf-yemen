@@ -332,7 +332,10 @@ function CorrespondencePage() {
                   const { data, error } = await supabase.storage
                     .from("correspondence-files")
                     .createSignedUrl(attachment.file_path, 60);
-                  if (error || !data) return toast.error("تعذر فتح المرفق");
+                  if (error || !data) {
+                    toast.error("تعذر فتح المرفق");
+                    return;
+                  }
                   window.open(data.signedUrl, "_blank", "noopener,noreferrer");
                 }}
                 onAttachmentDelete={(attachment) => deleteAttachmentMutation.mutate(attachment)}

@@ -58,15 +58,107 @@ export const listCorrespondence = createServerFn({ method: "GET" })
       .select("id, full_name")
       .order("full_name");
     if (employeesError) throw new Error(employeesError.message);
+    const visibleRows = actor.canManage
+      ? (rows ?? [])
+      : (rows ?? []).filter((row: { created_by: string; assigned_to: string | null }) =>
+          canAccess(row, actor),
+        );
+    const rowIds = visibleRows.map((row: { id: string }) => row.id);
+    const { data: attachments, error: attachmentsError } = rowIds.length
+      ? await (admin.from("correspondence_attachments" as never) as any)
+          .select("*")
+          .in("correspondence_id", rowIds)
+          .order("created_at", { ascending: false })
+      : { data: [], error: null };
+    if (attachmentsError) throw new Error(attachmentsError.message);
     return {
-      rows: actor.canManage
-        ? (rows ?? [])
-        : (rows ?? []).filter((row: { created_by: string; assigned_to: string | null }) =>
-            canAccess(row, actor),
-          ),
+      rows: visibleRows,
+      attachments: attachments ?? [],
       employees: employees ?? [],
       userId: context.userId,
     };
+  });
+
+export const registerCorrespondenceAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        correspondence_id: id,
+        file_path: z.string().trim().min(3).max(500),
+        file_name: z.string().trim().min(1).max(255),
+        file_size: z
+          .number()
+          .int()
+          .nonnegative()
+          .max(50 * 1024 * 1024),
+        mime_type: z.string().trim().max(150).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { getAdmin } = await import("@/lib/org.server");
+    const admin = getAdmin();
+    const actor = await loadActor(admin, context.userId);
+    const { data: row } = await (admin.from("correspondence" as never) as any)
+      .select("created_by, assigned_to")
+      .eq("id", data.correspondence_id)
+      .maybeSingle();
+    if (!row || !canAccess(row, actor)) throw new Error("لا تملك صلاحية إرفاق ملف بهذه المعاملة");
+    if (!data.file_path.startsWith(`${data.correspondence_id}/`))
+      throw new Error("مسار المرفق غير صالح");
+    const { data: attachment, error } = await (
+      admin.from("correspondence_attachments" as never) as any
+    )
+      .insert({ ...data, uploaded_by: context.userId })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return attachment;
+  });
+
+export const deleteCorrespondenceAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { getAdmin } = await import("@/lib/org.server");
+    const admin = getAdmin();
+    const actor = await loadActor(admin, context.userId);
+    const { data: attachment } = await (admin.from("correspondence_attachments" as never) as any)
+      .select("id, correspondence_id, uploaded_by")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!attachment) throw new Error("المرفق غير موجود");
+    const { data: row } = await (admin.from("correspondence" as never) as any)
+      .select("created_by, assigned_to")
+      .eq("id", attachment.correspondence_id)
+      .maybeSingle();
+    if (!row || !canAccess(row, actor)) throw new Error("لا تملك صلاحية حذف هذا المرفق");
+    const { error } = await (admin.from("correspondence_attachments" as never) as any)
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { filePath: attachment.file_path };
+  });
+
+export const listCorrespondenceTrail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { getAdmin } = await import("@/lib/org.server");
+    const admin = getAdmin();
+    const actor = await loadActor(admin, context.userId);
+    const { data: row } = await (admin.from("correspondence" as never) as any)
+      .select("created_by, assigned_to")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!row || !canAccess(row, actor)) throw new Error("لا تملك صلاحية الاطلاع على هذه المعاملة");
+    const { data: actions, error } = await (admin.from("correspondence_actions" as never) as any)
+      .select("*")
+      .eq("correspondence_id", data.id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return actions ?? [];
   });
 
 export const saveCorrespondence = createServerFn({ method: "POST" })
@@ -118,6 +210,12 @@ export const saveCorrespondence = createServerFn({ method: "POST" })
       entity: data.direction === "incoming" ? "وارد" : "صادر",
       entity_id: correspondenceId,
       entity_label: data.subject,
+    });
+    await (admin.from("correspondence_actions" as never) as any).insert({
+      correspondence_id: correspondenceId,
+      action: data.id ? "updated" : "created",
+      actor_id: context.userId,
+      assignee_id: data.assigned_to ?? null,
     });
     return { id: correspondenceId };
   });

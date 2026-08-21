@@ -31,16 +31,31 @@ CREATE TABLE IF NOT EXISTS public.correspondence_actions (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.correspondence_attachments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  correspondence_id uuid NOT NULL REFERENCES public.correspondence(id) ON DELETE CASCADE,
+  file_path text NOT NULL UNIQUE,
+  file_name text NOT NULL,
+  file_size bigint NOT NULL DEFAULT 0,
+  mime_type text,
+  uploaded_by uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS correspondence_direction_status_idx ON public.correspondence(direction, status);
 CREATE INDEX IF NOT EXISTS correspondence_due_date_idx ON public.correspondence(due_date);
 CREATE INDEX IF NOT EXISTS correspondence_assigned_to_idx ON public.correspondence(assigned_to);
 CREATE INDEX IF NOT EXISTS correspondence_actions_correspondence_idx ON public.correspondence_actions(correspondence_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS correspondence_attachments_correspondence_idx ON public.correspondence_attachments(correspondence_id, created_at DESC);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.correspondence TO authenticated;
 GRANT SELECT, INSERT ON public.correspondence_actions TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.correspondence_attachments TO authenticated;
 GRANT ALL ON public.correspondence, public.correspondence_actions TO service_role;
+GRANT ALL ON public.correspondence_attachments TO service_role;
 ALTER TABLE public.correspondence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correspondence_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.correspondence_attachments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY correspondence_read ON public.correspondence FOR SELECT TO authenticated
 USING (
@@ -64,3 +79,48 @@ USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence
 
 CREATE POLICY correspondence_actions_insert ON public.correspondence_actions FOR INSERT TO authenticated
 WITH CHECK (actor_id = auth.uid());
+
+CREATE POLICY correspondence_attachments_read ON public.correspondence_attachments FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id AND (
+  public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+  OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
+)));
+
+CREATE POLICY correspondence_attachments_insert ON public.correspondence_attachments FOR INSERT TO authenticated
+WITH CHECK (uploaded_by = auth.uid() AND EXISTS (SELECT 1 FROM public.correspondence c WHERE c.id = correspondence_id AND (
+  public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+  OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
+)));
+
+CREATE POLICY correspondence_attachments_delete ON public.correspondence_attachments FOR DELETE TO authenticated
+USING (uploaded_by = auth.uid() OR public.is_director() OR public.is_hr());
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('correspondence-files', 'correspondence-files', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY correspondence_files_read ON storage.objects FOR SELECT TO authenticated
+USING (
+  bucket_id = 'correspondence-files'
+  AND EXISTS (
+    SELECT 1 FROM public.correspondence c
+    WHERE c.id::text = (storage.foldername(name))[1]
+    AND (public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+      OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
+  )
+);
+
+CREATE POLICY correspondence_files_insert ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'correspondence-files'
+  AND owner = auth.uid()
+  AND EXISTS (
+    SELECT 1 FROM public.correspondence c
+    WHERE c.id::text = (storage.foldername(name))[1]
+    AND (public.is_director() OR public.is_hr() OR c.created_by = auth.uid()
+      OR c.assigned_to IN (SELECT id FROM public.employees WHERE user_id = auth.uid()))
+  )
+);
+
+CREATE POLICY correspondence_files_delete ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'correspondence-files' AND (owner = auth.uid() OR public.is_director() OR public.is_hr()));

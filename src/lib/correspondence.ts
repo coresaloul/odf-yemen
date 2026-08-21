@@ -32,6 +32,36 @@ export type CorrespondenceRow = {
   updated_at: string;
 };
 
+export type CorrespondenceAction = {
+  id: string;
+  correspondence_id: string;
+  action: string;
+  actor_id: string;
+  note: string | null;
+  created_at: string;
+};
+
+export type CorrespondenceAttachment = {
+  id: string;
+  correspondence_id: string;
+  file_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string | null;
+  uploaded_by: string;
+  created_at: string;
+};
+
+export const CORRESPONDENCE_ACTION_LABELS: Record<string, string> = {
+  created: "إنشاء",
+  updated: "تعديل",
+  submitted: "تسجيل وإصدار الرقم",
+  assigned: "إحالة",
+  status_changed: "تغيير الحالة",
+  closed: "إغلاق",
+  cancelled: "إلغاء",
+};
+
 export const CORRESPONDENCE_STATUS_LABELS: Record<CorrespondenceStatus, string> = {
   draft: "مسودة",
   registered: "مسجلة",

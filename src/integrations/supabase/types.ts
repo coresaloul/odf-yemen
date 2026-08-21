@@ -423,6 +423,7 @@ export type Database = {
       }
       correspondence: {
         Row: {
+          approval_stage: string
           assigned_to: string | null
           body: string | null
           completed_at: string | null
@@ -431,13 +432,22 @@ export type Database = {
           created_at: string
           created_by: string
           direction: string
+          director_approved_at: string | null
+          director_approved_by: string | null
           due_date: string | null
           external_reference: string | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
           id: string
+          manager_approved_at: string | null
+          manager_approved_by: string | null
           notes: string | null
           priority: string
           recipient_name: string | null
           reference_no: string | null
+          return_reason: string | null
+          secretariat_approved_at: string | null
+          secretariat_approved_by: string | null
           sender_name: string | null
           status: string
           subject: string
@@ -445,6 +455,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_stage?: string
           assigned_to?: string | null
           body?: string | null
           completed_at?: string | null
@@ -453,13 +464,22 @@ export type Database = {
           created_at?: string
           created_by?: string
           direction: string
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           due_date?: string | null
           external_reference?: string | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           notes?: string | null
           priority?: string
           recipient_name?: string | null
           reference_no?: string | null
+          return_reason?: string | null
+          secretariat_approved_at?: string | null
+          secretariat_approved_by?: string | null
           sender_name?: string | null
           status?: string
           subject: string
@@ -467,6 +487,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_stage?: string
           assigned_to?: string | null
           body?: string | null
           completed_at?: string | null
@@ -475,13 +496,22 @@ export type Database = {
           created_at?: string
           created_by?: string
           direction?: string
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           due_date?: string | null
           external_reference?: string | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           notes?: string | null
           priority?: string
           recipient_name?: string | null
           reference_no?: string | null
+          return_reason?: string | null
+          secretariat_approved_at?: string | null
+          secretariat_approved_by?: string | null
           sender_name?: string | null
           status?: string
           subject?: string
@@ -536,6 +566,44 @@ export type Database = {
           },
           {
             foreignKeyName: "correspondence_actions_correspondence_id_fkey"
+            columns: ["correspondence_id"]
+            isOneToOne: false
+            referencedRelation: "correspondence"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      correspondence_approvals: {
+        Row: {
+          action: string
+          actor_id: string
+          correspondence_id: string
+          created_at: string
+          id: string
+          note: string | null
+          stage: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          correspondence_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          stage: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          correspondence_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correspondence_approvals_correspondence_id_fkey"
             columns: ["correspondence_id"]
             isOneToOne: false
             referencedRelation: "correspondence"
@@ -3497,7 +3565,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      app_role: "executive_director" | "manager" | "employee" | "hr"
+      app_role:
+        | "executive_director"
+        | "manager"
+        | "employee"
+        | "hr"
+        | "secretariat"
       approval_stage:
         | "draft"
         | "pending_manager"
@@ -3671,7 +3744,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["executive_director", "manager", "employee", "hr"],
+      app_role: [
+        "executive_director",
+        "manager",
+        "employee",
+        "hr",
+        "secretariat",
+      ],
       approval_stage: [
         "draft",
         "pending_manager",

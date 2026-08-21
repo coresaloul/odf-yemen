@@ -155,7 +155,7 @@ function CorrespondencePage() {
       });
       for (const file of files) {
         if (file.size > 50 * 1024 * 1024) throw new Error("حجم المرفق يتجاوز 50 ميجابايت");
-        const path = buildStorageObjectKey(saved.id, file.name);
+        const path = buildStorageObjectKey(String(saved.id), file.name);
         const { error } = await supabase.storage.from("correspondence-files").upload(path, file);
         if (error) throw new Error(error.message);
         await registerAttachment({

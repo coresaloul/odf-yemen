@@ -304,7 +304,7 @@ export const decideCorrespondence = createServerFn({ method: "POST" })
       allowed =
         supervisor.isDirector ||
         (row.assigned_to ? await canSupervise(supervisor, row.assigned_to) : false);
-      nextStage = "pending_hr";
+      nextStage = "pending_secretariat";
     } else if (stage === "pending_secretariat") {
       allowed = actor.isSecretariat || actor.isDirector;
       nextStage = "pending_director";

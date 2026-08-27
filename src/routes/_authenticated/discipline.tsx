@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Award, Gavel, Plus, Send, Trash2, ShieldAlert } from "lucide-react";
+import { AiHrAssistantDialog } from "@/components/ai/AiHrAssistantDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -189,14 +190,15 @@ function DisciplinePage() {
         title="التكريم والجزاءات"
         description="سجل التكريم والمكافآت والإنذارات والجزاءات التأديبية وفق قانون العمل اليمني، بتدرّج ملزم وحق تظلّم ومحو تلقائي للجزاء بعد مدته."
         action={
-          <>
+          <div className="flex flex-wrap items-center gap-2">
+            <AiHrAssistantDialog />
             <Button variant="outline" onClick={() => setForm({ kind: "recognition", record: null })}>
               <Award className="ms-1 size-4" /> تكريم
             </Button>
             <Button onClick={() => setForm({ kind: "sanction", record: null })}>
               <Plus className="ms-1 size-4" /> جزاء
             </Button>
-          </>
+          </div>
         }
       />
 

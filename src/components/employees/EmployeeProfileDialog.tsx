@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { EMPLOYEE_STATUS_LABELS, formatDate } from "@/lib/hr";
+import { AiHrAssistantDialog } from "@/components/ai/AiHrAssistantDialog";
 import { EmployeeDocuments } from "./EmployeeDocuments";
 import { EmployeeServiceLinks } from "./EmployeeServiceLinks";
 import { EmployeeAvatar } from "./EmployeeAvatar";
@@ -54,18 +55,21 @@ export function EmployeeProfileDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={e.status === "active" ? "default" : "secondary"}>
-            {EMPLOYEE_STATUS_LABELS[e.status]}
-          </Badge>
-          <Badge variant="outline">
-            {departments.find((d) => d.id === e.department_id)?.name ?? "بدون إدارة"}
-          </Badge>
-          {e.section_id && (
-            <Badge variant="outline">
-              {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={e.status === "active" ? "default" : "secondary"}>
+              {EMPLOYEE_STATUS_LABELS[e.status]}
             </Badge>
-          )}
+            <Badge variant="outline">
+              {departments.find((d) => d.id === e.department_id)?.name ?? "بدون إدارة"}
+            </Badge>
+            {e.section_id && (
+              <Badge variant="outline">
+                {sections.find((s) => s.id === e.section_id)?.name ?? "—"}
+              </Badge>
+            )}
+          </div>
+          <AiHrAssistantDialog initialEmployeeId={e.id} />
         </div>
 
         <Tabs defaultValue="job" dir="rtl">

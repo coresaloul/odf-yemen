@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAY_NAMES } from "@/lib/attendance";
 import { saveWorkSettings, saveHoliday, deleteHoliday, saveLeaveType } from "@/lib/attendance.functions";
 import { initLeaveBalances } from "@/lib/leave.functions";
+import { CronAutomationPanel } from "@/components/settings/CronAutomationPanel";
 
 export function AttendanceSettings() {
   const qc = useQueryClient();
@@ -296,6 +297,9 @@ export function AttendanceSettings() {
           </table>
         </CardContent>
       </Card>
+
+      {/* لوحة التحكم بالمهام المجدولة والأتمتة */}
+      <CronAutomationPanel />
     </div>
   );
 }

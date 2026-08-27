@@ -9,41 +9,18 @@ import {
   FileText,
   KanbanSquare,
   List,
-  Loader2,
-  Mic,
   Plus,
   Printer,
-  Square,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/LoadingState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import { parseVoiceTask } from "@/lib/voice-task.functions";
 import { notifyTaskAssigned, notifyTaskStatusChanged } from "@/lib/task-emails.functions";
 import { submitTaskForApproval } from "@/lib/approvals.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 import {
@@ -52,9 +29,13 @@ import {
   openWhatsApp,
 } from "@/lib/whatsapp";
 import { TaskFilters, EMPTY_FILTERS, type TaskFiltersState } from "@/components/tasks/TaskFilters";
-import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskFormDialog, type TaskFormValues } from "@/components/tasks/TaskFormDialog";
+import { TaskStats } from "@/components/tasks/TaskStats";
+import { VoiceTaskButton } from "@/components/tasks/VoiceTaskButton";
+import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
+import { TaskListView } from "@/components/tasks/TaskListView";
+import { TaskDeleteDialog } from "@/components/tasks/TaskDeleteDialog";
 import {
   PRIORITY_RANK,
   isOverdue,
@@ -90,7 +71,6 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 function TasksPage() {
   const { isManager, employee, user } = useAuth();
   const requestApproval = useServerFn(submitTaskForApproval);
-  /** المكلَّف نفسه لا يعتمد إنجازه — يُرسل للاعتماد */
   const needsApproval = (task?: TaskRow | null) =>
     !!task && !isManager && task.assigned_by !== employee?.id;
   const qc = useQueryClient();
@@ -107,11 +87,6 @@ function TasksPage() {
   const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
   const [scope, setScope] = useState<"all" | "mine" | "assigned">("all");
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const current = new Date();
-    return new Date(current.getFullYear(), current.getMonth(), 1);
-  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks-page"],
@@ -138,7 +113,6 @@ function TasksPage() {
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
   const phoneOf = (id: string | null) => employees.find((e) => e.id === id)?.phone ?? null;
 
-  /** إشعارات واتساب: تُفتح محادثة لكل موظف برسالة جاهزة من نظام إدارة الموارد والمهام */
   type WaTarget = { phone: string | null; message: string };
   const notifyWhatsApp = (targets: WaTarget[]) => {
     const valid = targets.filter((t) => t.phone);
@@ -187,51 +161,6 @@ function TasksPage() {
     });
     return list;
   }, [tasks, employees, filters, scope, employee?.id]);
-
-  const calendarDays = useMemo(() => {
-    const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
-    const start = new Date(firstDay);
-    start.setDate(start.getDate() - firstDay.getDay());
-    const cells: Date[] = [];
-    for (let index = 0; index < 42; index += 1) {
-      const cell = new Date(start);
-      cell.setDate(start.getDate() + index);
-      cells.push(cell);
-    }
-    return cells;
-  }, [calendarMonth]);
-
-  const tasksForDay = (day: Date) => {
-    const target = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-    return filtered
-      .filter((task) => {
-        const taskStart = task.start_date
-          ? new Date(`${task.start_date}T00:00:00`)
-          : new Date(task.created_at);
-        const taskEnd = task.due_date ? new Date(`${task.due_date}T00:00:00`) : taskStart;
-        return target >= taskStart && target <= taskEnd;
-      })
-      .sort((a, b) => sortTasksByPriorityThenDue(a, b));
-  };
-
-  const taskCalendarTone = (task: TaskRow) => {
-    if (isOverdue(task)) {
-      return "border-red-600/40 bg-red-500/10 text-red-800 dark:text-red-200";
-    }
-
-    switch (task.status) {
-      case "completed":
-        return "border-emerald-600/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200";
-      case "pending_approval":
-        return "border-amber-600/40 bg-amber-500/10 text-amber-800 dark:text-amber-200";
-      case "in_progress":
-        return "border-sky-600/40 bg-sky-500/10 text-sky-800 dark:text-sky-200";
-      case "cancelled":
-        return "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-200";
-      default:
-        return "border-violet-600/40 bg-violet-500/10 text-violet-800 dark:text-violet-200";
-    }
-  };
 
   const stats = useMemo(() => {
     const total = filtered.length;
@@ -554,13 +483,13 @@ function TasksPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="إجمالي المهام" value={stats.total} />
-        <StatCard label="قيد التنفيذ" value={stats.running} />
-        <StatCard label="منجزة" value={stats.done} />
-        <StatCard label="متأخرة" value={stats.late} tone="danger" />
-        <StatCard label="متوسط الإنجاز" value={`${stats.avg}%`} />
-      </div>
+      <TaskStats
+        total={stats.total}
+        running={stats.running}
+        done={stats.done}
+        late={stats.late}
+        avg={stats.avg}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Tabs value={scope} onValueChange={(v) => setScope(v as typeof scope)}>
@@ -622,182 +551,23 @@ function TasksPage() {
       )}
 
       {!isLoading && filtered.length > 0 && view === "calendar" && (
-        <div className="space-y-4 rounded-xl border bg-card p-3 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setCalendarMonth(
-                  new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
-                )
-              }
-            >
-              السابق
-            </Button>
-            <div className="text-sm font-semibold text-foreground">
-              {new Intl.DateTimeFormat("ar-EG", { month: "long", year: "numeric" }).format(
-                calendarMonth,
-              )}
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setCalendarMonth(
-                  new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1),
-                )
-              }
-            >
-              التالي
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-2">
-            {[
-              "الأحد",
-              "الإثنين",
-              "الثلاثاء",
-              "الأربعاء",
-              "الخميس",
-              "الجمعة",
-              "السبت",
-            ].map((weekday) => (
-              <div
-                key={weekday}
-                className="rounded-md bg-muted/60 px-2 py-2 text-center text-[11px] font-semibold text-muted-foreground"
-              >
-                {weekday}
-              </div>
-            ))}
-
-            {calendarDays.map((day) => {
-              const dayTasks = tasksForDay(day);
-              const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
-              const isToday =
-                day.toDateString() === new Date().toDateString();
-
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={[
-                    "min-h-[150px] rounded-lg border p-2 text-right transition-colors",
-                    isCurrentMonth ? "border-border bg-background" : "border-muted bg-muted/20",
-                    isToday ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background" : "",
-                  ].join(" ")}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDay(day)}
-                    className={[
-                      "mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold transition hover:scale-105",
-                      isToday ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-                    ].join(" ")}
-                  >
-                    {day.getDate()}
-                  </button>
-
-                  <div className="space-y-1.5">
-                    {dayTasks.slice(0, 3).map((task) => (
-                      <button
-                        key={task.id}
-                        type="button"
-                        onClick={() => openTask(task)}
-                        className={[
-                          "w-full rounded-md border px-2 py-1.5 text-right text-[10px] shadow-sm transition hover:opacity-90",
-                          taskCalendarTone(task),
-                        ].join(" ")}
-                        title={`${task.title} (${formatDate(task.start_date)} - ${formatDate(task.due_date)})`}
-                      >
-                        <div className="truncate font-medium">{task.title}</div>
-                        <div className="mt-0.5 text-[9px] opacity-80">
-                          {formatDate(task.start_date)} → {formatDate(task.due_date)}
-                        </div>
-                      </button>
-                    ))}
-
-                    {dayTasks.length > 3 && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDay(day)}
-                        className="w-full rounded-md px-1 py-1 text-right text-[10px] text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
-                      >
-                        +{dayTasks.length - 3} مهام إضافية
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <TaskCalendarView tasks={filtered} onOpenTask={openTask} />
       )}
 
-      <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
-        <DialogContent dir="rtl" className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedDay
-                ? `المهام في ${new Intl.DateTimeFormat("ar-EG", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }).format(selectedDay)}`
-                : "المهام"}
-            </DialogTitle>
-            <DialogDescription>جميع المهام المرتبطة بهذا اليوم، مع حالة كل مهمة وتاريخها.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            {selectedDay && tasksForDay(selectedDay).length > 0 ? (
-              tasksForDay(selectedDay).map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedDay(null);
-                    openTask(task);
-                  }}
-                  className={[
-                    "flex w-full flex-col rounded-md border px-3 py-2 text-right transition hover:bg-muted/50",
-                    taskCalendarTone(task),
-                  ].join(" ")}
-                >
-                  <span className="font-medium">{task.title}</span>
-                  <span className="mt-1 text-[10px] opacity-80">
-                    {TASK_STATUS_LABELS[task.status] ?? task.status} • {formatDate(task.start_date)} → {formatDate(task.due_date)}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">لا توجد مهام لهذا اليوم.</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {view === "list" && (
-        <div className="space-y-3">
-          {filtered.map((t) => (
-            <TaskCard
-              key={t.id}
-              task={t}
-              assigneeName={nameOf(t.assignee_id)}
-              assignerName={nameOf(t.assigned_by)}
-              supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
-              canManage={canManageTask(t)}
-              canUpdateProgress={canUpdateProgress(t)}
-              assigneePhone={phoneOf(t.assignee_id)}
-              onOpen={() => openTask(t)}
-              onEdit={() => {
-                setEditing(t);
-                setFormOpen(true);
-              }}
-              onDelete={() => setDeleteTask(t)}
-              onProgress={(progress) => applyProgress.mutate({ id: t.id, progress })}
-            />
-          ))}
-        </div>
+        <TaskListView
+          tasks={filtered}
+          employees={employees}
+          canManageTask={canManageTask}
+          canUpdateProgress={canUpdateProgress}
+          onOpen={openTask}
+          onEdit={(t) => {
+            setEditing(t);
+            setFormOpen(true);
+          }}
+          onDelete={setDeleteTask}
+          onProgress={(id, progress) => applyProgress.mutate({ id, progress })}
+        />
       )}
 
       <TaskFormDialog
@@ -813,129 +583,12 @@ function TasksPage() {
         onSubmit={(values) => save.mutate(values)}
       />
 
-      <AlertDialog open={!!deleteTask} onOpenChange={(v) => !v && setDeleteTask(null)}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف المهمة</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم حذف «{deleteTask?.title}» مع كل تحديثاتها ومرفقاتها. لا يمكن التراجع.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteTask && remove.mutate(deleteTask.id)}>
-              حذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <TaskDeleteDialog
+        task={deleteTask}
+        open={!!deleteTask}
+        onOpenChange={(v) => !v && setDeleteTask(null)}
+        onConfirm={() => deleteTask && remove.mutate(deleteTask.id)}
+      />
     </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string | number;
-  tone?: "danger";
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : ""}`}>
-          {value}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function VoiceTaskButton({
-  employees,
-  onParsed,
-}: {
-  employees: { id: string; full_name: string }[];
-  onParsed: (p: {
-    title: string;
-    description: string | null;
-    assignee_id: string | null;
-    priority: string;
-    due_date: string | null;
-  }) => void;
-}) {
-  const { recording, start, stop } = useVoiceRecorder();
-  const [busy, setBusy] = useState(false);
-  const parse = useServerFn(parseVoiceTask);
-
-  const handle = async () => {
-    if (!recording) {
-      try {
-        await start();
-        toast.info("جارٍ التسجيل… تحدث بالمهمة ثم اضغط إيقاف");
-      } catch {
-        toast.error("تعذر الوصول إلى الميكروفون");
-      }
-      return;
-    }
-
-    const blob = await stop();
-    if (!blob) {
-      toast.error("التسجيل فارغ، حاول مرة أخرى");
-      return;
-    }
-    setBusy(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", blob, "recording.wav");
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) throw new Error("انتهت الجلسة، سجّل الدخول مجدداً");
-      const res = await fetch("/api/transcribe", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-      const json = (await res.json()) as { text?: string; error?: string };
-      if (!res.ok || !json.text) throw new Error(json.error ?? "تعذر تفريغ التسجيل");
-
-      const parsed = await parse({
-        data: { transcript: json.text, employees: employees.map((e) => e.full_name) },
-      });
-      const match = employees.find((e) => e.full_name === parsed.assignee_name);
-      onParsed({
-        title: parsed.title,
-        description: parsed.description,
-        assignee_id: match?.id ?? null,
-        priority: parsed.priority,
-        due_date: parsed.due_date,
-      });
-      toast.success("تم استخراج بيانات المهمة، راجعها قبل الحفظ");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "حدث خطأ غير متوقع");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Button
-      size="sm"
-      variant={recording ? "destructive" : "outline"}
-      onClick={handle}
-      disabled={busy}
-    >
-      {busy ? (
-        <Loader2 className="size-4 animate-spin" />
-      ) : recording ? (
-        <Square className="size-4" />
-      ) : (
-        <Mic className="size-4" />
-      )}
-      {busy ? "جارٍ التحليل…" : recording ? "إيقاف التسجيل" : "مهمة بالصوت"}
-    </Button>
   );
 }

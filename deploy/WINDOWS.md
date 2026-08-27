@@ -173,6 +173,22 @@ cd C:\odf-hr\deploy
 Get-Content .\db-2026-08-06_2300.sql -Raw | docker compose exec -T db psql -U postgres -d postgres
 ```
 
+## نقل البيانات من Supabase السحابي إلى PostgreSQL المحلية
+
+يجب أولاً تشغيل الخدمات المحلية وتطبيق migrations. بعد ذلك احصل من Supabase Dashboard على **رابط اتصال PostgreSQL**، وليس رابط REST أو `SUPABASE_URL`. يفضّل استخدام رابط Session Pooler عند توفره.
+
+من PowerShell داخل مجلد المشروع:
+
+```powershell
+cd .\deploy\windows
+powershell -ExecutionPolicy Bypass -File .\import-cloud-db.ps1 `
+   -SourceDatabaseUrl "postgresql://postgres:[كلمة-المرور]@db.[المشروع].supabase.co:5432/postgres"
+```
+
+ينقل السكربت بيانات مخطط `public` فقط إلى قاعدة PostgreSQL المحلية، ويحفظ نسخة dump داخل `deploy\backups`. لا يشمل ذلك حسابات المصادقة في `auth` أو الملفات الموجودة في Storage؛ أعد إنشاء المستخدمين محلياً وانقل ملفات Storage بشكل مستقل.
+
+نفّذ النقل على قاعدة محلية فارغة أو نسخة جديدة من volume لتجنب أخطاء المفاتيح المكررة. لا تضع رابط الاتصال في ملف داخل Git أو في سجل الأوامر المشترك.
+
 ---
 
 ## النسخ الاحتياطي: قاعدة ذهبية

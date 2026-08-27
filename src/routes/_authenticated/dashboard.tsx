@@ -1,14 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Award, Building2, ClipboardList, Layers, Trophy } from "lucide-react";
-import { EmptyState } from "@/components/EmptyState";
-import { ListSkeleton } from "@/components/LoadingState";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Award,
+  Building2,
+  ClipboardList,
+  Layers,
+  Trophy,
+  Zap,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,29 +22,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
-import {
-  PRIORITY_LABELS,
-  TASK_STATUS_LABELS,
-  formatDate,
-  periodRange,
-  type PeriodKey,
-} from "@/lib/hr";
-import { PageHeader } from "@/components/PageHeader";
+import { Label } from "@/components/ui/label";
+import { ListSkeleton } from "@/components/LoadingSkeleton";
+import { EmptyState } from "@/components/EmptyState";
 import { TopPerformerCard } from "@/components/dashboard/TopPerformerCard";
 import { LeaderboardTable } from "@/components/dashboard/LeaderboardTable";
 import { AttentionList } from "@/components/dashboard/AttentionList";
 import { DistributionCard } from "@/components/dashboard/DistributionCard";
 import { formatMinutes } from "@/lib/attendance";
 import {
-  groupScores,
+  type PeriodKey,
+  periodRange,
   rank,
-  scoreEmployees,
   topOf,
-  type MetricAttendance,
-  type MetricEmployee,
-  type MetricTask,
+  type PerformerScore,
 } from "@/lib/dashboard-metrics";
+import { formatDate, PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/hr";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -54,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
         property: "og:description",
         content: "لوحة شرف الأداء ومؤشرات المهام والدوام والتنبيهات لحظياً.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Dashboard,
@@ -66,127 +67,88 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: "quarterly", label: "ربع سنوي" },
 ];
 
+type DashboardAnalyticsPayload = {
+  summary: {
+    totalEmployees: number;
+    totalPeriodTasks: number;
+    completedPeriodTasks: number;
+    inProgressPeriodTasks: number;
+    newPeriodTasks: number;
+    overdueTasks: number;
+    dueSoonTasks: number;
+    completionRate: number;
+    avgCompliance: number;
+    todayPresent: number;
+    todayLate: number;
+    todayLeave: number;
+    todayAbsent: number;
+  };
+  employeeScores: PerformerScore[];
+  deptScores: PerformerScore[];
+  sectionScores: PerformerScore[];
+  expiringDocs: Array<{ id: string; title: string; expiry_date: string; employee_name: string }>;
+  pendingLeaves: Array<{ id: string; stage: string; start_date: string; end_date: string; employee_name: string }>;
+  pendingEvaluations: Array<{ id: string; approval_stage: string; employee_name: string }>;
+};
+
 function Dashboard() {
   const { employee, isDirector, isHR, isManager } = useAuth();
   const [period, setPeriod] = useState<PeriodKey>("monthly");
   const range = useMemo(() => periodRange(period), [period]);
-  const today = new Date().toISOString().slice(0, 10);
   const orgWide = isDirector || isHR;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard", range.start, range.end],
-    queryFn: async () => {
-      const soon = new Date();
-      soon.setDate(soon.getDate() + 30);
-      const soonIso = soon.toISOString().slice(0, 10);
-      const [employees, departments, sections, tasks, attendance, leaves, evaluations, docs] =
-        await Promise.all([
-          supabase
-            .from("employees")
-            .select("id, full_name, job_title, department_id, section_id, status"),
-          supabase.from("departments").select("id, name"),
-          supabase.from("sections").select("id, name, department_id"),
-          supabase
-            .from("tasks")
-            .select(
-              "id, title, status, priority, progress, due_date, assignee_id, completed_at, created_at, start_date",
-            )
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("attendance_records")
-            .select(
-              "employee_id, work_date, status, late_minutes, early_leave_minutes, permission_minutes",
-            )
-            .gte("work_date", range.start)
-            .lte("work_date", range.end),
-          supabase.from("leave_requests").select("id, employee_id, stage, start_date, end_date"),
-          supabase.from("evaluations").select("id, employee_id, approval_stage"),
-          supabase
-            .from("employee_documents")
-            .select("id, employee_id, title, expiry_date")
-            .not("expiry_date", "is", null)
-            .lte("expiry_date", soonIso),
-        ]);
-      return {
-        employees: (employees.data ?? []) as MetricEmployee[],
-        departments: departments.data ?? [],
-        sections: sections.data ?? [],
-        tasks: tasks.data ?? [],
-        attendance: (attendance.data ?? []) as MetricAttendance[],
-        leaves: leaves.data ?? [],
-        evaluations: evaluations.data ?? [],
-        docs: docs.data ?? [],
-      };
+  // ──── استعلام RPC فائق السرعة لقاعدة البيانات ────
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ["dashboard-analytics-rpc", range.start, range.end, orgWide, isManager, employee?.id, employee?.department_id],
+    queryFn: async (): Promise<DashboardAnalyticsPayload> => {
+      const { data, error } = await supabase.rpc("get_dashboard_analytics", {
+        p_start_date: range.start,
+        p_end_date: range.end,
+        p_scope_emp_id: (!orgWide && !isManager) ? (employee?.id ?? null) : null,
+        p_scope_dept_id: isManager ? (employee?.department_id ?? null) : null,
+        p_is_org_wide: orgWide,
+      });
+
+      if (error) {
+        console.error("RPC get_dashboard_analytics error:", error);
+        throw error;
+      }
+      return data as DashboardAnalyticsPayload;
     },
   });
 
-  const allEmployees = data?.employees ?? [];
-  const departments = data?.departments ?? [];
-  const sections = data?.sections ?? [];
+  // ──── استعلام خفيف لأحدث المهام المعروضة في الأسفل ────
+  const { data: recentTasks } = useQuery({
+    queryKey: ["dashboard-recent-tasks", orgWide, isManager, employee?.id, employee?.department_id],
+    queryFn: async () => {
+      let q = supabase
+        .from("tasks")
+        .select("id, title, status, priority, progress, due_date, assignee_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(8);
 
-  /* ── نطاق العرض حسب الدور ── */
-  const employees = useMemo(() => {
-    if (orgWide) return allEmployees;
-    if (isManager && employee?.department_id)
-      return allEmployees.filter((e) => e.department_id === employee.department_id);
-    return allEmployees.filter((e) => e.id === employee?.id);
-  }, [allEmployees, orgWide, isManager, employee]);
+      if (!orgWide) {
+        if (isManager && employee?.department_id) {
+          const { data: empIds } = await supabase
+            .from("employees")
+            .select("id")
+            .eq("department_id", employee.department_id);
+          const ids = (empIds ?? []).map((e) => e.id);
+          if (ids.length > 0) q = q.in("assignee_id", ids);
+        } else if (employee?.id) {
+          q = q.eq("assignee_id", employee.id);
+        }
+      }
 
-  const scopeIds = useMemo(() => new Set(employees.map((e) => e.id)), [employees]);
+      const { data } = await q;
+      return data ?? [];
+    },
+  });
 
-  const tasks = useMemo(
-    () => (data?.tasks ?? []).filter((t) => scopeIds.has(t.assignee_id)),
-    [data?.tasks, scopeIds],
-  );
-  const periodTasks = useMemo(
-    () => tasks.filter((t) => t.start_date >= range.start && t.start_date <= range.end),
-    [tasks, range],
-  );
-  const attendance = useMemo(
-    () => (data?.attendance ?? []).filter((a) => scopeIds.has(a.employee_id)),
-    [data?.attendance, scopeIds],
-  );
-
-  const deptName = (id: string | null) => departments.find((d) => d.id === id)?.name ?? "";
-  const sectionName = (id: string | null) => sections.find((s) => s.id === id)?.name ?? "";
-
-  /* ── درجات الأداء ── */
-  const employeeScores = useMemo(
-    () =>
-      scoreEmployees(
-        employees.filter((e) => e.status === "active"),
-        periodTasks as MetricTask[],
-        attendance,
-        (e) => sectionName(e.section_id) || deptName(e.department_id),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [employees, periodTasks, attendance, departments, sections],
-  );
-
-  const deptScores = useMemo(
-    () =>
-      groupScores(
-        employeeScores,
-        departments
-          .filter((d) => employees.some((e) => e.department_id === d.id))
-          .map((d) => ({ id: d.id, name: d.name })),
-        (id) => employees.filter((e) => e.department_id === id).map((e) => e.id),
-      ),
-    [employeeScores, departments, employees],
-  );
-
-  const sectionScores = useMemo(
-    () =>
-      groupScores(
-        employeeScores,
-        sections
-          .filter((s) => employees.some((e) => e.section_id === s.id))
-          .map((s) => ({ id: s.id, name: s.name, subtitle: deptName(s.department_id) })),
-        (id) => employees.filter((e) => e.section_id === id).map((e) => e.id),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [employeeScores, sections, employees, departments],
-  );
+  const summary = analytics?.summary;
+  const employeeScores = analytics?.employeeScores ?? [];
+  const deptScores = analytics?.deptScores ?? [];
+  const sectionScores = analytics?.sectionScores ?? [];
 
   const topEmployee = topOf(employeeScores);
   const topDept = topOf(deptScores);
@@ -195,41 +157,33 @@ function Dashboard() {
   const myRank = rank(employeeScores).findIndex((s) => s.id === employee?.id) + 1;
 
   /* ── مؤشرات عامة ── */
-  const completed = periodTasks.filter((t) => t.status === "completed").length;
-  const overdue = tasks.filter(
-    (t) => t.status !== "completed" && t.status !== "cancelled" && t.due_date && t.due_date < today,
-  ).length;
-  const dueSoon = tasks.filter((t) => {
-    if (t.status === "completed" || t.status === "cancelled" || !t.due_date) return false;
-    const limit = new Date();
-    limit.setDate(limit.getDate() + 7);
-    return t.due_date >= today && t.due_date <= limit.toISOString().slice(0, 10);
-  }).length;
-  const rate = periodTasks.length ? Math.round((completed / periodTasks.length) * 100) : 0;
-  const overallCompliance = employeeScores.length
-    ? Math.round(employeeScores.reduce((s, e) => s + e.attendanceScore, 0) / employeeScores.length)
-    : 0;
+  const completed = summary?.completedPeriodTasks ?? 0;
+  const totalPeriodTasks = summary?.totalPeriodTasks ?? 0;
+  const overdue = summary?.overdueTasks ?? 0;
+  const dueSoon = summary?.dueSoonTasks ?? 0;
+  const rate = summary?.completionRate ?? 0;
+  const overallCompliance = summary?.avgCompliance ?? 0;
 
-  const todayRows = attendance.filter((a) => a.work_date === today);
+  const totalToday = (summary?.todayPresent ?? 0) + (summary?.todayLate ?? 0) + (summary?.todayLeave ?? 0) + (summary?.todayAbsent ?? 0);
   const attendanceSlices = [
     {
       label: "حاضر في الموعد",
-      value: todayRows.filter((a) => a.status === "present" && a.late_minutes === 0).length,
+      value: summary?.todayPresent ?? 0,
       className: "bg-primary",
     },
     {
       label: "متأخر",
-      value: todayRows.filter((a) => a.status === "present" && a.late_minutes > 0).length,
+      value: summary?.todayLate ?? 0,
       className: "bg-accent",
     },
     {
       label: "إجازة / إذن",
-      value: todayRows.filter((a) => a.status === "leave" || a.status === "permission").length,
+      value: summary?.todayLeave ?? 0,
       className: "bg-muted-foreground/50",
     },
     {
       label: "غائب",
-      value: todayRows.filter((a) => a.status === "absent").length,
+      value: summary?.todayAbsent ?? 0,
       className: "bg-destructive",
     },
   ];
@@ -237,38 +191,20 @@ function Dashboard() {
   const statusSlices = [
     {
       label: TASK_STATUS_LABELS["completed"] ?? "منجزة",
-      value: periodTasks.filter((t) => t.status === "completed").length,
+      value: summary?.completedPeriodTasks ?? 0,
       className: "bg-primary",
     },
     {
       label: TASK_STATUS_LABELS["in_progress"] ?? "قيد التنفيذ",
-      value: periodTasks.filter((t) => t.status === "in_progress").length,
+      value: summary?.inProgressPeriodTasks ?? 0,
       className: "bg-accent",
     },
     {
       label: TASK_STATUS_LABELS["new"] ?? "جديدة",
-      value: periodTasks.filter((t) => t.status === "new").length,
+      value: summary?.newPeriodTasks ?? 0,
       className: "bg-secondary",
     },
-    {
-      label: TASK_STATUS_LABELS["cancelled"] ?? "ملغاة",
-      value: periodTasks.filter((t) => t.status === "cancelled").length,
-      className: "bg-muted-foreground/50",
-    },
   ];
-
-  /* ── تنبيهات ── */
-  const pendingLeaves = (data?.leaves ?? []).filter(
-    (l) =>
-      scopeIds.has(l.employee_id) &&
-      ["pending_manager", "pending_hr", "pending_director"].includes(l.stage),
-  ).length;
-  const pendingEvaluations = (data?.evaluations ?? []).filter(
-    (e) =>
-      scopeIds.has(e.employee_id) &&
-      ["pending_manager", "pending_hr", "pending_director"].includes(e.approval_stage),
-  ).length;
-  const expiringDocs = (data?.docs ?? []).filter((d) => scopeIds.has(d.employee_id)).length;
 
   const lateBoard = [...employeeScores]
     .filter((s) => s.lateMinutes > 0)
@@ -276,10 +212,10 @@ function Dashboard() {
     .slice(0, 5);
 
   const stats = [
-    { label: "الموظفون", value: employees.length },
-    { label: "الإدارات", value: orgWide ? departments.length : "—" },
-    { label: "الأقسام", value: orgWide ? sections.length : "—" },
-    { label: "مهام الفترة", value: periodTasks.length },
+    { label: "الموظفون", value: summary?.totalEmployees ?? 0 },
+    { label: "الإدارات", value: orgWide ? deptScores.length : "—" },
+    { label: "الأقسام", value: orgWide ? sectionScores.length : "—" },
+    { label: "مهام الفترة", value: totalPeriodTasks },
     { label: "نسبة الالتزام", value: `${overallCompliance}%` },
     { label: "مستحقة خلال ٧ أيام", value: dueSoon },
   ];
@@ -291,7 +227,7 @@ function Dashboard() {
         description={
           <div className="space-y-1">
             {employee?.job_title ? <p>{employee.job_title}</p> : null}
-            <p>
+            <p className="flex items-center gap-1.5">
               {orgWide
                 ? "لوحة قيادة شاملة لكل إدارات وأقسام المؤسسة"
                 : isManager
@@ -319,9 +255,14 @@ function Dashboard() {
         }
       />
 
-      <p className="text-xs text-muted-foreground">
-        الفترة: {formatDate(range.start)} — {formatDate(range.end)}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          الفترة: {formatDate(range.start)} — {formatDate(range.end)}
+        </p>
+        <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <Zap className="size-3.5 fill-current" /> معالجة فورية فائقة السرعة عبر قاعدة البيانات
+        </span>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6">
         {stats.map((s) => (
@@ -394,7 +335,7 @@ function Dashboard() {
         <CardContent className="space-y-2">
           <Progress value={rate} />
           <p className="text-sm text-muted-foreground">
-            {rate}% من مهام الفترة منجزة ({completed} من {periodTasks.length})
+            {rate}% من مهام الفترة منجزة ({completed} من {totalPeriodTasks})
           </p>
         </CardContent>
       </Card>
@@ -402,13 +343,13 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <DistributionCard
           title="حضور اليوم"
-          total={todayRows.length}
+          total={totalToday}
           slices={attendanceSlices}
-          footer={todayRows.length === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
+          footer={totalToday === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
         />
         <DistributionCard
           title="توزيع المهام حسب الحالة"
-          total={periodTasks.length}
+          total={totalPeriodTasks}
           slices={statusSlices}
         />
       </div>
@@ -432,15 +373,19 @@ function Dashboard() {
         <AttentionList
           items={[
             { label: "مهام متأخرة عن الاستحقاق", count: overdue, to: "/tasks", tone: "danger" },
-            { label: "طلبات إجازة بانتظار الاعتماد", count: pendingLeaves, to: "/leaves" },
+            {
+              label: "طلبات إجازة بانتظار الاعتماد",
+              count: (analytics?.pendingLeaves ?? []).length,
+              to: "/leaves",
+            },
             {
               label: "تقييمات ضمن مراحل الاعتماد",
-              count: pendingEvaluations,
+              count: (analytics?.pendingEvaluations ?? []).length,
               to: "/evaluations",
             },
             {
               label: "وثائق موظفين تنتهي خلال ٣٠ يوماً",
-              count: expiringDocs,
+              count: (analytics?.expiringDocs ?? []).length,
               to: "/employees",
               tone: "danger",
             },
@@ -479,10 +424,10 @@ function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading && <ListSkeleton rows={3} />}
-          {!isLoading && tasks.length === 0 && (
+          {!isLoading && (recentTasks ?? []).length === 0 && (
             <EmptyState compact icon={ClipboardList} title="لا توجد مهام بعد" />
           )}
-          {tasks.slice(0, 8).map((t) => (
+          {(recentTasks ?? []).map((t) => (
             <div
               key={t.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"

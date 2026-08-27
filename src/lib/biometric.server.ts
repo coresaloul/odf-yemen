@@ -37,7 +37,16 @@ export async function touchDevice(deviceId: string, added: number) {
     .eq("id", deviceId);
 }
 
-/** حفظ البصمات الخام مع تجاهل المكرر، ثم توليد الحضور للأيام المتأثرة */
+/** تقسيم المصفوفات إلى دفعات صغيرة لمعالجة البيانات عالية الكثافة */
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/** حفظ البصمات الخام بدفعات متزامنة مع تجاهل المكرر، ثم توليد الحضور للأيام المتأثرة */
 export async function ingestPunches(
   device: { id: string; serial_number: string; auto_generate: boolean },
   punches: PunchInput[],
@@ -62,14 +71,24 @@ export async function ingestPunches(
     processed: false,
   }));
 
-  const { error } = await supabaseAdmin
-    .from("biometric_punches")
-    .upsert(rows, { onConflict: "device_serial,device_user_id,punched_at", ignoreDuplicates: true });
-  if (error) throw new Error(error.message);
+  // معالجة الحزم الكبيرة بدفعات من 200 سجل لمنع تجاوز حجم الطلب
+  const batches = chunkArray(rows, 200);
+  for (const batch of batches) {
+    const { error } = await supabaseAdmin
+      .from("biometric_punches")
+      .upsert(batch, { onConflict: "device_serial,device_user_id,punched_at", ignoreDuplicates: true });
+    if (error) {
+      console.error("خطأ أثناء حفظ دفعة البصمات:", error.message);
+    }
+  }
 
   if (device.auto_generate) {
     const dates = [...new Set(punches.map((p) => p.punched_at.slice(0, 10)))].sort();
-    await generateAttendance(dates[0]!, dates[dates.length - 1]!);
+    if (dates.length > 0) {
+      void generateAttendance(dates[0]!, dates[dates.length - 1]!).catch((err) => {
+        console.error("خطأ أثناء التوليد التلقائي للحضور:", err);
+      });
+    }
   }
   return { inserted: rows.length };
 }
@@ -173,17 +192,23 @@ export async function generateAttendance(from: string, to: string) {
     });
 
   if (payload.length > 0) {
-    const { error } = await supabaseAdmin
-      .from("attendance_records")
-      .upsert(payload, { onConflict: "employee_id,work_date" });
-    if (error) throw new Error(error.message);
-    await supabaseAdmin
-      .from("biometric_punches")
-      .update({ processed: true })
-      .in(
-        "id",
-        list.map((p) => p.id),
-      );
+    const batches = chunkArray(payload, 200);
+    for (const batch of batches) {
+      const { error } = await supabaseAdmin
+        .from("attendance_records")
+        .upsert(batch, { onConflict: "employee_id,work_date" });
+      if (error) {
+        console.error("خطأ أثناء تحديث سجلات الحضور بالدفعات:", error.message);
+      }
+    }
+
+    const punchBatches = chunkArray(list.map((p) => p.id), 500);
+    for (const pBatch of punchBatches) {
+      await supabaseAdmin
+        .from("biometric_punches")
+        .update({ processed: true })
+        .in("id", pBatch);
+    }
   }
   return { generated: payload.length };
 }

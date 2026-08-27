@@ -136,7 +136,9 @@ export type Database = {
           id: string
           late_minutes: number
           notes: string | null
+          overtime_minutes: number
           permission_minutes: number
+          shift_id: string | null
           source: string
           status: Database["public"]["Enums"]["attendance_status"]
           updated_at: string
@@ -152,7 +154,9 @@ export type Database = {
           id?: string
           late_minutes?: number
           notes?: string | null
+          overtime_minutes?: number
           permission_minutes?: number
+          shift_id?: string | null
           source?: string
           status?: Database["public"]["Enums"]["attendance_status"]
           updated_at?: string
@@ -168,7 +172,9 @@ export type Database = {
           id?: string
           late_minutes?: number
           notes?: string | null
+          overtime_minutes?: number
           permission_minutes?: number
+          shift_id?: string | null
           source?: string
           status?: Database["public"]["Enums"]["attendance_status"]
           updated_at?: string
@@ -181,6 +187,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "work_shifts"
             referencedColumns: ["id"]
           },
         ]
@@ -3285,6 +3298,74 @@ export type Database = {
           },
         ]
       }
+      shift_assignments: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          employee_id: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          section_id: string | null
+          shift_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          section_id?: string | null
+          shift_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          section_id?: string | null
+          shift_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_assignments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "work_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_attachments: {
         Row: {
           created_at: string
@@ -3557,12 +3638,78 @@ export type Database = {
         }
         Relationships: []
       }
+      work_shifts: {
+        Row: {
+          active: boolean
+          code: string
+          color: string
+          created_at: string
+          end_time: string
+          grace_minutes: number
+          id: string
+          is_default: boolean
+          is_night_shift: boolean
+          min_overtime_minutes: number
+          name: string
+          notes: string | null
+          overtime_enabled: boolean
+          start_time: string
+          updated_at: string
+          work_days: number[]
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          color?: string
+          created_at?: string
+          end_time?: string
+          grace_minutes?: number
+          id?: string
+          is_default?: boolean
+          is_night_shift?: boolean
+          min_overtime_minutes?: number
+          name: string
+          notes?: string | null
+          overtime_enabled?: boolean
+          start_time?: string
+          updated_at?: string
+          work_days?: number[]
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          color?: string
+          created_at?: string
+          end_time?: string
+          grace_minutes?: number
+          id?: string
+          is_default?: boolean
+          is_night_shift?: boolean
+          min_overtime_minutes?: number
+          name?: string
+          notes?: string | null
+          overtime_enabled?: boolean
+          start_time?: string
+          updated_at?: string
+          work_days?: number[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_dashboard_analytics: {
+        Args: {
+          p_end_date: string
+          p_is_org_wide?: boolean
+          p_scope_dept_id?: string
+          p_scope_emp_id?: string
+          p_start_date: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

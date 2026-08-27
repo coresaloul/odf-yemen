@@ -1,10 +1,39 @@
-/** أدوات مشتركة (نقية) لحسابات الدوام والعطل والإجازات */
+/** أدوات مشتركة (نقية) لحسابات الدوام والعطل والإجازات والورديات والساعات الإضافية */
 
 export type WorkSettings = {
   work_days: number[];
   start_time: string;
   end_time: string;
   grace_minutes: number;
+};
+
+export type ShiftRow = {
+  id: string;
+  name: string;
+  code: string;
+  start_time: string;
+  end_time: string;
+  work_days: number[];
+  grace_minutes: number;
+  is_night_shift: boolean;
+  overtime_enabled: boolean;
+  min_overtime_minutes: number;
+  color: string;
+  is_default: boolean;
+  active: boolean;
+  notes?: string | null;
+};
+
+export type ShiftAssignmentRow = {
+  id: string;
+  shift_id: string;
+  employee_id?: string | null;
+  department_id?: string | null;
+  section_id?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  notes?: string | null;
+  shift?: ShiftRow | null;
 };
 
 export type HolidayRow = {
@@ -32,6 +61,23 @@ export const DEFAULT_WORK_SETTINGS: WorkSettings = {
   start_time: "08:00",
   end_time: "15:00",
   grace_minutes: 10,
+};
+
+export const DEFAULT_SHIFT: ShiftRow = {
+  id: "default",
+  name: "الوردية الصباحية القياسية",
+  code: "default-morning",
+  start_time: "08:00",
+  end_time: "15:00",
+  work_days: [0, 1, 2, 3, 4],
+  grace_minutes: 10,
+  is_night_shift: false,
+  overtime_enabled: true,
+  min_overtime_minutes: 30,
+  color: "#0284c7",
+  is_default: true,
+  active: true,
+  notes: "الوردية الافتراضية العامة",
 };
 
 export const DAY_NAMES = [
@@ -81,7 +127,7 @@ export function dayOf(dateStr: string) {
   return new Date(`${dateStr}T00:00:00`).getDay();
 }
 
-export function isWeekendDay(dateStr: string, settings: WorkSettings) {
+export function isWeekendDay(dateStr: string, settings: WorkSettings | ShiftRow) {
   return !settings.work_days.includes(dayOf(dateStr));
 }
 
@@ -101,7 +147,11 @@ export function holidayOn(dateStr: string, holidays: HolidayRow[]): HolidayRow |
   return null;
 }
 
-export function isOffDay(dateStr: string, settings: WorkSettings, holidays: HolidayRow[]) {
+export function isOffDay(
+  dateStr: string,
+  settings: WorkSettings | ShiftRow,
+  holidays: HolidayRow[],
+) {
   return isWeekendDay(dateStr, settings) || !!holidayOn(dateStr, holidays);
 }
 
@@ -120,7 +170,7 @@ export function listDates(start: string, end: string): string[] {
 export function countWorkingDays(
   start: string,
   end: string,
-  settings: WorkSettings,
+  settings: WorkSettings | ShiftRow,
   holidays: HolidayRow[],
 ) {
   return listDates(start, end).filter((d) => !isOffDay(d, settings, holidays)).length;
@@ -130,22 +180,71 @@ export type AttendanceComputation = {
   late_minutes: number;
   early_leave_minutes: number;
   worked_minutes: number;
+  overtime_minutes: number;
 };
 
+/**
+ * حساب التأخير، الانصراف المبكر، ساعات العمل الفعلية، وساعات العمل الإضافي (Overtime)
+ * وفق الوردية المحددة أو إعدادات العمل العامة.
+ */
 export function computeAttendance(
   input: { check_in?: string | null; check_out?: string | null; permission_minutes?: number },
-  settings: WorkSettings,
+  settings: WorkSettings | ShiftRow,
+  options?: { isOffDay?: boolean },
 ): AttendanceComputation {
   const start = toMinutes(settings.start_time) ?? 480;
   const end = toMinutes(settings.end_time) ?? 900;
   const grace = settings.grace_minutes ?? 0;
   const permission = input.permission_minutes ?? 0;
+  const isNight = "is_night_shift" in settings ? Boolean(settings.is_night_shift) : false;
+  const overtimeEnabled = "overtime_enabled" in settings ? Boolean(settings.overtime_enabled) : true;
+  const minOvertime = "min_overtime_minutes" in settings ? Number(settings.min_overtime_minutes) : 30;
 
   const inMin = toMinutes(input.check_in);
   const outMin = toMinutes(input.check_out);
 
-  let late = inMin != null && inMin > start + grace ? inMin - start - grace : 0;
-  let early = outMin != null && outMin < end ? end - outMin : 0;
+  if (inMin == null && outMin == null) {
+    return { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0, overtime_minutes: 0 };
+  }
+
+  // إذا كان الحضور في يوم عطلة أو إجازة، فكل ساعات العمل تحتسب إضافي
+  if (options?.isOffDay && inMin != null && outMin != null) {
+    const rawWorked = outMin >= inMin ? outMin - inMin : 1440 - inMin + outMin;
+    return {
+      late_minutes: 0,
+      early_leave_minutes: 0,
+      worked_minutes: Math.max(0, Math.round(rawWorked)),
+      overtime_minutes: overtimeEnabled ? Math.max(0, Math.round(rawWorked)) : 0,
+    };
+  }
+
+  let late = 0;
+  let early = 0;
+  let worked = 0;
+  let overtime = 0;
+
+  if (inMin != null) {
+    if (inMin > start + grace) {
+      late = inMin - start - grace;
+    }
+  }
+
+  if (outMin != null) {
+    if (!isNight) {
+      if (outMin < end) {
+        early = end - outMin;
+      } else if (overtimeEnabled && outMin >= end + minOvertime) {
+        overtime = outMin - end;
+      }
+    } else {
+      // نوبة ليلية تعبر منتصف الليل
+      if (outMin < end) {
+        early = end - outMin;
+      } else if (overtimeEnabled && outMin >= end + minOvertime) {
+        overtime = outMin - end;
+      }
+    }
+  }
 
   // خصم الإذن الساعي المعتمد من التأخير ثم من الانصراف المبكر
   let credit = permission;
@@ -154,11 +253,15 @@ export function computeAttendance(
   credit -= usedOnLate;
   early -= Math.min(credit, early);
 
-  const worked = inMin != null && outMin != null && outMin > inMin ? outMin - inMin : 0;
+  if (inMin != null && outMin != null) {
+    worked = outMin >= inMin ? outMin - inMin : 1440 - inMin + outMin;
+  }
+
   return {
     late_minutes: Math.max(0, Math.round(late)),
     early_leave_minutes: Math.max(0, Math.round(early)),
     worked_minutes: Math.max(0, Math.round(worked)),
+    overtime_minutes: Math.max(0, Math.round(overtime)),
   };
 }
 
@@ -167,7 +270,7 @@ export function complianceScore(rows: {
   status: string;
   late_minutes: number;
   early_leave_minutes: number;
-}[]) {
+}) {
   const countable = rows.filter((r) => r.status !== "holiday" && r.status !== "leave");
   if (countable.length === 0) return 100;
   const present = countable.filter((r) => r.status === "present" || r.status === "permission").length;

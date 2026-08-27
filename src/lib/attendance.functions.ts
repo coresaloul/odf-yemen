@@ -128,13 +128,19 @@ export const saveAttendanceRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => recordSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { loadActor, assertAdmin, admin, loadWorkContext } = await import(
-      "@/lib/attendance.server"
-    );
-    const { computeAttendance } = await import("@/lib/attendance");
+    const { loadActor, assertAdmin, admin, resolveEmployeesShiftsMap, loadWorkContext } =
+      await import("@/lib/attendance.server");
+    const { computeAttendance, isOffDay } = await import("@/lib/attendance");
     const { writeAudit } = await import("@/lib/org.server");
     assertAdmin(await loadActor(context.userId));
-    const { settings } = await loadWorkContext();
+
+    const { holidays } = await loadWorkContext();
+    const { getShift } = await resolveEmployeesShiftsMap(
+      [data.employee_id],
+      data.work_date,
+      data.work_date,
+    );
+    const shift = getShift(data.employee_id, data.work_date);
 
     const { data: existing } = await admin()
       .from("attendance_records")
@@ -144,6 +150,7 @@ export const saveAttendanceRecord = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const permission = existing?.permission_minutes ?? 0;
+    const off = isOffDay(data.work_date, shift, holidays);
     const calc =
       data.status === "present" || data.status === "permission"
         ? computeAttendance(
@@ -152,9 +159,10 @@ export const saveAttendanceRecord = createServerFn({ method: "POST" })
               check_out: data.check_out ?? null,
               permission_minutes: permission,
             },
-            settings,
+            shift,
+            { isOffDay: off },
           )
-        : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0 };
+        : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0, overtime_minutes: 0 };
 
     const { error } = await admin()
       .from("attendance_records")
@@ -168,6 +176,7 @@ export const saveAttendanceRecord = createServerFn({ method: "POST" })
           notes: data.notes ?? null,
           permission_minutes: permission,
           source: "manual",
+          shift_id: shift.id !== "default" ? shift.id : null,
           ...calc,
         },
         { onConflict: "employee_id,work_date" },
@@ -195,7 +204,7 @@ export const deleteAttendanceRecord = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** استيراد سجلات جهاز البصمة بعد المعاينة */
+/** استيراد سجلات جهاز البصمة بعد المعاينة مع احتساب الوردية والساعات الإضافية */
 export const importAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -216,18 +225,21 @@ export const importAttendance = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { loadActor, assertAdmin, admin, loadWorkContext } = await import(
-      "@/lib/attendance.server"
-    );
+    const { loadActor, assertAdmin, admin, loadWorkContext, resolveEmployeesShiftsMap } =
+      await import("@/lib/attendance.server");
     const { computeAttendance, isOffDay } = await import("@/lib/attendance");
     const { writeAudit } = await import("@/lib/org.server");
     assertAdmin(await loadActor(context.userId));
-    const { settings, holidays } = await loadWorkContext();
+    const { holidays } = await loadWorkContext();
 
-    // الإجازات المعتمدة ضمن نطاق الملف
     const dates = data.rows.map((r) => r.work_date).sort();
     const minDate = dates[0]!;
     const maxDate = dates[dates.length - 1]!;
+    const employeeIds = [...new Set(data.rows.map((r) => r.employee_id))];
+
+    const { getShift } = await resolveEmployeesShiftsMap(employeeIds, minDate, maxDate);
+
+    // الإجازات المعتمدة ضمن نطاق الملف
     const { data: leaves } = await admin()
       .from("leave_requests")
       .select("employee_id, start_date, end_date, kind")
@@ -254,8 +266,9 @@ export const importAttendance = createServerFn({ method: "POST" })
     );
 
     const payload = data.rows.map((r) => {
+      const shift = getShift(r.employee_id, r.work_date);
       const permission = permMap.get(`${r.employee_id}|${r.work_date}`) ?? 0;
-      const off = isOffDay(r.work_date, settings, holidays);
+      const off = isOffDay(r.work_date, shift, holidays);
       const hasIn = !!r.check_in;
       const status = off
         ? "holiday"
@@ -270,9 +283,10 @@ export const importAttendance = createServerFn({ method: "POST" })
         status === "present" || status === "permission"
           ? computeAttendance(
               { check_in: r.check_in, check_out: r.check_out, permission_minutes: permission },
-              settings,
+              shift,
+              { isOffDay: off },
             )
-          : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0 };
+          : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0, overtime_minutes: 0 };
       return {
         employee_id: r.employee_id,
         work_date: r.work_date,
@@ -281,6 +295,7 @@ export const importAttendance = createServerFn({ method: "POST" })
         status: status as "present" | "absent" | "leave" | "holiday" | "permission",
         permission_minutes: permission,
         source: "import",
+        shift_id: shift.id !== "default" ? shift.id : null,
         ...calc,
       };
     });
@@ -298,17 +313,16 @@ export const importAttendance = createServerFn({ method: "POST" })
     return { imported: payload.length };
   });
 
-/** توليد سجلات غياب/عطلة للأيام غير المسجّلة ضمن فترة */
+/** توليد سجلات غياب/عطلة للأيام غير المسجّلة ضمن فترة مع مراعاة وردية كل موظف */
 export const fillMissingAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ start: z.string(), end: z.string() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { loadActor, assertAdmin, admin, loadWorkContext } = await import(
-      "@/lib/attendance.server"
-    );
+    const { loadActor, assertAdmin, admin, loadWorkContext, resolveEmployeesShiftsMap } =
+      await import("@/lib/attendance.server");
     const { listDates, isOffDay } = await import("@/lib/attendance");
     assertAdmin(await loadActor(context.userId));
-    const { settings, holidays } = await loadWorkContext();
+    const { holidays } = await loadWorkContext();
 
     const [{ data: employees }, { data: existing }, { data: leaves }] = await Promise.all([
       admin().from("employees").select("id").eq("status", "active"),
@@ -326,13 +340,18 @@ export const fillMissingAttendance = createServerFn({ method: "POST" })
         .gte("end_date", data.start),
     ]);
 
+    const activeEmps = employees ?? [];
+    const empIds = activeEmps.map((e) => e.id);
+    const { getShift } = await resolveEmployeesShiftsMap(empIds, data.start, data.end);
+
     const have = new Set((existing ?? []).map((r) => `${r.employee_id}|${r.work_date}`));
     const days = listDates(data.start, data.end);
     const rows: Record<string, unknown>[] = [];
-    for (const emp of employees ?? []) {
+    for (const emp of activeEmps) {
       for (const day of days) {
         if (have.has(`${emp.id}|${day}`)) continue;
-        const off = isOffDay(day, settings, holidays);
+        const shift = getShift(emp.id, day);
+        const off = isOffDay(day, shift, holidays);
         const leave = (leaves ?? []).some(
           (l) => l.employee_id === emp.id && day >= l.start_date && day <= l.end_date,
         );
@@ -343,6 +362,8 @@ export const fillMissingAttendance = createServerFn({ method: "POST" })
           late_minutes: 0,
           early_leave_minutes: 0,
           worked_minutes: 0,
+          overtime_minutes: 0,
+          shift_id: shift.id !== "default" ? shift.id : null,
           source: "system",
         });
       }

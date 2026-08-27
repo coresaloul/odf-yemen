@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Upload, Save, Wand2 } from "lucide-react";
+import { Upload, Save, Wand2, Clock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { AttendanceSettings } from "@/components/attendance/AttendanceSettings";
 import { BiometricDevices } from "@/components/attendance/BiometricDevices";
+import { ShiftManagement } from "@/components/attendance/ShiftManagement";
 import {
   ATTENDANCE_STATUSES,
   ATTENDANCE_STATUS_LABELS,
@@ -40,12 +41,12 @@ export const Route = createFileRoute("/_authenticated/attendance")({
       { title: "الدوام والحضور | الموارد البشرية" },
       {
         name: "description",
-        content: "متابعة الحضور والغياب والتأخير، استيراد سجلات البصمة، وإعدادات الدوام والعطل.",
+        content: "متابعة الحضور والغياب والتأخير والورديات، استيراد سجلات البصمة، وحساب الساعات الإضافية.",
       },
       { property: "og:title", content: "الدوام والحضور | الموارد البشرية" },
       {
         property: "og:description",
-        content: "سجلات الدوام اليومية والشهرية لموظفي مؤسسة اليتيم التنموية.",
+        content: "سجلات الدوام اليومية والشهرية وإدارة الورديات لموظفي مؤسسة اليتيم التنموية.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -113,18 +114,33 @@ function AttendancePage() {
   const [date, setDate] = useState(today());
   const [month, setMonth] = useState(today().slice(0, 7));
 
-  const { data: employeesData } = useQuery({
-    queryKey: ["attendance-employees"],
+  const { data: baseData } = useQuery({
+    queryKey: ["attendance-base-data"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("employees")
-        .select("id, full_name, employee_no, status")
-        .eq("status", "active")
-        .order("full_name");
-      return data ?? [];
+      const [{ data: emps }, { data: depts }, { data: secs }, { data: shifts }] = await Promise.all([
+        supabase
+          .from("employees")
+          .select("id, full_name, employee_no, status, department_id, section_id")
+          .eq("status", "active")
+          .order("full_name"),
+        supabase.from("departments").select("id, name").order("name"),
+        supabase.from("sections").select("id, name, department_id").order("name"),
+        supabase.from("work_shifts").select("id, name, code, color, start_time, end_time"),
+      ]);
+      return {
+        employees: emps ?? [],
+        departments: depts ?? [],
+        sections: secs ?? [],
+        shifts: shifts ?? [],
+      };
     },
   });
-  const employees = employeesData ?? [];
+
+  const employees = baseData?.employees ?? [];
+  const departments = baseData?.departments ?? [];
+  const sections = baseData?.sections ?? [];
+  const shifts = baseData?.shifts ?? [];
+  const shiftMap = new Map(shifts.map((s) => [s.id, s]));
 
   const { data: dayRecords } = useQuery({
     queryKey: ["attendance", "day", date],
@@ -220,6 +236,7 @@ function AttendancePage() {
         leave: count("leave"),
         late: mine.reduce((s, r) => s + (r.late_minutes ?? 0), 0),
         early: mine.reduce((s, r) => s + (r.early_leave_minutes ?? 0), 0),
+        overtime: mine.reduce((s, r) => s + (r.overtime_minutes ?? 0), 0),
         score: complianceScore(
           mine.map((r) => ({
             status: String(r.status),
@@ -234,14 +251,15 @@ function AttendancePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="إدارة الدوام والحضور"
-        description="سجلات الحضور اليومية والشهرية، استيراد البصمة، وإعدادات أيام العمل والعطل"
+        title="إدارة الدوام والورديات"
+        description="سجلات الحضور اليومية والشهرية، إدارة الورديات والجداول المرنة، استيراد البصمة، وحساب الإضافي"
       />
 
       <Tabs defaultValue="daily" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="daily">اليومي</TabsTrigger>
           <TabsTrigger value="monthly">الملخص الشهري</TabsTrigger>
+          {isAdmin && <TabsTrigger value="shifts">إدارة الورديات</TabsTrigger>}
           {isAdmin && <TabsTrigger value="import">استيراد البصمة</TabsTrigger>}
           {isAdmin && <TabsTrigger value="devices">أجهزة البصمة</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">الإعدادات</TabsTrigger>}
@@ -277,10 +295,12 @@ function AttendancePage() {
                   <tr>
                     <th className="p-3">الموظف</th>
                     <th className="p-3">الرقم</th>
+                    <th className="p-3">الوردية</th>
                     <th className="p-3">الحضور</th>
                     <th className="p-3">الانصراف</th>
                     <th className="p-3">التأخير</th>
                     <th className="p-3">انصراف مبكر</th>
+                    <th className="p-3">إضافي (Overtime)</th>
                     <th className="p-3">الحالة</th>
                     {isAdmin && <th className="p-3">حفظ</th>}
                   </tr>
@@ -288,11 +308,13 @@ function AttendancePage() {
                 <tbody>
                   {employees.map((e) => {
                     const r = (dayRecords ?? []).find((x) => x.employee_id === e.id);
+                    const shiftObj = r?.shift_id ? shiftMap.get(r.shift_id) : null;
                     return (
                       <DayRow
                         key={e.id}
                         employee={e}
                         record={r ?? null}
+                        shift={shiftObj ?? null}
                         editable={isAdmin}
                         saving={saveMut.isPending}
                         onSave={(v) => saveMut.mutate({ ...v, employee_id: e.id, work_date: date })}
@@ -301,7 +323,7 @@ function AttendancePage() {
                   })}
                   {employees.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                      <td colSpan={10} className="p-4 text-center text-muted-foreground">
                         لا يوجد موظفون نشطون
                       </td>
                     </tr>
@@ -346,18 +368,28 @@ function AttendancePage() {
                     <th className="p-3">الإجازات</th>
                     <th className="p-3">إجمالي التأخير</th>
                     <th className="p-3">الانصراف المبكر</th>
+                    <th className="p-3">الساعات الإضافية</th>
                     <th className="p-3">نسبة الالتزام</th>
                   </tr>
                 </thead>
                 <tbody>
                   {monthly.map((m) => (
                     <tr key={m.employee.id} className="border-t">
-                      <td className="p-3">{m.employee.full_name}</td>
+                      <td className="p-3 font-medium">{m.employee.full_name}</td>
                       <td className="p-3">{m.present}</td>
                       <td className="p-3">{m.absent}</td>
                       <td className="p-3">{m.leave}</td>
                       <td className="p-3">{formatMinutes(m.late)}</td>
                       <td className="p-3">{formatMinutes(m.early)}</td>
+                      <td className="p-3">
+                        {m.overtime > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                            <Sparkles className="size-3" /> {formatMinutes(m.overtime)}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="p-3">
                         <Badge
                           variant={
@@ -375,6 +407,17 @@ function AttendancePage() {
           </Card>
         </TabsContent>
 
+        {/* إدارة الورديات */}
+        {isAdmin && (
+          <TabsContent value="shifts">
+            <ShiftManagement
+              employees={employees}
+              departments={departments}
+              sections={sections}
+            />
+          </TabsContent>
+        )}
+
         {/* الاستيراد */}
         {isAdmin && (
           <TabsContent value="import" className="space-y-4">
@@ -388,8 +431,8 @@ function AttendancePage() {
                   (check_out). يقبل النظام الفواصل «,» أو «;» أو Tab.
                 </p>
                 <p>
-                  يتم احتساب التأخير والانصراف المبكر تلقائياً حسب إعدادات الدوام، وتُحدَّد العطل
-                  والإجازات المعتمدة تلقائياً.
+                  يتم احتساب التأخير والانصراف المبكر والساعات الإضافية تلقائياً وفق وردية كل موظف،
+                  وتُحدَّد العطل والإجازات المعتمدة تلقائياً.
                 </p>
                 <input
                   ref={fileRef}
@@ -466,12 +509,14 @@ function AttendancePage() {
           </TabsContent>
         )}
 
+        {/* أجهزة البصمة */}
         {isAdmin && (
           <TabsContent value="devices">
             <BiometricDevices />
           </TabsContent>
         )}
 
+        {/* الإعدادات */}
         {isAdmin && (
           <TabsContent value="settings">
             <AttendanceSettings />
@@ -488,17 +533,21 @@ type DayRecord = {
   status: string;
   late_minutes: number | null;
   early_leave_minutes: number | null;
+  overtime_minutes?: number | null;
+  shift_id?: string | null;
 };
 
 function DayRow({
   employee,
   record,
+  shift,
   editable,
   saving,
   onSave,
 }: {
   employee: { id: string; full_name: string; employee_no: string };
   record: DayRecord | null;
+  shift?: { id: string; name: string; color: string } | null;
   editable: boolean;
   saving: boolean;
   onSave: (v: {
@@ -519,15 +568,36 @@ function DayRow({
     setStatus(String(record?.status ?? "absent"));
   }
 
+  const overtime = record?.overtime_minutes ?? 0;
+
   if (!editable) {
     return (
       <tr className="border-t">
         <td className="p-3">{employee.full_name}</td>
         <td className="p-3">{employee.employee_no}</td>
+        <td className="p-3">
+          {shift ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+              style={{ backgroundColor: shift.color || "#0284c7" }}
+            >
+              <Clock className="size-2.5" /> {shift.name}
+            </span>
+          ) : (
+            "—"
+          )}
+        </td>
         <td className="p-3">{record?.check_in?.slice(0, 5) ?? "—"}</td>
         <td className="p-3">{record?.check_out?.slice(0, 5) ?? "—"}</td>
         <td className="p-3">{formatMinutes(record?.late_minutes ?? 0)}</td>
         <td className="p-3">{formatMinutes(record?.early_leave_minutes ?? 0)}</td>
+        <td className="p-3">
+          {overtime > 0 ? (
+            <span className="font-semibold text-emerald-600">+{formatMinutes(overtime)}</span>
+          ) : (
+            "—"
+          )}
+        </td>
         <td className="p-3">
           <Badge variant={record?.status === "present" ? "default" : "secondary"}>
             {ATTENDANCE_STATUS_LABELS[record?.status ?? "absent"]}
@@ -539,14 +609,26 @@ function DayRow({
 
   return (
     <tr className="border-t">
-      <td className="p-3">{employee.full_name}</td>
-      <td className="p-3">{employee.employee_no}</td>
+      <td className="p-3 font-medium">{employee.full_name}</td>
+      <td className="p-3 text-xs text-muted-foreground">{employee.employee_no}</td>
+      <td className="p-3">
+        {shift ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-2xs"
+            style={{ backgroundColor: shift.color || "#0284c7" }}
+          >
+            <Clock className="size-2.5" /> {shift.name}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">الافتراضية</span>
+        )}
+      </td>
       <td className="p-2">
         <Input
           type="time"
           value={checkIn}
           onChange={(e) => setCheckIn(e.target.value)}
-          className="w-32"
+          className="w-28 text-xs"
         />
       </td>
       <td className="p-2">
@@ -554,14 +636,21 @@ function DayRow({
           type="time"
           value={checkOut}
           onChange={(e) => setCheckOut(e.target.value)}
-          className="w-32"
+          className="w-28 text-xs"
         />
       </td>
-      <td className="p-3">{formatMinutes(record?.late_minutes ?? 0)}</td>
-      <td className="p-3">{formatMinutes(record?.early_leave_minutes ?? 0)}</td>
+      <td className="p-3 text-xs">{formatMinutes(record?.late_minutes ?? 0)}</td>
+      <td className="p-3 text-xs">{formatMinutes(record?.early_leave_minutes ?? 0)}</td>
+      <td className="p-3 text-xs">
+        {overtime > 0 ? (
+          <span className="font-semibold text-emerald-600">+{formatMinutes(overtime)}</span>
+        ) : (
+          "—"
+        )}
+      </td>
       <td className="p-2">
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-28 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

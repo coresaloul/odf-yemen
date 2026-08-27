@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { computeAttendance, isOffDay } from "@/lib/attendance";
-import { loadWorkContext } from "@/lib/attendance.server";
+import { loadWorkContext, resolveEmployeesShiftsMap } from "@/lib/attendance.server";
 
 export type PunchInput = {
   device_user_id: string;
@@ -74,9 +74,9 @@ export async function ingestPunches(
   return { inserted: rows.length };
 }
 
-/** توليد سجلات الحضور من البصمات الخام لفترة محددة */
+/** توليد سجلات الحضور من البصمات الخام لفترة محددة مع تطبيق الوردية واحتساب الإضافي */
 export async function generateAttendance(from: string, to: string) {
-  const { settings, holidays } = await loadWorkContext();
+  const { holidays } = await loadWorkContext();
   const { data: punches } = await supabaseAdmin
     .from("biometric_punches")
     .select("id, employee_id, punched_at")
@@ -107,7 +107,7 @@ export async function generateAttendance(from: string, to: string) {
   const maxDate = dates[dates.length - 1]!;
   const employeeIds = [...new Set(keys.map((k) => k.split("|")[0]!))];
 
-  const [{ data: leaves }, { data: existing }] = await Promise.all([
+  const [{ data: leaves }, { data: existing }, { getShift }] = await Promise.all([
     supabaseAdmin
       .from("leave_requests")
       .select("employee_id, start_date, end_date, kind")
@@ -121,6 +121,7 @@ export async function generateAttendance(from: string, to: string) {
       .in("employee_id", employeeIds)
       .gte("work_date", minDate)
       .lte("work_date", maxDate),
+    resolveEmployeesShiftsMap(employeeIds, minDate, maxDate),
   ]);
 
   const permMap = new Map(
@@ -136,11 +137,12 @@ export async function generateAttendance(from: string, to: string) {
     .filter((k) => !manualKeys.has(k)) // لا نطمس التعديلات اليدوية
     .map((k) => {
       const [employeeId, workDate] = k.split("|") as [string, string];
+      const shift = getShift(employeeId, workDate);
       const times = (grouped.get(k) ?? []).sort();
       const checkIn = times[0] ?? null;
       const checkOut = times.length > 1 ? times[times.length - 1]! : null;
       const permission = permMap.get(k) ?? 0;
-      const off = isOffDay(workDate, settings, holidays);
+      const off = isOffDay(workDate, shift, holidays);
       const onLeave = (leaves ?? []).some(
         (l) =>
           l.employee_id === employeeId &&
@@ -153,9 +155,10 @@ export async function generateAttendance(from: string, to: string) {
         status === "present" || status === "permission"
           ? computeAttendance(
               { check_in: checkIn, check_out: checkOut, permission_minutes: permission },
-              settings,
+              shift,
+              { isOffDay: off },
             )
-          : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0 };
+          : { late_minutes: 0, early_leave_minutes: 0, worked_minutes: 0, overtime_minutes: 0 };
       return {
         employee_id: employeeId,
         work_date: workDate,
@@ -164,6 +167,7 @@ export async function generateAttendance(from: string, to: string) {
         status: status as "present" | "absent" | "leave" | "holiday" | "permission",
         permission_minutes: permission,
         source: "device",
+        shift_id: shift.id !== "default" ? shift.id : null,
         ...calc,
       };
     });

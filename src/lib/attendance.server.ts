@@ -1,7 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
+  DEFAULT_SHIFT,
   DEFAULT_WORK_SETTINGS,
   type HolidayRow,
+  type ShiftRow,
   type WorkSettings,
 } from "@/lib/attendance";
 
@@ -12,23 +14,131 @@ export function admin() {
 export async function loadWorkContext(): Promise<{
   settings: WorkSettings;
   holidays: HolidayRow[];
+  shifts: ShiftRow[];
+  defaultShift: ShiftRow;
 }> {
-  const [{ data: s }, { data: h }] = await Promise.all([
+  const [{ data: s }, { data: h }, { data: shiftsData }] = await Promise.all([
     supabaseAdmin
       .from("work_settings")
       .select("work_days, start_time, end_time, grace_minutes")
       .maybeSingle(),
     supabaseAdmin.from("holidays").select("id, name, start_date, end_date, recurring_annually"),
+    supabaseAdmin.from("work_shifts").select("*").order("name"),
   ]);
+
+  const shifts: ShiftRow[] = (shiftsData ?? []).map((sh) => ({
+    id: String(sh.id),
+    name: String(sh.name),
+    code: String(sh.code),
+    start_time: String(sh.start_time).slice(0, 5),
+    end_time: String(sh.end_time).slice(0, 5),
+    work_days: (sh.work_days ?? [0, 1, 2, 3, 4]) as number[],
+    grace_minutes: Number(sh.grace_minutes ?? 10),
+    is_night_shift: Boolean(sh.is_night_shift ?? false),
+    overtime_enabled: Boolean(sh.overtime_enabled ?? true),
+    min_overtime_minutes: Number(sh.min_overtime_minutes ?? 30),
+    color: String(sh.color ?? "#0284c7"),
+    is_default: Boolean(sh.is_default ?? false),
+    active: Boolean(sh.active ?? true),
+    notes: sh.notes ? String(sh.notes) : null,
+  }));
+
+  const defaultShift =
+    shifts.find((sh) => sh.is_default && sh.active) ??
+    shifts.find((sh) => sh.active) ??
+    DEFAULT_SHIFT;
+
   const settings: WorkSettings = s
     ? {
-        work_days: (s.work_days ?? DEFAULT_WORK_SETTINGS.work_days) as number[],
+        work_days: (s.work_days ?? defaultShift.work_days) as number[],
         start_time: String(s.start_time).slice(0, 5),
         end_time: String(s.end_time).slice(0, 5),
-        grace_minutes: s.grace_minutes ?? 0,
+        grace_minutes: s.grace_minutes ?? defaultShift.grace_minutes,
       }
-    : DEFAULT_WORK_SETTINGS;
-  return { settings, holidays: (h ?? []) as HolidayRow[] };
+    : {
+        work_days: defaultShift.work_days,
+        start_time: defaultShift.start_time,
+        end_time: defaultShift.end_time,
+        grace_minutes: defaultShift.grace_minutes,
+      };
+
+  return { settings, holidays: (h ?? []) as HolidayRow[], shifts, defaultShift };
+}
+
+/**
+ * جلب وتحديد الوردية الفعالة لمجموعة من الموظفين في نطاق زمني
+ * بترتيب الأولوية: تعيين الموظف > تعيين القسم > تعيين الإدارة > الوردية الافتراضية
+ */
+export async function resolveEmployeesShiftsMap(
+  employeeIds: string[],
+  startDate: string,
+  endDate: string,
+): Promise<{
+  getShift: (employeeId: string, workDate: string) => ShiftRow;
+}> {
+  const { shifts, defaultShift } = await loadWorkContext();
+  const shiftById = new Map(shifts.map((s) => [s.id, s]));
+
+  const [{ data: emps }, { data: assignments }] = await Promise.all([
+    supabaseAdmin
+      .from("employees")
+      .select("id, department_id, section_id")
+      .in("id", employeeIds),
+    supabaseAdmin
+      .from("shift_assignments")
+      .select("shift_id, employee_id, department_id, section_id, start_date, end_date")
+      .or(`end_date.is.null,end_date.gte.${startDate}`)
+      .lte("start_date", endDate),
+  ]);
+
+  const empMap = new Map((emps ?? []).map((e) => [e.id, e]));
+  const activeAssignments = assignments ?? [];
+
+  return {
+    getShift: (employeeId: string, workDate: string) => {
+      const emp = empMap.get(employeeId);
+
+      // 1. فحص تعيين الموظف المباشر
+      const empAssign = activeAssignments.find(
+        (a) =>
+          a.employee_id === employeeId &&
+          workDate >= a.start_date &&
+          (!a.end_date || workDate <= a.end_date),
+      );
+      if (empAssign && shiftById.has(empAssign.shift_id)) {
+        return shiftById.get(empAssign.shift_id)!;
+      }
+
+      // 2. فحص تعيين القسم
+      if (emp?.section_id) {
+        const secAssign = activeAssignments.find(
+          (a) =>
+            a.section_id === emp.section_id &&
+            workDate >= a.start_date &&
+            (!a.end_date || workDate <= a.end_date),
+        );
+        if (secAssign && shiftById.has(secAssign.shift_id)) {
+          return shiftById.get(secAssign.shift_id)!;
+        }
+      }
+
+      // 3. فحص تعيين الإدارة
+      if (emp?.department_id) {
+        const deptAssign = activeAssignments.find(
+          (a) =>
+            a.department_id === emp.department_id &&
+            workDate >= a.start_date &&
+            (!a.end_date || workDate <= a.end_date),
+        );
+        if (deptAssign && shiftById.has(deptAssign.shift_id)) {
+          return shiftById.get(deptAssign.shift_id)!;
+        }
+      }
+
+      // 4. الوردية الافتراضية
+      return defaultShift;
+    },
+  };
 }
 
 export type ActorContext = {

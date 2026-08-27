@@ -3700,7 +3700,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_dashboard_analytics: {
+        Args: {
+          p_end_date: string
+          p_is_org_wide?: boolean
+          p_scope_dept_id?: string
+          p_scope_emp_id?: string
+          p_start_date: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

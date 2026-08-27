@@ -33,6 +33,7 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as IclockSplatRouteImport } from './routes/iclock/$'
 import { Route as AuthenticatedTasksTaskIdRouteImport } from './routes/_authenticated/tasks_.$taskId'
+import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
 import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push/resubscribe'
 import { Route as ApiPublicPushVapidRouteImport } from './routes/api/public/push/vapid'
@@ -161,6 +162,11 @@ const AuthenticatedTasksTaskIdRoute =
     path: '/tasks/$taskId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiCronDispatchRoute = ApiCronDispatchRouteImport.update({
+  id: '/api/cron/dispatch',
+  path: '/api/cron/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   id: '/api/public/push/dispatch',
   path: '/api/public/push/dispatch',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
@@ -275,6 +283,7 @@ export interface FileRoutesById {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/iclock/$': typeof IclockSplatRoute
   '/_authenticated/tasks_/$taskId': typeof AuthenticatedTasksTaskIdRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/push/resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/push/vapid': typeof ApiPublicPushVapidRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/iclock/$'
     | '/tasks/$taskId'
+    | '/api/cron/dispatch'
     | '/api/public/push/dispatch'
     | '/api/public/push/resubscribe'
     | '/api/public/push/vapid'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/iclock/$'
     | '/tasks/$taskId'
+    | '/api/cron/dispatch'
     | '/api/public/push/dispatch'
     | '/api/public/push/resubscribe'
     | '/api/public/push/vapid'
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/iclock/$'
     | '/_authenticated/tasks_/$taskId'
+    | '/api/cron/dispatch'
     | '/api/public/push/dispatch'
     | '/api/public/push/resubscribe'
     | '/api/public/push/vapid'
@@ -381,6 +393,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   IclockSplatRoute: typeof IclockSplatRoute
+  ApiCronDispatchRoute: typeof ApiCronDispatchRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicPushResubscribeRoute: typeof ApiPublicPushResubscribeRoute
   ApiPublicPushVapidRoute: typeof ApiPublicPushVapidRoute
@@ -558,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksTaskIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/cron/dispatch': {
+      id: '/api/cron/dispatch'
+      path: '/api/cron/dispatch'
+      fullPath: '/api/cron/dispatch'
+      preLoaderRoute: typeof ApiCronDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/push/dispatch': {
       id: '/api/public/push/dispatch'
       path: '/api/public/push/dispatch'
@@ -649,6 +669,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   IclockSplatRoute: IclockSplatRoute,
+  ApiCronDispatchRoute: ApiCronDispatchRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicPushResubscribeRoute: ApiPublicPushResubscribeRoute,
   ApiPublicPushVapidRoute: ApiPublicPushVapidRoute,

@@ -40,7 +40,12 @@ import { formatMinutes } from "@/lib/attendance";
 import {
   rank,
   topOf,
+  scoreEmployees,
+  groupScores,
   type PerformerScore,
+  type MetricEmployee,
+  type MetricTask,
+  type MetricAttendance,
 } from "@/lib/dashboard-metrics";
 import {
   formatDate,
@@ -102,16 +107,205 @@ type DashboardAnalyticsPayload = {
   pendingEvaluations: Array<{ id: string; approval_stage: string; employee_name: string }>;
 };
 
+/** جلب بيانات لوحة القيادة عبر الاستعلام المباشر كخيار احتياطي موثوق 100% */
+async function fetchDashboardFallback(
+  range: { start: string; end: string },
+  orgWide: boolean,
+  isManager: boolean,
+  currentEmp: { id?: string; department_id?: string | null } | null,
+): Promise<DashboardAnalyticsPayload> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 30);
+  const soonIso = soon.toISOString().slice(0, 10);
+
+  const [
+    employeesRes,
+    departmentsRes,
+    sectionsRes,
+    tasksRes,
+    attendanceRes,
+    todayAttendanceRes,
+    leavesRes,
+    evaluationsRes,
+    docsRes,
+  ] = await Promise.all([
+    supabase
+      .from("employees")
+      .select("id, full_name, job_title, department_id, section_id, status")
+      .eq("status", "active"),
+    supabase.from("departments").select("id, name"),
+    supabase.from("sections").select("id, name, department_id"),
+    supabase
+      .from("tasks")
+      .select("id, title, status, priority, progress, weight, due_date, assignee_id, completed_at, created_at, start_date"),
+    supabase
+      .from("attendance_records")
+      .select("employee_id, work_date, status, late_minutes, early_leave_minutes, permission_minutes, overtime_minutes")
+      .gte("work_date", range.start)
+      .lte("work_date", range.end),
+    supabase
+      .from("attendance_records")
+      .select("employee_id, status, late_minutes")
+      .eq("work_date", todayStr),
+    supabase
+      .from("leave_requests")
+      .select("id, employee_id, stage, start_date, end_date")
+      .in("stage", ["pending_manager", "pending_hr", "pending_director"]),
+    supabase
+      .from("evaluations")
+      .select("id, employee_id, approval_stage, total_score, approved, period_start, period_end"),
+    supabase
+      .from("employee_documents")
+      .select("id, employee_id, title, expiry_date")
+      .not("expiry_date", "is", null)
+      .lte("expiry_date", soonIso),
+  ]);
+
+  const allEmployees = (employeesRes.data ?? []) as MetricEmployee[];
+  const departments = departmentsRes.data ?? [];
+  const sections = sectionsRes.data ?? [];
+  const allTasks = (tasksRes.data ?? []) as MetricTask[];
+  const attendance = (attendanceRes.data ?? []) as MetricAttendance[];
+  const todayAtt = todayAttendanceRes.data ?? [];
+  const leaves = leavesRes.data ?? [];
+  const evaluations = evaluationsRes.data ?? [];
+  const docs = docsRes.data ?? [];
+
+  let targetEmployees = allEmployees;
+  if (!orgWide) {
+    if (isManager && currentEmp?.department_id) {
+      targetEmployees = allEmployees.filter((e) => e.department_id === currentEmp.department_id);
+    } else if (currentEmp?.id) {
+      targetEmployees = allEmployees.filter((e) => e.id === currentEmp.id);
+    }
+  }
+
+  const targetIds = new Set(targetEmployees.map((e) => e.id));
+  const targetEmpMap = new Map(allEmployees.map((e) => [e.id, e]));
+
+  const periodTasks = allTasks.filter((t) => {
+    if (!targetIds.has(t.assignee_id)) return false;
+    const sDate = t.start_date || (t as any).created_at?.slice(0, 10);
+    const dDate = t.due_date;
+    return (
+      (sDate && sDate >= range.start && sDate <= range.end) ||
+      (dDate && dDate >= range.start && dDate <= range.end)
+    );
+  });
+
+  const completedPeriodTasks = periodTasks.filter((t) => t.status === "completed").length;
+  const inProgressPeriodTasks = periodTasks.filter((t) => t.status === "in_progress").length;
+  const newPeriodTasks = periodTasks.filter((t) => t.status === "new").length;
+
+  const targetActiveTasks = allTasks.filter(
+    (t) => targetIds.has(t.assignee_id) && t.status !== "completed" && t.status !== "cancelled",
+  );
+  const overdueTasks = targetActiveTasks.filter((t) => t.due_date && t.due_date < todayStr).length;
+
+  const next7Days = new Date();
+  next7Days.setDate(next7Days.getDate() + 7);
+  const next7DaysStr = next7Days.toISOString().slice(0, 10);
+  const dueSoonTasks = targetActiveTasks.filter(
+    (t) => t.due_date && t.due_date >= todayStr && t.due_date <= next7DaysStr,
+  ).length;
+
+  const completionRate =
+    periodTasks.length > 0 ? Math.round((completedPeriodTasks / periodTasks.length) * 100) : 0;
+
+  const deptMap = new Map(departments.map((d) => [d.id, d.name]));
+  const secMap = new Map(sections.map((s) => [s.id, s.name]));
+
+  const unitNameOf = (e: MetricEmployee) => {
+    if (e.section_id && secMap.has(e.section_id)) return secMap.get(e.section_id)!;
+    if (e.department_id && deptMap.has(e.department_id)) return deptMap.get(e.department_id)!;
+    return "";
+  };
+
+  const targetAtt = attendance.filter((a) => targetIds.has(a.employee_id));
+  const targetTodayAtt = todayAtt.filter((a) => targetIds.has(a.employee_id));
+
+  const employeeScores = scoreEmployees(targetEmployees, periodTasks, targetAtt, unitNameOf);
+
+  const avgCompliance =
+    employeeScores.length > 0 && employeeScores.some((s) => s.presentDays > 0)
+      ? Math.round(
+          employeeScores.reduce((acc, s) => acc + s.attendanceScore, 0) / employeeScores.length,
+        )
+      : 100;
+
+  const deptScores = groupScores(
+    employeeScores,
+    departments,
+    (deptId) => allEmployees.filter((e) => e.department_id === deptId).map((e) => e.id),
+  );
+
+  const sectionScores = groupScores(
+    employeeScores,
+    sections,
+    (secId) => allEmployees.filter((e) => e.section_id === secId).map((e) => e.id),
+  );
+
+  return {
+    summary: {
+      totalEmployees: targetEmployees.length,
+      totalPeriodTasks: periodTasks.length,
+      completedPeriodTasks,
+      inProgressPeriodTasks,
+      newPeriodTasks,
+      overdueTasks,
+      dueSoonTasks,
+      completionRate,
+      avgCompliance,
+      todayPresent: targetTodayAtt.filter((a) => a.status === "present").length,
+      todayLate: targetTodayAtt.filter(
+        (a) => a.status === "present" && (a.late_minutes ?? 0) > 0,
+      ).length,
+      todayLeave: targetTodayAtt.filter(
+        (a) => a.status === "leave" || a.status === "permission",
+      ).length,
+      todayAbsent: targetTodayAtt.filter((a) => a.status === "absent").length,
+    },
+    employeeScores,
+    deptScores,
+    sectionScores,
+    expiringDocs: docs
+      .filter((d) => targetIds.has(d.employee_id))
+      .map((d) => ({
+        id: d.id,
+        title: d.title,
+        expiry_date: d.expiry_date ?? "",
+        employee_name: targetEmpMap.get(d.employee_id)?.full_name ?? "—",
+      })),
+    pendingLeaves: leaves
+      .filter((l) => targetIds.has(l.employee_id))
+      .map((l) => ({
+        id: l.id,
+        stage: l.stage,
+        start_date: l.start_date,
+        end_date: l.end_date,
+        employee_name: targetEmpMap.get(l.employee_id)?.full_name ?? "—",
+      })),
+    pendingEvaluations: evaluations
+      .filter((ev) => targetIds.has(ev.employee_id) && !ev.approved)
+      .map((ev) => ({
+        id: ev.id,
+        approval_stage: ev.approval_stage ?? "pending",
+        employee_name: targetEmpMap.get(ev.employee_id)?.full_name ?? "—",
+      })),
+  };
+}
+
 function Dashboard() {
   const { employee, isDirector, isHR, isManager, isSecretariat } = useAuth();
   const [period, setPeriod] = useState<PeriodKey>("monthly");
   const range = useMemo(() => periodRange(period), [period]);
   const orgWide = isDirector || isHR;
 
-  // ──── استعلام RPC فائق السرعة لقاعدة البيانات ────
+  // ──── استعلام بيانات لوحة المعلومات (مع دعم الاستدعاء المباشر والاحتياطي الفوري) ────
   const { data: analytics, isLoading } = useQuery({
     queryKey: [
-      "dashboard-analytics-rpc",
+      "dashboard-analytics-payload",
       range.start,
       range.end,
       orgWide,
@@ -120,21 +314,26 @@ function Dashboard() {
       employee?.department_id,
     ],
     queryFn: async (): Promise<DashboardAnalyticsPayload> => {
-      const scopeEmpId = !orgWide && !isManager ? employee?.id : undefined;
-      const scopeDeptId = isManager ? employee?.department_id : undefined;
-      const { data, error } = await supabase.rpc("get_dashboard_analytics", {
-        p_start_date: range.start,
-        p_end_date: range.end,
-        p_is_org_wide: orgWide,
-        ...(scopeEmpId ? { p_scope_emp_id: scopeEmpId } : {}),
-        ...(scopeDeptId ? { p_scope_dept_id: scopeDeptId } : {}),
-      });
+      try {
+        const scopeEmpId = !orgWide && !isManager ? employee?.id : undefined;
+        const scopeDeptId = isManager ? employee?.department_id : undefined;
+        const { data, error } = await supabase.rpc("get_dashboard_analytics", {
+          p_start_date: range.start,
+          p_end_date: range.end,
+          p_is_org_wide: orgWide,
+          ...(scopeEmpId ? { p_scope_emp_id: scopeEmpId } : {}),
+          ...(scopeDeptId ? { p_scope_dept_id: scopeDeptId } : {}),
+        });
 
-      if (error) {
-        console.error("RPC get_dashboard_analytics error:", error);
-        throw error;
+        if (!error && data && (data as any).summary) {
+          return data as DashboardAnalyticsPayload;
+        }
+      } catch (err) {
+        console.warn("RPC unavailable, using resilient fallback queries:", err);
       }
-      return data as DashboardAnalyticsPayload;
+
+      // Fallback query
+      return fetchDashboardFallback(range, orgWide, isManager, employee);
     },
   });
 

@@ -21,6 +21,8 @@ export type MetricTask = {
   progress: number;
   due_date: string | null;
   completed_at: string | null;
+  start_date?: string | null;
+  created_at?: string | null;
 };
 
 export type MetricAttendance = {

@@ -184,13 +184,25 @@ async function fetchDashboardFallback(
   const targetIds = new Set(targetEmployees.map((e) => e.id));
   const targetEmpMap = new Map(allEmployees.map((e) => [e.id, e]));
 
+  const deptMap = new Map(departments.map((d) => [d.id, d.name]));
+  const secMap = new Map(sections.map((s) => [s.id, s.name]));
+
+  const unitNameOf = (e: MetricEmployee) => {
+    if (e.section_id && secMap.has(e.section_id)) return secMap.get(e.section_id)!;
+    if (e.department_id && deptMap.has(e.department_id)) return deptMap.get(e.department_id)!;
+    return "";
+  };
+
   const periodTasks = allTasks.filter((t) => {
     if (!targetIds.has(t.assignee_id)) return false;
     const sDate = t.start_date || (t as any).created_at?.slice(0, 10);
     const dDate = t.due_date;
+    const cDate = t.completed_at?.slice(0, 10);
     return (
       (sDate && sDate >= range.start && sDate <= range.end) ||
-      (dDate && dDate >= range.start && dDate <= range.end)
+      (dDate && dDate >= range.start && dDate <= range.end) ||
+      (cDate && cDate >= range.start && cDate <= range.end) ||
+      t.status !== "completed"
     );
   });
 
@@ -213,19 +225,15 @@ async function fetchDashboardFallback(
   const completionRate =
     periodTasks.length > 0 ? Math.round((completedPeriodTasks / periodTasks.length) * 100) : 0;
 
-  const deptMap = new Map(departments.map((d) => [d.id, d.name]));
-  const secMap = new Map(sections.map((s) => [s.id, s.name]));
-
-  const unitNameOf = (e: MetricEmployee) => {
-    if (e.section_id && secMap.has(e.section_id)) return secMap.get(e.section_id)!;
-    if (e.department_id && deptMap.has(e.department_id)) return deptMap.get(e.department_id)!;
-    return "";
-  };
-
   const targetAtt = attendance.filter((a) => targetIds.has(a.employee_id));
   const targetTodayAtt = todayAtt.filter((a) => targetIds.has(a.employee_id));
 
+  // حساب درجات الموظفين
   const employeeScores = scoreEmployees(targetEmployees, periodTasks, targetAtt, unitNameOf);
+
+  // حساب درجات كافة الموظفين لتجميع الإدارات والأقسام بدقة
+  const allEmployeeScores =
+    orgWide ? employeeScores : scoreEmployees(allEmployees, allTasks, attendance, unitNameOf);
 
   const avgCompliance =
     employeeScores.length > 0 && employeeScores.some((s) => s.presentDays > 0)
@@ -235,13 +243,13 @@ async function fetchDashboardFallback(
       : 100;
 
   const deptScores = groupScores(
-    employeeScores,
+    allEmployeeScores,
     departments,
     (deptId) => allEmployees.filter((e) => e.department_id === deptId).map((e) => e.id),
   );
 
   const sectionScores = groupScores(
-    employeeScores,
+    allEmployeeScores,
     sections,
     (secId) => allEmployees.filter((e) => e.section_id === secId).map((e) => e.id),
   );

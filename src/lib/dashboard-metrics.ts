@@ -160,6 +160,14 @@ function attendanceScoreOf(att: MetricAttendance[]) {
 
 /** الدمج النهائي لدرجة الأداء */
 function combine(tasksScore: number, attendanceScore: number, punctuality: number) {
+  // إذا لم يكن هناك دوام مسجل ولكن توجد مهام، لا نظلم درجة المهام
+  if (attendanceScore === 0 && tasksScore > 0) {
+    return pct(tasksScore * 0.7 + punctuality * 0.3);
+  }
+  // إذا لم تكن هناك مهام مسجلة ولكن يوجد دوام
+  if (tasksScore === 0 && attendanceScore > 0) {
+    return pct(attendanceScore * 0.7 + punctuality * 0.3);
+  }
   return pct(tasksScore * 0.45 + attendanceScore * 0.35 + punctuality * 0.20);
 }
 
@@ -185,6 +193,7 @@ export function scoreEmployees(
     const overtimeMinutes = att.reduce((s, a) => s + (a.overtime_minutes ?? 0), 0);
 
     const score = combine(tasksScore, attendanceScore, punctualityScore);
+    const hasActivity = own.length > 0 || att.length > 0 || score > 0;
 
     return {
       id: e.id,
@@ -200,7 +209,7 @@ export function scoreEmployees(
       lateMinutes,
       presentDays,
       overtimeMinutes,
-      eligible: presentDays >= 2 && (completedTasks >= 1 || own.length >= 1) && attendanceScore >= 50,
+      eligible: hasActivity,
       memberCount: 1,
     };
   });
@@ -222,6 +231,7 @@ export function groupScores(
     const attendanceScore = avg((s) => s.attendanceScore);
     const punctualityScore = avg((s) => s.punctualityScore);
     const score = combine(tasksScore, attendanceScore, punctualityScore);
+    const totalTasks = members.reduce((s, m) => s + m.totalTasks, 0);
     const completedTasks = members.reduce((s, m) => s + m.completedTasks, 0);
     const presentDays = members.reduce((s, m) => s + m.presentDays, 0);
     const lateMinutes = members.reduce((s, m) => s + m.lateMinutes, 0);
@@ -231,7 +241,7 @@ export function groupScores(
       id: u.id,
       name: u.name,
       subtitle: u.subtitle ?? `${members.length} موظف`,
-      totalTasks: members.reduce((s, m) => s + m.totalTasks, 0),
+      totalTasks,
       completedTasks,
       tasksScore,
       attendanceScore,
@@ -241,32 +251,38 @@ export function groupScores(
       lateMinutes,
       presentDays,
       overtimeMinutes,
-      eligible: members.length > 0 && completedTasks >= 1 && score >= 60,
+      eligible: members.length > 0,
       memberCount: members.length,
     };
   });
 }
 
-/** تراتبية فض التعادل الذكي واختيار أفضل أداء */
+/** تراتبية فض التعادل واختيار أفضل أداء */
 export function rank(scores: PerformerScore[]) {
-  return [...scores]
-    .filter((s) => s.eligible)
-    .sort((a, b) => {
-      // 1. الدرجة الإجمالية
-      if (b.score !== a.score) return b.score - a.score;
-      // 2. المهام المنجزة
-      if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
-      // 3. درجة جودة المهام الموزونة
-      if (b.tasksScore !== a.tasksScore) return b.tasksScore - a.tasksScore;
-      // 4. الالتزام بالمواعيد
-      if (b.punctualityScore !== a.punctualityScore) return b.punctualityScore - a.punctualityScore;
-      // 5. الانضباط والدوام
-      if (b.attendanceScore !== a.attendanceScore) return b.attendanceScore - a.attendanceScore;
-      // 6. الأقل تأخراً
-      return a.lateMinutes - b.lateMinutes;
-    });
+  if (!scores || scores.length === 0) return [];
+
+  // إذا وجد من لديه نشاط ودرجات نفضلهم، وإلا نعيد كامل القائمة
+  const activeScores = scores.filter((s) => s.eligible && s.score > 0);
+  const pool = activeScores.length > 0 ? activeScores : scores.filter((s) => s.eligible || scores.length <= 10);
+  const targetList = pool.length > 0 ? pool : scores;
+
+  return [...targetList].sort((a, b) => {
+    // 1. الدرجة الإجمالية
+    if (b.score !== a.score) return b.score - a.score;
+    // 2. المهام المنجزة
+    if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
+    // 3. درجة جودة المهام
+    if (b.tasksScore !== a.tasksScore) return b.tasksScore - a.tasksScore;
+    // 4. الالتزام بالمواعيد
+    if (b.punctualityScore !== a.punctualityScore) return b.punctualityScore - a.punctualityScore;
+    // 5. الانضباط والدوام
+    if (b.attendanceScore !== a.attendanceScore) return b.attendanceScore - a.attendanceScore;
+    // 6. الأقل تأخراً
+    return a.lateMinutes - b.lateMinutes;
+  });
 }
 
 export function topOf(scores: PerformerScore[]): PerformerScore | null {
-  return rank(scores)[0] ?? null;
+  if (!scores || scores.length === 0) return null;
+  return rank(scores)[0] ?? scores[0] ?? null;
 }

@@ -107,7 +107,7 @@ const monthRange = (month: string) => {
 };
 
 function AttendancePage() {
-  const { isDirector, isHR } = useAuth();
+  const { employee, isDirector, isHR } = useAuth();
   const isAdmin = isDirector || isHR;
   const qc = useQueryClient();
 
@@ -248,6 +248,33 @@ function AttendancePage() {
     });
   }, [monthRecords, employees]);
 
+  /* ── سجلات الموظف الشخصية ── */
+  const myAttendanceRows = useMemo(() => {
+    if (!employee?.id) return [];
+    return (monthRecords ?? [])
+      .filter((r) => r.employee_id === employee.id)
+      .sort((a, b) => b.work_date.localeCompare(a.work_date));
+  }, [monthRecords, employee?.id]);
+
+  const myMonthlyStats = useMemo(() => {
+    const count = (s: string) => myAttendanceRows.filter((r) => r.status === s).length;
+    return {
+      present: count("present") + count("permission"),
+      absent: count("absent"),
+      leave: count("leave"),
+      late: myAttendanceRows.reduce((s, r) => s + (r.late_minutes ?? 0), 0),
+      early: myAttendanceRows.reduce((s, r) => s + (r.early_leave_minutes ?? 0), 0),
+      overtime: myAttendanceRows.reduce((s, r) => s + (r.overtime_minutes ?? 0), 0),
+      score: complianceScore(
+        myAttendanceRows.map((r) => ({
+          status: String(r.status),
+          late_minutes: r.late_minutes ?? 0,
+          early_leave_minutes: r.early_leave_minutes ?? 0,
+        })),
+      ),
+    };
+  }, [myAttendanceRows]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -255,8 +282,9 @@ function AttendancePage() {
         description="سجلات الحضور اليومية والشهرية، إدارة الورديات والجداول المرنة، استيراد البصمة، وحساب الإضافي"
       />
 
-      <Tabs defaultValue="daily" className="space-y-4">
+      <Tabs defaultValue={isAdmin ? "daily" : "my-attendance"} className="space-y-4">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="my-attendance">دوامي الشخصي</TabsTrigger>
           <TabsTrigger value="daily">اليومي</TabsTrigger>
           <TabsTrigger value="monthly">الملخص الشهري</TabsTrigger>
           {isAdmin && <TabsTrigger value="shifts">إدارة الورديات</TabsTrigger>}
@@ -264,6 +292,132 @@ function AttendancePage() {
           {isAdmin && <TabsTrigger value="devices">أجهزة البصمة</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">الإعدادات</TabsTrigger>}
         </TabsList>
+
+        {/* دوامي الشخصي */}
+        <TabsContent value="my-attendance" className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 sm:gap-4">
+            <div className="w-full space-y-2 sm:w-auto">
+              <Label>الشهر</Label>
+              <Input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="w-full sm:w-48"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              متابعة حضورك الشخصي والتأخيرات وساعات العمل الإضافية
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-4 sm:p-5">
+                <p className="text-xs text-muted-foreground">أيام الحضور المسجلة</p>
+                <p className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl">
+                  {myMonthlyStats.present}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">خلال شهر {month}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 sm:p-5">
+                <p className="text-xs text-muted-foreground">نسبة الالتزام والانضباط</p>
+                <p className="mt-1 font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400 sm:text-3xl">
+                  {myMonthlyStats.score}%
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">معدل الانضباط التراكمي</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 sm:p-5">
+                <p className="text-xs text-muted-foreground">إجمالي التأخير المسجل</p>
+                <p className="mt-1 font-display text-2xl font-bold text-amber-600 sm:text-3xl">
+                  {formatMinutes(myMonthlyStats.late)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">انصراف مبكر: {formatMinutes(myMonthlyStats.early)}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 sm:p-5">
+                <p className="text-xs text-muted-foreground">الساعات الإضافية</p>
+                <p className="mt-1 font-display text-2xl font-bold text-indigo-600 sm:text-3xl">
+                  +{formatMinutes(myMonthlyStats.overtime)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">إضافي معتمد</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">سجل بصمات وحضور الشهر</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto p-0">
+              {myAttendanceRows.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  لا توجد سجلات دوام مسجلة لك في هذا الشهر ({month}).
+                </div>
+              ) : (
+                <table className="w-full text-right text-sm">
+                  <thead className="bg-muted/60 text-xs">
+                    <tr>
+                      <th className="p-3">تاريخ اليوم</th>
+                      <th className="p-3">الوردية</th>
+                      <th className="p-3">وقت الحضور</th>
+                      <th className="p-3">وقت الانصراف</th>
+                      <th className="p-3">التأخير</th>
+                      <th className="p-3">انصراف مبكر</th>
+                      <th className="p-3">ساعات إضافية</th>
+                      <th className="p-3">الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myAttendanceRows.map((r) => {
+                      const shiftObj = r.shift_id ? shiftMap.get(r.shift_id) : null;
+                      return (
+                        <tr key={r.id} className="border-t transition-colors hover:bg-muted/30">
+                          <td className="p-3 font-medium">{r.work_date}</td>
+                          <td className="p-3">
+                            {shiftObj ? (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                                style={{ backgroundColor: shiftObj.color || "#0284c7" }}
+                              >
+                                <Clock className="size-2.5" /> {shiftObj.name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">الافتراضية</span>
+                            )}
+                          </td>
+                          <td className="p-3 font-mono text-xs">{r.check_in?.slice(0, 5) ?? "—"}</td>
+                          <td className="p-3 font-mono text-xs">{r.check_out?.slice(0, 5) ?? "—"}</td>
+                          <td className="p-3 text-xs">{formatMinutes(r.late_minutes ?? 0)}</td>
+                          <td className="p-3 text-xs">{formatMinutes(r.early_leave_minutes ?? 0)}</td>
+                          <td className="p-3 text-xs">
+                            {(r.overtime_minutes ?? 0) > 0 ? (
+                              <span className="font-semibold text-emerald-600">+{formatMinutes(r.overtime_minutes ?? 0)}</span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <Badge variant={r.status === "present" ? "default" : "secondary"}>
+                              {ATTENDANCE_STATUS_LABELS[r.status ?? "absent"]}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* اليومي */}
         <TabsContent value="daily" className="space-y-4">

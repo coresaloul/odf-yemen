@@ -8,6 +8,9 @@ import {
   Layers,
   Trophy,
   Zap,
+  ShieldCheck,
+  Activity,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,29 +32,37 @@ import { TopPerformerCard } from "@/components/dashboard/TopPerformerCard";
 import { LeaderboardTable } from "@/components/dashboard/LeaderboardTable";
 import { AttentionList } from "@/components/dashboard/AttentionList";
 import { DistributionCard } from "@/components/dashboard/DistributionCard";
+import { QuickActionsBar } from "@/components/dashboard/QuickActionsBar";
+import { EmployeeDashboardView } from "@/components/dashboard/EmployeeDashboardView";
+import { ManagerDashboardView } from "@/components/dashboard/ManagerDashboardView";
+import { SecretariatDashboardView } from "@/components/dashboard/SecretariatDashboardView";
 import { formatMinutes } from "@/lib/attendance";
-import { rank, topOf, type PerformerScore } from "@/lib/dashboard-metrics";
+import {
+  rank,
+  topOf,
+  type PerformerScore,
+} from "@/lib/dashboard-metrics";
 import {
   formatDate,
   PRIORITY_LABELS,
   TASK_STATUS_LABELS,
-  periodRange,
   type PeriodKey,
+  periodRange,
 } from "@/lib/hr";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "لوحة المعلومات | الموارد البشرية" },
+      { title: "لوحة المعلومات | مؤسسة اليتيم التنموية" },
       {
         name: "description",
         content:
-          "لوحة قيادة لأداء مؤسسة اليتيم التنموية: أفضل موظف وأفضل إدارة وقسم، الحضور، المهام والتنبيهات.",
+          "لوحة قيادة مخصصة حسب الأدوار والصلاحيات: الموظف، المدير المباشر، الموارد البشرية، السكرتارية والمدير التنفيذي.",
       },
-      { property: "og:title", content: "لوحة المعلومات | الموارد البشرية" },
+      { property: "og:title", content: "لوحة المعلومات | مؤسسة اليتيم التنموية" },
       {
         property: "og:description",
-        content: "لوحة شرف الأداء ومؤشرات المهام والدوام والتنبيهات لحظياً.",
+        content: "مؤشرات الأداء، الحضور، الإنجاز، والموافقات والتنبيهات المخصصة لحظياً.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -92,14 +103,22 @@ type DashboardAnalyticsPayload = {
 };
 
 function Dashboard() {
-  const { employee, isDirector, isHR, isManager } = useAuth();
+  const { employee, isDirector, isHR, isManager, isSecretariat } = useAuth();
   const [period, setPeriod] = useState<PeriodKey>("monthly");
   const range = useMemo(() => periodRange(period), [period]);
   const orgWide = isDirector || isHR;
 
   // ──── استعلام RPC فائق السرعة لقاعدة البيانات ────
   const { data: analytics, isLoading } = useQuery({
-    queryKey: ["dashboard-analytics-rpc", range.start, range.end, orgWide, isManager, employee?.id, employee?.department_id],
+    queryKey: [
+      "dashboard-analytics-rpc",
+      range.start,
+      range.end,
+      orgWide,
+      isManager,
+      employee?.id,
+      employee?.department_id,
+    ],
     queryFn: async (): Promise<DashboardAnalyticsPayload> => {
       const scopeEmpId = !orgWide && !isManager ? employee?.id : undefined;
       const scopeDeptId = isManager ? employee?.department_id : undefined;
@@ -119,8 +138,8 @@ function Dashboard() {
     },
   });
 
-  // ──── استعلام خفيف لأحدث المهام المعروضة في الأسفل ────
-  const { data: recentTasks } = useQuery({
+  // ──── استعلام المهام الحديثة ────
+  const { data: recentTasks = [] } = useQuery({
     queryKey: ["dashboard-recent-tasks", orgWide, isManager, employee?.id, employee?.department_id],
     queryFn: async () => {
       let q = supabase
@@ -166,7 +185,12 @@ function Dashboard() {
   const rate = summary?.completionRate ?? 0;
   const overallCompliance = summary?.avgCompliance ?? 0;
 
-  const totalToday = (summary?.todayPresent ?? 0) + (summary?.todayLate ?? 0) + (summary?.todayLeave ?? 0) + (summary?.todayAbsent ?? 0);
+  const totalToday =
+    (summary?.todayPresent ?? 0) +
+    (summary?.todayLate ?? 0) +
+    (summary?.todayLeave ?? 0) +
+    (summary?.todayAbsent ?? 0);
+
   const attendanceSlices = [
     {
       label: "حاضر في الموعد",
@@ -224,25 +248,23 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={`أهلاً ${employee?.full_name ?? ""}`}
-        description={
-          <div className="space-y-1">
-            {employee?.job_title ? <p>{employee.job_title}</p> : null}
-            <p className="flex items-center gap-1.5">
-              {orgWide
-                ? "لوحة قيادة شاملة لكل إدارات وأقسام المؤسسة"
-                : isManager
-                  ? "أداء نطاق إدارتك ومؤشرات فريقك"
-                  : "متابعة أدائك ومهامك والتزامك بالدوام"}
-            </p>
-          </div>
-        }
-        action={
+      {/* شريط الإجراءات السريعة في أعلى لوحة المعلومات */}
+      <QuickActionsBar />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs text-muted-foreground">
+            الفترة الزمنية المحددة: {formatDate(range.start)} — {formatDate(range.end)}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <Zap className="size-3.5 fill-current" /> معالجة فورية فائقة السرعة
+          </span>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground">الفترة</Label>
+            <Label className="text-xs text-muted-foreground">الفترة:</Label>
             <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -254,202 +276,204 @@ function Dashboard() {
               </SelectContent>
             </Select>
           </div>
-        }
-      />
-
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          الفترة: {formatDate(range.start)} — {formatDate(range.end)}
-        </p>
-        <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-          <Zap className="size-3.5 fill-current" /> معالجة فورية فائقة السرعة عبر قاعدة البيانات
-        </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6">
-        {stats.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="p-4 sm:p-5">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl">
-                {s.value}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* ─── التبديل الديناميكي للعرض حسب الدور ─── */}
 
-      {/* لوحة الشرف */}
-      {orgWide || isManager ? (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <TopPerformerCard
-            label="أفضل موظف"
-            icon={<Trophy className="size-4 text-accent" />}
-            performer={topEmployee}
-          />
-          <TopPerformerCard
-            label="أفضل إدارة"
-            icon={<Building2 className="size-4 text-accent" />}
-            performer={topDept}
-          />
-          <TopPerformerCard
-            label="أفضل قسم"
-            icon={<Layers className="size-4 text-accent" />}
-            performer={topSection}
-          />
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <TopPerformerCard
-            label="أدائي خلال الفترة"
-            icon={<Award className="size-4 text-accent" />}
-            performer={myScore}
-          />
-          <Card>
-            <CardContent className="space-y-2 p-5">
-              <p className="text-xs text-muted-foreground">ترتيبي بين الزملاء</p>
-              <p className="font-display text-3xl font-bold text-primary">
-                {myRank > 0 ? `${myRank}` : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                من أصل {rank(employeeScores).length} موظف مشمول بالتقييم
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="space-y-2 p-5">
-              <p className="text-xs text-muted-foreground">إجمالي التأخير خلال الفترة</p>
-              <p className="font-display text-3xl font-bold text-primary">
-                {formatMinutes(myScore?.lateMinutes ?? 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {myScore?.presentDays ?? 0} يوم حضور مسجّل
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      {/* 1. عرض السكرتارية إذا كان المستخدم سكرتارية وليس مديراً أو HR أو تنفيذي */}
+      {!orgWide && !isManager && isSecretariat && (
+        <SecretariatDashboardView employee={employee} recentTasks={recentTasks} />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">نسبة إنجاز مهام الفترة</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Progress value={rate} />
-          <p className="text-sm text-muted-foreground">
-            {rate}% من مهام الفترة منجزة ({completed} من {totalPeriodTasks})
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DistributionCard
-          title="حضور اليوم"
-          total={totalToday}
-          slices={attendanceSlices}
-          footer={totalToday === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
+      {/* 2. عرض الموظف العادي إذا لم يكن مديراً أو HR أو تنفيذي */}
+      {!orgWide && !isManager && !isSecretariat && (
+        <EmployeeDashboardView
+          employee={employee}
+          summary={summary}
+          myScore={myScore}
+          myRank={myRank}
+          totalRanked={rank(employeeScores).length}
+          recentTasks={recentTasks}
+          pendingLeaves={analytics?.pendingLeaves ?? []}
+          pendingEvaluations={analytics?.pendingEvaluations ?? []}
         />
-        <DistributionCard
-          title="توزيع المهام حسب الحالة"
-          total={totalPeriodTasks}
-          slices={statusSlices}
-        />
-      </div>
-
-      {(orgWide || isManager) && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <LeaderboardTable
-            title="أفضل ٥ موظفين"
-            entityLabel="الموظف"
-            rows={rank(employeeScores)}
-          />
-          <LeaderboardTable title="ترتيب الأقسام" entityLabel="القسم" rows={rank(sectionScores)} />
-        </div>
       )}
 
+      {/* 3. عرض المدير المباشر إذا كان مديراً وليس إدارياً شاملاً (HR/Director) */}
+      {isManager && !orgWide && (
+        <ManagerDashboardView
+          employee={employee}
+          summary={summary}
+          employeeScores={employeeScores}
+          sectionScores={sectionScores}
+          topEmployee={topEmployee}
+          recentTasks={recentTasks}
+          pendingLeaves={analytics?.pendingLeaves ?? []}
+          pendingEvaluations={analytics?.pendingEvaluations ?? []}
+        />
+      )}
+
+      {/* 4. عرض الإدارة العليا والموارد البشرية (Org-Wide) */}
       {orgWide && (
-        <LeaderboardTable title="ترتيب الإدارات" entityLabel="الإدارة" rows={rank(deptScores)} />
-      )}
+        <div className="space-y-6">
+          <PageHeader
+            title={isDirector ? "لوحة القيادة الاستراتيجية" : "لوحة الموارد البشرية والعمليات"}
+            description={
+              isDirector
+                ? "رؤية بانورامية شاملة لمؤشرات الأداء المؤسسي، الانضباط، مسارات الاعتماد وشرف التميز"
+                : "متابعة القوة العاملة، الدوام، الإجازات، مسيرات الرواتب والوثائق المؤسسية"
+            }
+          />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AttentionList
-          items={[
-            { label: "مهام متأخرة عن الاستحقاق", count: overdue, to: "/tasks", tone: "danger" },
-            {
-              label: "طلبات إجازة بانتظار الاعتماد",
-              count: (analytics?.pendingLeaves ?? []).length,
-              to: "/leaves",
-            },
-            {
-              label: "تقييمات ضمن مراحل الاعتماد",
-              count: (analytics?.pendingEvaluations ?? []).length,
-              to: "/evaluations",
-            },
-            {
-              label: "وثائق موظفين تنتهي خلال ٣٠ يوماً",
-              count: (analytics?.expiringDocs ?? []).length,
-              to: "/employees",
-              tone: "danger",
-            },
-          ]}
-        />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6">
+            {stats.map((s) => (
+              <Card key={s.label}>
+                <CardContent className="p-4 sm:p-5">
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl">
+                    {s.value}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-        {orgWide || isManager ? (
+          {/* لوحة الشرف المؤسسية */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <TopPerformerCard
+              label="أفضل موظف"
+              icon={<Trophy className="size-4 text-accent" />}
+              performer={topEmployee}
+            />
+            <TopPerformerCard
+              label="أفضل إدارة"
+              icon={<Building2 className="size-4 text-accent" />}
+              performer={topDept}
+            />
+            <TopPerformerCard
+              label="أفضل قسم"
+              icon={<Layers className="size-4 text-accent" />}
+              performer={topSection}
+            />
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">الأكثر تأخراً خلال الفترة</CardTitle>
+              <CardTitle className="text-base">نسبة إنجاز مهام الفترة للمؤسسة</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {lateBoard.length === 0 && (
-                <p className="text-sm text-muted-foreground">لا توجد حالات تأخير مسجّلة.</p>
+              <Progress value={rate} />
+              <p className="text-sm text-muted-foreground">
+                {rate}% من مهام الفترة منجزة ({completed} من {totalPeriodTasks})
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DistributionCard
+              title="حضور اليوم على مستوى المؤسسة"
+              total={totalToday}
+              slices={attendanceSlices}
+              footer={totalToday === 0 ? "لم تُسجَّل سجلات حضور لهذا اليوم بعد." : undefined}
+            />
+            <DistributionCard
+              title="توزيع المهام حسب الحالة"
+              total={totalPeriodTasks}
+              slices={statusSlices}
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <LeaderboardTable
+              title="أفضل ٥ موظفين"
+              entityLabel="الموظف"
+              rows={rank(employeeScores)}
+            />
+            <LeaderboardTable title="ترتيب الأقسام" entityLabel="القسم" rows={rank(sectionScores)} />
+          </div>
+
+          <LeaderboardTable title="ترتيب الإدارات" entityLabel="الإدارة" rows={rank(deptScores)} />
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <AttentionList
+              items={[
+                { label: "مهام متأخرة عن الاستحقاق", count: overdue, to: "/tasks", tone: "danger" },
+                {
+                  label: "طلبات إجازة بانتظار الاعتماد",
+                  count: (analytics?.pendingLeaves ?? []).length,
+                  to: "/leaves",
+                },
+                {
+                  label: "تقييمات ضمن مراحل الاعتماد",
+                  count: (analytics?.pendingEvaluations ?? []).length,
+                  to: "/evaluations",
+                },
+                {
+                  label: "وثائق موظفين تنتهي خلال ٣٠ يوماً",
+                  count: (analytics?.expiringDocs ?? []).length,
+                  to: "/employees",
+                  tone: "danger",
+                },
+              ]}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">الأكثر تأخراً خلال الفترة</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {lateBoard.length === 0 && (
+                  <p className="text-sm text-muted-foreground">لا توجد حالات تأخير مسجّلة.</p>
+                )}
+                {lateBoard.map((e) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{e.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{e.subtitle}</p>
+                    </div>
+                    <Badge variant="outline">{formatMinutes(e.lateMinutes)}</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">أحدث المهام في النظام</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoading && <ListSkeleton rows={3} />}
+              {!isLoading && recentTasks.length === 0 && (
+                <EmptyState compact icon={ClipboardList} title="لا توجد مهام بعد" />
               )}
-              {lateBoard.map((e) => (
+              {recentTasks.map((t) => (
                 <div
-                  key={e.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{e.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{e.subtitle}</p>
+                    <p className="truncate font-medium">{t.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      الاستحقاق: {formatDate(t.due_date)} — التقدم: {t.progress}%
+                    </p>
                   </div>
-                  <Badge variant="outline">{formatMinutes(e.lateMinutes)}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{PRIORITY_LABELS[t.priority]}</Badge>
+                    <Badge variant={t.status === "completed" ? "default" : "secondary"}>
+                      {TASK_STATUS_LABELS[t.status]}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </CardContent>
           </Card>
-        ) : null}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">أحدث المهام</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {isLoading && <ListSkeleton rows={3} />}
-          {!isLoading && (recentTasks ?? []).length === 0 && (
-            <EmptyState compact icon={ClipboardList} title="لا توجد مهام بعد" />
-          )}
-          {(recentTasks ?? []).map((t) => (
-            <div
-              key={t.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium">{t.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  الاستحقاق: {formatDate(t.due_date)} — التقدم: {t.progress}%
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{PRIORITY_LABELS[t.priority]}</Badge>
-                <Badge variant={t.status === "completed" ? "default" : "secondary"}>
-                  {TASK_STATUS_LABELS[t.status]}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }

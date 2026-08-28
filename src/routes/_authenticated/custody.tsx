@@ -58,6 +58,7 @@ import {
   saveCustodyAssignment,
 } from "@/lib/custody.functions";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
+import { formatDate } from "@/lib/hr";
 
 export const Route = createFileRoute("/_authenticated/custody")({
   component: CustodyPage,
@@ -99,7 +100,7 @@ const emptyItem = (): ItemDraft => ({
 });
 
 function CustodyPage() {
-  const { isDirector, isHR } = useAuth();
+  const { employee, isDirector, isHR } = useAuth();
   const canManage = isDirector || isHR;
   const qc = useQueryClient();
 
@@ -128,6 +129,10 @@ function CustodyPage() {
 
   const rows = assignments.data ?? [];
   const openRows = rows.filter((r) => isOpenAssignment(r.status));
+  const mineRows = useMemo(
+    () => (employee?.id ? rows.filter((r) => r.employee_id === employee.id) : []),
+    [rows, employee?.id],
+  );
   const stats = useMemo(
     () => ({
       open: openRows.length,
@@ -1007,13 +1012,80 @@ function CustodyPage() {
         ))}
       </div>
 
-      <Tabs defaultValue="active">
+      <Tabs defaultValue={canManage ? "active" : "mine"}>
         <TabsList className="flex-wrap">
+          <TabsTrigger value="mine">عهدي المستلمة</TabsTrigger>
           <TabsTrigger value="active">العهد النشطة</TabsTrigger>
           <TabsTrigger value="all">كل السجلات</TabsTrigger>
-          <TabsTrigger value="assets">سجل الأصول</TabsTrigger>
+          {canManage && <TabsTrigger value="assets">سجل الأصول</TabsTrigger>}
           <TabsTrigger value="reports">التقارير</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="mine" className="space-y-3">
+          {assignments.isLoading ? (
+            <ListSkeleton />
+          ) : mineRows.length === 0 ? (
+            <EmptyState
+              icon={Package}
+              title="لا توجد عهد مسجلة باسمك"
+              description="لم يتم تسليم أي عهد أصول أو أجهزة أو عهد مالية لك حالياً."
+            />
+          ) : (
+            mineRows.map((r) => (
+              <Card key={r.id}>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{CUSTODY_KIND_LABELS[r.kind]}</Badge>
+                    <Badge variant="outline">{ASSIGNMENT_STATUS_LABELS[r.status]}</Badge>
+                    {isOverdue(r) && <Badge variant="destructive">تجاوزت تاريخ الإرجاع</Badge>}
+                  </div>
+                  <div>
+                    <p className="font-semibold">
+                      {r.kind === "cash"
+                        ? `عهدة مالية: مبلغ ${money(r.cash_amount)}`
+                        : r.items.map((i) => `${i.title} ×${i.quantity}`).join("، ") || "عهدة ممتلكات"}
+                    </p>
+                    {r.kind === "cash" && (
+                      <p className="text-sm text-muted-foreground">
+                        المتبقي غير المسوى: {money(cashRemaining(r))}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      الغرض: {r.purpose ?? "—"} · تاريخ الاستلام: {r.handed_over_at ? formatDate(r.handed_over_at) : "قيد المعالجة"} · الإرجاع المتوقع: {r.expected_return_date ? formatDate(r.expected_return_date) : "—"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {r.status === "handed_over" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActive(r);
+                          setReturns({});
+                          setView("return");
+                        }}
+                      >
+                        طلب إرجاع العهدة
+                      </Button>
+                    )}
+                    {r.kind === "cash" && r.status === "handed_over" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActive(r);
+                          setView("cash");
+                        }}
+                      >
+                        إضافة بيان تسوية
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
 
         {(["active", "all"] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-3">

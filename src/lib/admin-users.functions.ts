@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdminRole, assertDirectorRole } from "@/lib/roles";
 
-const ROLES = ["executive_director", "manager", "hr", "employee"] as const;
+const ROLES = ["executive_director", "manager", "hr", "secretariat", "employee"] as const;
 type Role = (typeof ROLES)[number];
 
 
@@ -109,7 +109,7 @@ export const setUserRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ userId: z.string().uuid(), roles: z.array(z.enum(ROLES)).max(4) })
+      .object({ userId: z.string().uuid(), roles: z.array(z.enum(ROLES)).max(5) })
       .parse(data),
   )
   .handler(async ({ data, context }) => {

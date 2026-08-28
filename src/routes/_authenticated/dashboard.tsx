@@ -101,12 +101,14 @@ function Dashboard() {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ["dashboard-analytics-rpc", range.start, range.end, orgWide, isManager, employee?.id, employee?.department_id],
     queryFn: async (): Promise<DashboardAnalyticsPayload> => {
+      const scopeEmpId = !orgWide && !isManager ? employee?.id : undefined;
+      const scopeDeptId = isManager ? employee?.department_id : undefined;
       const { data, error } = await supabase.rpc("get_dashboard_analytics", {
         p_start_date: range.start,
         p_end_date: range.end,
-        p_scope_emp_id: (!orgWide && !isManager) ? (employee?.id ?? undefined) : undefined,
-        p_scope_dept_id: isManager ? (employee?.department_id ?? undefined) : undefined,
         p_is_org_wide: orgWide,
+        ...(scopeEmpId ? { p_scope_emp_id: scopeEmpId } : {}),
+        ...(scopeDeptId ? { p_scope_dept_id: scopeDeptId } : {}),
       });
 
       if (error) {

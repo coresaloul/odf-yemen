@@ -19,7 +19,13 @@ export const generateAiDocument = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { draftAdministrativeDocument } = await import("@/lib/ai-hr.server");
-    const result = await draftAdministrativeDocument(data);
+    const result = await draftAdministrativeDocument({
+      ...data,
+      jobTitle: data.jobTitle ?? null,
+      departmentName: data.departmentName ?? null,
+      sanctionDegree: data.sanctionDegree ?? null,
+      customNotes: data.customNotes ?? null,
+    });
     return result;
   });
 

@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type CronResultItem = { task: string; success: boolean; message: string };
+type CronResultPayload = CronResultItem | CronResultItem[];
+
 export const triggerCronTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -42,5 +45,5 @@ export const triggerCronTask = createServerFn({ method: "POST" })
       entity_label: data.task,
     });
 
-    return { ok: true, result };
+    return { ok: true, result: result as unknown as CronResultPayload };
   });

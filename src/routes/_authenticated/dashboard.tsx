@@ -23,21 +23,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ListSkeleton } from "@/components/LoadingSkeleton";
+import { ListSkeleton } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { TopPerformerCard } from "@/components/dashboard/TopPerformerCard";
 import { LeaderboardTable } from "@/components/dashboard/LeaderboardTable";
 import { AttentionList } from "@/components/dashboard/AttentionList";
 import { DistributionCard } from "@/components/dashboard/DistributionCard";
 import { formatMinutes } from "@/lib/attendance";
+import { rank, topOf, type PerformerScore } from "@/lib/dashboard-metrics";
 import {
-  type PeriodKey,
+  formatDate,
+  PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
   periodRange,
-  rank,
-  topOf,
-  type PerformerScore,
-} from "@/lib/dashboard-metrics";
-import { formatDate, PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/hr";
+  type PeriodKey,
+} from "@/lib/hr";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -101,12 +101,14 @@ function Dashboard() {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ["dashboard-analytics-rpc", range.start, range.end, orgWide, isManager, employee?.id, employee?.department_id],
     queryFn: async (): Promise<DashboardAnalyticsPayload> => {
+      const scopeEmpId = !orgWide && !isManager ? employee?.id : undefined;
+      const scopeDeptId = isManager ? employee?.department_id : undefined;
       const { data, error } = await supabase.rpc("get_dashboard_analytics", {
         p_start_date: range.start,
         p_end_date: range.end,
-        p_scope_emp_id: (!orgWide && !isManager) ? (employee?.id ?? null) : null,
-        p_scope_dept_id: isManager ? (employee?.department_id ?? null) : null,
         p_is_org_wide: orgWide,
+        ...(scopeEmpId ? { p_scope_emp_id: scopeEmpId } : {}),
+        ...(scopeDeptId ? { p_scope_dept_id: scopeDeptId } : {}),
       });
 
       if (error) {

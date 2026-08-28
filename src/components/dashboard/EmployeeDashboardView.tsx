@@ -200,15 +200,15 @@ export function EmployeeDashboardView({
 
             <div className="space-y-2.5 pt-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">إنجاز المهام (٤٠٪):</span>
+                <span className="text-muted-foreground">إنجاز المهام الموزونة (٤٥٪):</span>
                 <span className="font-semibold">{myScore?.tasksScore ?? 0}%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">الانضباط والدوام (٣٠٪):</span>
+                <span className="text-muted-foreground">الانضباط والدوام (٣٥٪):</span>
                 <span className="font-semibold">{myScore?.attendanceScore ?? 0}%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">الالتزام بالمواعيد (٣٠٪):</span>
+                <span className="text-muted-foreground">الالتزام بالمواعيد (٢٠٪):</span>
                 <span className="font-semibold">{myScore?.punctualityScore ?? 0}%</span>
               </div>
             </div>

@@ -79,11 +79,11 @@ function RequestCard({
           {row.employee_name} — {row.department_name}
         </p>
 
-        <dl className="divide-y rounded-lg border text-sm">
+        <dl className="divide-y rounded-lg border bg-muted/20 text-xs sm:text-sm">
           {row.fields.map((f) => (
-            <div key={f.key} className="grid grid-cols-[9rem_minmax(0,1fr)] gap-2 px-3 py-2">
-              <dt className="text-muted-foreground">{f.label}</dt>
-              <dd className="min-w-0 break-words">{formatFieldValue(f, row.values[f.key])}</dd>
+            <div key={f.key} className="grid grid-cols-1 gap-0.5 px-3 py-2 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-2">
+              <dt className="font-medium text-muted-foreground">{f.label}</dt>
+              <dd className="min-w-0 font-medium break-words text-foreground">{formatFieldValue(f, row.values[f.key])}</dd>
             </div>
           ))}
         </dl>

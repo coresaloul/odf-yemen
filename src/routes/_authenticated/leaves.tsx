@@ -294,96 +294,178 @@ function RequestsTable({
   onDecide?: (id: string, action: "approved" | "returned", note?: string) => void;
   onDelete?: (id: string) => void;
 }) {
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-sm text-muted-foreground">
+          {emptyText}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
-      <CardContent className="overflow-x-auto p-0">
-        <table className="w-full text-right text-sm">
-          <thead className="bg-muted/60 text-xs">
-            <tr>
-              <th className="p-3">الموظف</th>
-              <th className="p-3">النوع</th>
-              <th className="p-3">الفترة</th>
-              <th className="p-3">المدة</th>
-              <th className="p-3">المرحلة</th>
-              <th className="p-3">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t align-top">
-                <td className="p-3">{r.employees?.full_name ?? "—"}</td>
-                <td className="p-3">
-                  {r.leave_types?.name ?? "—"}
-                  <span className="block text-xs text-muted-foreground">
-                    {r.kind === "permission" ? "إذن ساعي" : "إجازة"}
+    <>
+      {/* عرض البطاقات على شاشات الهواتف */}
+      <div className="space-y-3 sm:hidden">
+        {rows.map((r) => (
+          <Card key={r.id} className="overflow-hidden border-border/80">
+            <CardContent className="space-y-2.5 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground">{r.employees?.full_name ?? "—"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.leave_types?.name ?? "—"} · {r.kind === "permission" ? "إذن ساعي" : "إجازة"}
+                  </p>
+                </div>
+                <Badge variant={stageVariant(String(r.stage))}>
+                  {STAGE_LABELS[String(r.stage)]}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
+                <div>
+                  <span className="text-muted-foreground">الفترة: </span>
+                  <span className="font-medium text-foreground">
+                    {r.kind === "permission"
+                      ? `${r.start_date} (${String(r.start_time ?? "").slice(0, 5)} - ${String(r.end_time ?? "").slice(0, 5)})`
+                      : `${r.start_date} — ${r.end_date}`}
                   </span>
-                </td>
-                <td className="p-3">
-                  {r.kind === "permission"
-                    ? `${r.start_date} (${String(r.start_time ?? "").slice(0, 5)} — ${String(r.end_time ?? "").slice(0, 5)})`
-                    : `${r.start_date} — ${r.end_date}`}
-                </td>
-                <td className="p-3">
-                  {r.kind === "permission" ? `${Number(r.hours)} ساعة` : `${Number(r.days)} يوم`}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stageVariant(String(r.stage))}>
-                    {STAGE_LABELS[String(r.stage)]}
-                  </Badge>
-                  {r.return_reason && (
-                    <p className="mt-1 text-xs text-destructive">{r.return_reason}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">المدة: </span>
+                  <span className="font-medium text-foreground">
+                    {r.kind === "permission" ? `${Number(r.hours)} ساعة` : `${Number(r.days)} يوم`}
+                  </span>
+                </div>
+              </div>
+
+              {r.return_reason && (
+                <p className="text-xs text-destructive">سبب الإعادة: {r.return_reason}</p>
+              )}
+
+              {/* أزرار الإجراءات على الموبايل */}
+              {(onSubmit || onDecide || (onDelete && String(r.stage) !== "approved")) && (
+                <div className="flex flex-wrap items-center gap-1.5 border-t pt-2.5">
+                  {onSubmit && ["draft", "returned"].includes(String(r.stage)) && (
+                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => onSubmit(r.id)}>
+                      <Send className="size-3.5" /> إرسال للاعتماد
+                    </Button>
                   )}
-                  {!["draft", "approved", "returned"].includes(String(r.stage)) && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {LEAVE_STAGE_STEPS.findIndex((s) => s.stage === r.stage) + 1} من{" "}
-                      {LEAVE_STAGE_STEPS.length}
-                    </p>
+                  {onDecide && (
+                    <>
+                      <Button size="sm" className="flex-1 gap-1" onClick={() => onDecide(r.id, "approved")}>
+                        <Check className="size-3.5" /> اعتماد
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 gap-1"
+                        onClick={() => {
+                          const note = window.prompt("سبب الإعادة للتعديل");
+                          if (note) onDecide(r.id, "returned", note);
+                        }}
+                      >
+                        <Undo2 className="size-3.5" /> إعادة للتعديل
+                      </Button>
+                    </>
                   )}
-                </td>
-                <td className="p-3">
-                  <div className="flex flex-wrap gap-1">
-                    {onSubmit && ["draft", "returned"].includes(String(r.stage)) && (
-                      <Button size="sm" variant="outline" onClick={() => onSubmit(r.id)}>
-                        <Send className="size-3.5" /> إرسال
-                      </Button>
-                    )}
-                    {onDecide && (
-                      <>
-                        <Button size="sm" onClick={() => onDecide(r.id, "approved")}>
-                          <Check className="size-3.5" /> اعتماد
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const note = window.prompt("سبب الإعادة للتعديل");
-                            if (note) onDecide(r.id, "returned", note);
-                          }}
-                        >
-                          <Undo2 className="size-3.5" /> إعادة
-                        </Button>
-                      </>
-                    )}
-                    {onDelete && String(r.stage) !== "approved" && (
-                      <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}>
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+                  {onDelete && String(r.stage) !== "approved" && (
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => onDelete(r.id)}>
+                      <Trash2 className="size-4" /> حذف
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* عرض الجدول على الشاشات المتوسطة والكبيرة */}
+      <Card className="hidden sm:block">
+        <CardContent className="touch-scroll overflow-x-auto p-0">
+          <table className="w-full text-right text-sm">
+            <thead className="bg-muted/60 text-xs">
               <tr>
-                <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                  {emptyText}
-                </td>
+                <th className="p-3">الموظف</th>
+                <th className="p-3">النوع</th>
+                <th className="p-3">الفترة</th>
+                <th className="p-3">المدة</th>
+                <th className="p-3">المرحلة</th>
+                <th className="p-3">إجراءات</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </CardContent>
-    </Card>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t align-top hover:bg-muted/30">
+                  <td className="p-3 font-medium">{r.employees?.full_name ?? "—"}</td>
+                  <td className="p-3">
+                    {r.leave_types?.name ?? "—"}
+                    <span className="block text-xs text-muted-foreground">
+                      {r.kind === "permission" ? "إذن ساعي" : "إجازة"}
+                    </span>
+                  </td>
+                  <td className="p-3 text-xs">
+                    {r.kind === "permission"
+                      ? `${r.start_date} (${String(r.start_time ?? "").slice(0, 5)} — ${String(r.end_time ?? "").slice(0, 5)})`
+                      : `${r.start_date} — ${r.end_date}`}
+                  </td>
+                  <td className="p-3 text-xs font-semibold">
+                    {r.kind === "permission" ? `${Number(r.hours)} ساعة` : `${Number(r.days)} يوم`}
+                  </td>
+                  <td className="p-3">
+                    <Badge variant={stageVariant(String(r.stage))}>
+                      {STAGE_LABELS[String(r.stage)]}
+                    </Badge>
+                    {r.return_reason && (
+                      <p className="mt-1 text-xs text-destructive">{r.return_reason}</p>
+                    )}
+                    {!["draft", "approved", "returned"].includes(String(r.stage)) && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {LEAVE_STAGE_STEPS.findIndex((s) => s.stage === r.stage) + 1} من{" "}
+                        {LEAVE_STAGE_STEPS.length}
+                      </p>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-1">
+                      {onSubmit && ["draft", "returned"].includes(String(r.stage)) && (
+                        <Button size="sm" variant="outline" onClick={() => onSubmit(r.id)}>
+                          <Send className="size-3.5" /> إرسال
+                        </Button>
+                      )}
+                      {onDecide && (
+                        <>
+                          <Button size="sm" onClick={() => onDecide(r.id, "approved")}>
+                            <Check className="size-3.5" /> اعتماد
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const note = window.prompt("سبب الإعادة للتعديل");
+                              if (note) onDecide(r.id, "returned", note);
+                            }}
+                          >
+                            <Undo2 className="size-3.5" /> إعادة
+                          </Button>
+                        </>
+                      )}
+                      {onDelete && String(r.stage) !== "approved" && (
+                        <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}>
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </>
   );
 }
 

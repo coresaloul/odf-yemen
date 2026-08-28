@@ -352,71 +352,128 @@ function AttendancePage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">سجل بصمات وحضور الشهر</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto p-0">
-              {myAttendanceRows.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  لا توجد سجلات دوام مسجلة لك في هذا الشهر ({month}).
-                </div>
-              ) : (
-                <table className="w-full text-right text-sm">
-                  <thead className="bg-muted/60 text-xs">
-                    <tr>
-                      <th className="p-3">تاريخ اليوم</th>
-                      <th className="p-3">الوردية</th>
-                      <th className="p-3">وقت الحضور</th>
-                      <th className="p-3">وقت الانصراف</th>
-                      <th className="p-3">التأخير</th>
-                      <th className="p-3">انصراف مبكر</th>
-                      <th className="p-3">ساعات إضافية</th>
-                      <th className="p-3">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myAttendanceRows.map((r) => {
-                      const shiftObj = r.shift_id ? shiftMap.get(r.shift_id) : null;
-                      return (
-                        <tr key={r.id} className="border-t transition-colors hover:bg-muted/30">
-                          <td className="p-3 font-medium">{r.work_date}</td>
-                          <td className="p-3">
-                            {shiftObj ? (
+          {myAttendanceRows.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                لا توجد سجلات دوام مسجلة لك في هذا الشهر ({month}).
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* عرض البطاقات على الهواتف */}
+              <div className="space-y-3 sm:hidden">
+                {myAttendanceRows.map((r) => {
+                  const shiftObj = r.shift_id ? shiftMap.get(r.shift_id) : null;
+                  return (
+                    <Card key={r.id} className="overflow-hidden border-border/80">
+                      <CardContent className="space-y-2.5 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{r.work_date}</span>
+                            {shiftObj && (
                               <span
                                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
                                 style={{ backgroundColor: shiftObj.color || "#0284c7" }}
                               >
                                 <Clock className="size-2.5" /> {shiftObj.name}
                               </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">الافتراضية</span>
                             )}
-                          </td>
-                          <td className="p-3 font-mono text-xs">{r.check_in?.slice(0, 5) ?? "—"}</td>
-                          <td className="p-3 font-mono text-xs">{r.check_out?.slice(0, 5) ?? "—"}</td>
-                          <td className="p-3 text-xs">{formatMinutes(r.late_minutes ?? 0)}</td>
-                          <td className="p-3 text-xs">{formatMinutes(r.early_leave_minutes ?? 0)}</td>
-                          <td className="p-3 text-xs">
-                            {(r.overtime_minutes ?? 0) > 0 ? (
-                              <span className="font-semibold text-emerald-600">+{formatMinutes(r.overtime_minutes ?? 0)}</span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <Badge variant={r.status === "present" ? "default" : "secondary"}>
-                              {ATTENDANCE_STATUS_LABELS[r.status ?? "absent"]}
-                            </Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
+                          </div>
+                          <Badge variant={r.status === "present" ? "default" : "secondary"}>
+                            {ATTENDANCE_STATUS_LABELS[r.status ?? "absent"]}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">الحضور: </span>
+                            <span className="font-mono font-medium text-foreground">{r.check_in?.slice(0, 5) ?? "—"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">الانصراف: </span>
+                            <span className="font-mono font-medium text-foreground">{r.check_out?.slice(0, 5) ?? "—"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">التأخير: </span>
+                            <span className={(r.late_minutes ?? 0) > 0 ? "font-semibold text-amber-600" : "text-muted-foreground"}>
+                              {formatMinutes(r.late_minutes ?? 0)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">الإضافي: </span>
+                            <span className={(r.overtime_minutes ?? 0) > 0 ? "font-semibold text-emerald-600" : "text-muted-foreground"}>
+                              {(r.overtime_minutes ?? 0) > 0 ? `+${formatMinutes(r.overtime_minutes ?? 0)}` : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* عرض الجدول على الشاشات المتوسطة والكبيرة */}
+              <Card className="hidden sm:block">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold">سجل بصمات وحضور الشهر</CardTitle>
+                </CardHeader>
+                <CardContent className="touch-scroll overflow-x-auto p-0">
+                  <table className="w-full text-right text-sm">
+                    <thead className="bg-muted/60 text-xs">
+                      <tr>
+                        <th className="p-3">تاريخ اليوم</th>
+                        <th className="p-3">الوردية</th>
+                        <th className="p-3">وقت الحضور</th>
+                        <th className="p-3">وقت الانصراف</th>
+                        <th className="p-3">التأخير</th>
+                        <th className="p-3">انصراف مبكر</th>
+                        <th className="p-3">ساعات إضافية</th>
+                        <th className="p-3">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myAttendanceRows.map((r) => {
+                        const shiftObj = r.shift_id ? shiftMap.get(r.shift_id) : null;
+                        return (
+                          <tr key={r.id} className="border-t transition-colors hover:bg-muted/30">
+                            <td className="p-3 font-medium">{r.work_date}</td>
+                            <td className="p-3">
+                              {shiftObj ? (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                                  style={{ backgroundColor: shiftObj.color || "#0284c7" }}
+                                >
+                                  <Clock className="size-2.5" /> {shiftObj.name}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">الافتراضية</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-mono text-xs">{r.check_in?.slice(0, 5) ?? "—"}</td>
+                            <td className="p-3 font-mono text-xs">{r.check_out?.slice(0, 5) ?? "—"}</td>
+                            <td className="p-3 text-xs">{formatMinutes(r.late_minutes ?? 0)}</td>
+                            <td className="p-3 text-xs">{formatMinutes(r.early_leave_minutes ?? 0)}</td>
+                            <td className="p-3 text-xs">
+                              {(r.overtime_minutes ?? 0) > 0 ? (
+                                <span className="font-semibold text-emerald-600">+{formatMinutes(r.overtime_minutes ?? 0)}</span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <Badge variant={r.status === "present" ? "default" : "secondary"}>
+                                {ATTENDANCE_STATUS_LABELS[r.status ?? "absent"]}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* اليومي */}

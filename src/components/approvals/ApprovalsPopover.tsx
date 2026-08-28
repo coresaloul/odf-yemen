@@ -28,7 +28,7 @@ export function ApprovalsPopover() {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent dir="rtl" align="end" className="w-80 p-0">
+        <PopoverContent dir="rtl" align="end" className="w-80 max-w-[calc(100vw-1.5rem)] p-0 shadow-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <p className="text-sm font-semibold">طلبات بانتظار قرارك</p>
             <Badge variant="secondary">{data.length}</Badge>

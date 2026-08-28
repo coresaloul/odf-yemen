@@ -6,6 +6,7 @@ import { ORG_NAME } from "@/lib/hr";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { ApprovalsPopover } from "@/components/approvals/ApprovalsPopover";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -38,7 +39,7 @@ function AuthenticatedLayout() {
         <AppSidebar />
 
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
-          <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-card/95 px-3 backdrop-blur md:px-5">
+          <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-card/95 px-3 backdrop-blur-md md:px-5">
             <SidebarTrigger className="size-9 shrink-0" aria-label="طيّ القائمة" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">
@@ -50,9 +51,11 @@ function AuthenticatedLayout() {
             <NotificationsBell />
           </header>
 
-          <main className="flex-1 p-3 sm:p-5 md:p-8">
+          <main className="flex-1 p-3 pb-20 sm:p-5 sm:pb-20 md:p-8 md:pb-8">
             <Outlet />
           </main>
+
+          <MobileBottomNav />
         </SidebarInset>
       </div>
     </SidebarProvider>

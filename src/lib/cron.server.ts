@@ -211,8 +211,6 @@ export async function dispatchWeeklyPerformanceDigest(): Promise<CronTaskResult>
   const { data: analytics } = await supabaseAdmin.rpc("get_dashboard_analytics", {
     p_start_date: start,
     p_end_date: end,
-    p_scope_emp_id: null,
-    p_scope_dept_id: null,
     p_is_org_wide: true,
   });
 

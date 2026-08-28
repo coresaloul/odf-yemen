@@ -146,7 +146,7 @@ export async function analyzeEmployeePerformance(
     supabaseAdmin.from("employees").select("id, full_name, job_title, department:departments(name), section:sections(name)").eq("id", employeeId).maybeSingle(),
     supabaseAdmin.from("tasks").select("id, title, status, progress, due_date, completed_at").eq("assignee_id", employeeId).gte("created_at", `${periodStart}T00:00:00`),
     supabaseAdmin.from("attendance_records").select("work_date, status, late_minutes, early_leave_minutes").eq("employee_id", employeeId).gte("work_date", periodStart).lte("work_date", periodEnd),
-    supabaseAdmin.from("disciplinary_records").select("id, kind, reason, status").eq("employee_id", employeeId),
+    supabaseAdmin.from("disciplinary_actions").select("id, stage, violation_description").eq("employee_id", employeeId),
   ]);
 
   if (!emp) throw new Error("الموظف غير موجود");

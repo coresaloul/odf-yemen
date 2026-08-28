@@ -122,7 +122,7 @@ export const deleteShift = createServerFn({ method: "POST" })
     await writeAudit(context.userId, {
       action: "حذف",
       entity: "وردية عمل",
-      entity_label: shift?.name,
+      entity_label: shift?.name ?? null,
     });
     return { ok: true };
   });

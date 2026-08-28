@@ -1,5 +1,7 @@
 -- =========================================================
 -- ترقية دالة تحليلات لوحة القيادة ومعادلة احتساب «أفضل موظف»
+-- المعايير المعتمدة: 60% لإنجاز المهام + 30% للانضباط والدوام + 10% للمواعيد
+-- شرط الفوز: إنجاز مهام فعلية (completed_tasks >= 2) وحضور >= 70%
 -- =========================================================
 
 CREATE OR REPLACE FUNCTION public.get_dashboard_analytics(
@@ -18,7 +20,6 @@ DECLARE
   v_today date := current_date;
   v_limit_soon date := current_date + 30;
   v_days_in_period int := GREATEST(1, (p_end_date - p_start_date + 1));
-  v_min_presence int := CASE WHEN (p_end_date - p_start_date + 1) <= 7 THEN 2 ELSE 6 END;
   v_result jsonb;
 BEGIN
   WITH
@@ -54,7 +55,6 @@ BEGIN
       t.priority,
       COALESCE(t.progress, 0) AS progress,
       COALESCE(t.weight, 1.0) AS base_weight,
-      -- معامل أولوية المهمة
       CASE t.priority
         WHEN 'urgent' THEN 1.5
         WHEN 'high' THEN 1.25
@@ -71,6 +71,8 @@ BEGIN
     WHERE (t.start_date >= p_start_date AND t.start_date <= p_end_date)
        OR (t.created_at::date >= p_start_date AND t.created_at::date <= p_end_date)
        OR (t.due_date >= p_start_date AND t.due_date <= p_end_date)
+       OR (t.completed_at::date >= p_start_date AND t.completed_at::date <= p_end_date)
+       OR (t.status NOT IN ('completed', 'cancelled'))
   ),
 
   -- 3. سجلات الحضور في الفترة
@@ -99,47 +101,7 @@ BEGIN
     WHERE a.work_date = v_today
   ),
 
-  -- 5. التقييمات المؤسسية المعتمدة خلال الفترة
-  period_evaluations AS (
-    SELECT
-      ev.employee_id,
-      AVG(ev.total_score) AS avg_eval_score,
-      COUNT(ev.id) AS eval_count
-    FROM public.evaluations ev
-    INNER JOIN target_employees te ON te.id = ev.employee_id
-    WHERE ev.approved IS TRUE
-      AND ev.period_start <= p_end_date
-      AND ev.period_end >= p_start_date
-    GROUP BY ev.employee_id
-  ),
-
-  -- 6. التكريمات المعتمدة خلال الفترة
-  period_recognitions AS (
-    SELECT
-      r.employee_id,
-      COUNT(r.id) AS recognition_count
-    FROM public.employee_recognitions r
-    INNER JOIN target_employees te ON te.id = r.employee_id
-    WHERE r.stage = 'approved'
-      AND r.award_date >= p_start_date
-      AND r.award_date <= p_end_date
-    GROUP BY r.employee_id
-  ),
-
-  -- 7. الجزاءات المعتمدة خلال الفترة
-  period_sanctions AS (
-    SELECT
-      s.employee_id,
-      COUNT(s.id) AS sanction_count
-    FROM public.disciplinary_actions s
-    INNER JOIN target_employees te ON te.id = s.employee_id
-    WHERE s.stage = 'approved'
-      AND s.created_at::date >= p_start_date
-      AND s.created_at::date <= p_end_date
-    GROUP BY s.employee_id
-  ),
-
-  -- 8. إحصائيات المهام المجمعة والموزونة لكل موظف
+  -- 5. إحصائيات المهام المجمعة والموزونة لكل موظف
   emp_task_stats AS (
     SELECT
       te.id AS employee_id,
@@ -165,7 +127,7 @@ BEGIN
     GROUP BY te.id
   ),
 
-  -- 9. إحصائيات الحضور المجمعة لكل موظف
+  -- 6. إحصائيات الحضور المجمعة لكل موظف
   emp_att_stats AS (
     SELECT
       te.id AS employee_id,
@@ -181,7 +143,7 @@ BEGIN
     GROUP BY te.id
   ),
 
-  -- 10. حساب درجات الموظفين المتقدمة والشاملة
+  -- 7. حساب درجات الموظفين
   emp_scores AS (
     SELECT
       te.id,
@@ -199,53 +161,44 @@ BEGIN
       COALESCE(att.present_days, 0) AS "presentDays",
       COALESCE(att.total_late_minutes, 0) AS "lateMinutes",
       COALESCE(att.total_overtime_minutes, 0) AS "overtimeMinutes",
-      COALESCE(rec.recognition_count, 0) AS "recognitionCount",
-      COALESCE(sanc.sanction_count, 0) AS "sanctionCount",
-      eval.avg_eval_score,
+      COALESCE(att.total_recorded_days, 0) AS "recordedDays",
 
-      -- أ. درجة المهام الموزونة مع مراعاة حجم الإنجاز (0 - 100)
+      -- أ. درجة المهام والإنتاجية (60%)
       GREATEST(0, LEAST(100, ROUND(
         CASE
           WHEN COALESCE(ts.total_tasks, 0) = 0 THEN 0
           ELSE (
-            -- 40% لمتوسط التقدم الموزون + 60% لنسبة الأوزان المنجزة
-            ((ts.progress_weight / NULLIF(ts.total_weight, 0)) * 40.0) +
-            ((ts.completed_weight / NULLIF(ts.total_weight, 0)) * 60.0) +
-            -- بونص حجم العمل (حتى +5 نقاط)
+            ((ts.completed_weight / NULLIF(ts.total_weight, 0)) * 65.0) +
+            ((ts.progress_weight / NULLIF(ts.total_weight, 0)) * 35.0) +
             CASE
-              WHEN ts.completed_tasks >= 10 THEN 5
-              WHEN ts.completed_tasks >= 5 THEN 3
-              WHEN ts.completed_tasks >= 2 THEN 1
+              WHEN ts.completed_tasks >= 15 THEN 10
+              WHEN ts.completed_tasks >= 10 THEN 7
+              WHEN ts.completed_tasks >= 5 THEN 4
+              WHEN ts.completed_tasks >= 2 THEN 2
               ELSE 0
             END
           )
         END
       )))::int AS "tasksScore",
 
-      -- ب. درجة الحضور والانضباط العادلة (0 - 100)
+      -- ب. درجة الحضور والانضباط (30%)
       GREATEST(0, LEAST(100, ROUND(
         CASE
           WHEN COALESCE(att.total_recorded_days, 0) = 0 THEN 0
           ELSE (
-            -- نسبة الحضور والإجازات المعتمدة
             (((att.present_days + att.leave_days)::numeric / att.total_recorded_days) * 100.0)
-            -- خصم التأخير بعد مهلة سماح 15 دقيقة
-            - (GREATEST(0, COALESCE(att.total_late_minutes, 0) - 15) / 25.0)
-            -- خصم الانصراف المبكر
-            - (COALESCE(att.total_early_minutes, 0) / 25.0)
-            -- خصم الغياب غير المبرر (8 نقاط لكل يوم غياب)
-            - (COALESCE(att.absent_days, 0) * 8.0)
-            -- بونص الساعات الإضافية المعتمدة (حتى +5 نقاط)
+            - (GREATEST(0, COALESCE(att.total_late_minutes, 0) - 15) / 20.0)
+            - (COALESCE(att.total_early_minutes, 0) / 20.0)
+            - (COALESCE(att.absent_days, 0) * 10.0)
             + LEAST(5.0, (COALESCE(att.total_overtime_minutes, 0) / 60.0) * 1.0)
           )
         END
       )))::int AS "attendanceScore",
 
-      -- ج. درجة الالتزام بالمواعيد (0 - 100)
+      -- ج. درجة الالتزام بالمواعيد (10%)
       GREATEST(0, LEAST(100, ROUND(
         CASE
           WHEN COALESCE(ts.due_count, 0) = 0 THEN
-            -- إذا لم تكن هناك مواعيد نهائية، تعتمد على سرعة إنجاز المهام
             CASE WHEN ts.total_tasks > 0 AND ts.completed_tasks = ts.total_tasks THEN 100
                  WHEN ts.total_tasks > 0 THEN 85
                  ELSE 80 END
@@ -258,74 +211,41 @@ BEGIN
     FROM target_employees te
     LEFT JOIN emp_task_stats ts ON ts.employee_id = te.id
     LEFT JOIN emp_att_stats att ON att.employee_id = te.id
-    LEFT JOIN period_evaluations eval ON eval.employee_id = te.id
-    LEFT JOIN period_recognitions rec ON rec.employee_id = te.id
-    LEFT JOIN period_sanctions sanc ON sanc.employee_id = te.id
   ),
 
-  -- 11. الحساب النهائي والترجيحي لدرجات الموظفين
+  -- 8. الحساب النهائي والترجيحي (المهام 60% + الدوام 30% + المواعيد 10%)
   performer_scores AS (
     SELECT
       es.*,
-      -- المعادلة المجمعة الشاملة
       GREATEST(0, LEAST(100, ROUND(
-        CASE
-          -- في حال وجود تقييم أداء رسمي معتمد: دمج 15% للتقييم
-          WHEN es.avg_eval_score IS NOT NULL THEN
-            (es."tasksScore" * 0.40) +
-            (es."attendanceScore" * 0.30) +
-            (es."punctualityScore" * 0.15) +
-            (es.avg_eval_score * 0.15) +
-            (es."recognitionCount" * 3.0) -
-            (es."sanctionCount" * 15.0)
-          -- في حال عدم وجود تقييم رسمي: توزيع النسبة على المهام والحضور
-          ELSE
-            (es."tasksScore" * 0.45) +
-            (es."attendanceScore" * 0.35) +
-            (es."punctualityScore" * 0.20) +
-            (es."recognitionCount" * 3.0) -
-            (es."sanctionCount" * 15.0)
-        END
+        (es."tasksScore" * 0.60) +
+        (es."attendanceScore" * 0.30) +
+        (es."punctualityScore" * 0.10)
       )))::int AS score,
 
-      -- التقدير اللفظي
       CASE
-        WHEN ROUND(
-          CASE WHEN es.avg_eval_score IS NOT NULL
-               THEN (es."tasksScore" * 0.40) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.15) + (es.avg_eval_score * 0.15)
-               ELSE (es."tasksScore" * 0.45) + (es."attendanceScore" * 0.35) + (es."punctualityScore" * 0.20) END
-        ) >= 90 THEN 'ممتاز'
-        WHEN ROUND(
-          CASE WHEN es.avg_eval_score IS NOT NULL
-               THEN (es."tasksScore" * 0.40) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.15) + (es.avg_eval_score * 0.15)
-               ELSE (es."tasksScore" * 0.45) + (es."attendanceScore" * 0.35) + (es."punctualityScore" * 0.20) END
-        ) >= 80 THEN 'جيد جداً'
-        WHEN ROUND(
-          CASE WHEN es.avg_eval_score IS NOT NULL
-               THEN (es."tasksScore" * 0.40) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.15) + (es.avg_eval_score * 0.15)
-               ELSE (es."tasksScore" * 0.45) + (es."attendanceScore" * 0.35) + (es."punctualityScore" * 0.20) END
-        ) >= 70 THEN 'جيد'
-        WHEN ROUND(
-          CASE WHEN es.avg_eval_score IS NOT NULL
-               THEN (es."tasksScore" * 0.40) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.15) + (es.avg_eval_score * 0.15)
-               ELSE (es."tasksScore" * 0.45) + (es."attendanceScore" * 0.35) + (es."punctualityScore" * 0.20) END
-        ) >= 60 THEN 'مقبول'
+        WHEN ROUND((es."tasksScore" * 0.60) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.10)) >= 90 THEN 'ممتاز'
+        WHEN ROUND((es."tasksScore" * 0.60) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.10)) >= 80 THEN 'جيد جداً'
+        WHEN ROUND((es."tasksScore" * 0.60) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.10)) >= 70 THEN 'جيد'
+        WHEN ROUND((es."tasksScore" * 0.60) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.10)) >= 60 THEN 'مقبول'
         ELSE 'ضعيف'
       END AS grade,
 
-      -- معايير الأهلية للترشح للوحة الشرف
+      -- شروط الأهلية الصارمة للمنافسة على أفضل موظف:
+      -- 1. إنجاز مهمتين على الأقل
+      -- 2. حضور 70% فأعلى
+      -- 3. درجة عامة 70% فأعلى
       (
-        es."presentDays" >= v_min_presence
-        AND (es."completedTasks" >= 1 OR es."totalTasks" >= 1)
-        AND es."sanctionCount" = 0
-        AND es."attendanceScore" >= 50
+        es."completedTasks" >= 2
+        AND es."attendanceScore" >= 70
+        AND ROUND((es."tasksScore" * 0.60) + (es."attendanceScore" * 0.30) + (es."punctualityScore" * 0.10)) >= 70
       ) AS eligible,
 
       1 AS "memberCount"
     FROM emp_scores es
   ),
 
-  -- 12. تجميع درجات الإدارات
+  -- 9. تجميع درجات الإدارات
   dept_scores AS (
     SELECT
       d.id,
@@ -346,14 +266,14 @@ BEGIN
         WHEN COALESCE(ROUND(AVG(ps.score)), 0) >= 60 THEN 'مقبول'
         ELSE 'ضعيف'
       END AS grade,
-      (COUNT(ps.id) > 0 AND SUM(ps."completedTasks") >= 1 AND AVG(ps.score) >= 60) AS eligible,
+      (COUNT(ps.id) > 0 AND SUM(ps."completedTasks") >= 2 AND AVG(ps.score) >= 60) AS eligible,
       COUNT(ps.id)::int AS "memberCount"
     FROM public.departments d
     INNER JOIN performer_scores ps ON ps.department_id = d.id
     GROUP BY d.id, d.name
   ),
 
-  -- 13. تجميع درجات الأقسام
+  -- 10. تجميع درجات الأقسام
   section_scores AS (
     SELECT
       s.id,
@@ -374,14 +294,14 @@ BEGIN
         WHEN COALESCE(ROUND(AVG(ps.score)), 0) >= 60 THEN 'مقبول'
         ELSE 'ضعيف'
       END AS grade,
-      (COUNT(ps.id) > 0 AND SUM(ps."completedTasks") >= 1 AND AVG(ps.score) >= 60) AS eligible,
+      (COUNT(ps.id) > 0 AND SUM(ps."completedTasks") >= 2 AND AVG(ps.score) >= 60) AS eligible,
       COUNT(ps.id)::int AS "memberCount"
     FROM public.sections s
     INNER JOIN performer_scores ps ON ps.section_id = s.id
     GROUP BY s.id, s.name
   ),
 
-  -- 14. وثائق قريبة من الانتهاء
+  -- 11. وثائق قريبة من الانتهاء
   expiring_documents AS (
     SELECT
       d.id,
@@ -396,7 +316,7 @@ BEGIN
     LIMIT 10
   ),
 
-  -- 15. طلبات إجازة معلقة
+  -- 12. طلبات إجازة معلقة
   pending_leaves AS (
     SELECT
       l.id,
@@ -411,7 +331,7 @@ BEGIN
     LIMIT 10
   ),
 
-  -- 16. تقييمات معلقة
+  -- 13. تقييمات معلقة
   pending_evaluations AS (
     SELECT
       ev.id,
@@ -425,7 +345,7 @@ BEGIN
     LIMIT 10
   )
 
-  -- 17. بناء النتيجة الشاملة كـ JSON موحد
+  -- 14. بناء النتيجة الشاملة كـ JSON موحد
   SELECT jsonb_build_object(
     'summary', jsonb_build_object(
       'totalEmployees', (SELECT COUNT(*) FROM target_employees),
@@ -453,15 +373,15 @@ BEGIN
       'todayAbsent', (SELECT COUNT(*) FROM today_attendance WHERE status = 'absent')
     ),
     'employeeScores', COALESCE((
-      SELECT jsonb_agg(to_jsonb(ps) ORDER BY ps.score DESC, ps."completedTasks" DESC, ps."tasksScore" DESC, ps."punctualityScore" DESC, ps."attendanceScore" DESC, ps."lateMinutes" ASC)
+      SELECT jsonb_agg(to_jsonb(ps) ORDER BY ps.eligible DESC, ps.score DESC, ps."completedTasks" DESC, ps."tasksScore" DESC, ps."attendanceScore" DESC, ps."punctualityScore" DESC, ps."lateMinutes" ASC)
       FROM performer_scores ps
     ), '[]'::jsonb),
     'deptScores', COALESCE((
-      SELECT jsonb_agg(to_jsonb(ds) ORDER BY ds.score DESC, ds."completedTasks" DESC, ds."tasksScore" DESC)
+      SELECT jsonb_agg(to_jsonb(ds) ORDER BY ds.eligible DESC, ds.score DESC, ds."completedTasks" DESC, ds."tasksScore" DESC)
       FROM dept_scores ds
     ), '[]'::jsonb),
     'sectionScores', COALESCE((
-      SELECT jsonb_agg(to_jsonb(ss) ORDER BY ss.score DESC, ss."completedTasks" DESC, ss."tasksScore" DESC)
+      SELECT jsonb_agg(to_jsonb(ss) ORDER BY ss.eligible DESC, ss.score DESC, ss."completedTasks" DESC, ss."tasksScore" DESC)
       FROM section_scores ss
     ), '[]'::jsonb),
     'expiringDocs', COALESCE((SELECT jsonb_agg(to_jsonb(ed)) FROM expiring_documents ed), '[]'::jsonb),

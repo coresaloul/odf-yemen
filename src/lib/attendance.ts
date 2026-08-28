@@ -270,7 +270,7 @@ export function complianceScore(rows: {
   status: string;
   late_minutes: number;
   early_leave_minutes: number;
-}) {
+}[]) {
   const countable = rows.filter((r) => r.status !== "holiday" && r.status !== "leave");
   if (countable.length === 0) return 100;
   const present = countable.filter((r) => r.status === "present" || r.status === "permission").length;

@@ -277,7 +277,11 @@ export function groupScores(
 }
 
 /**
- * ترتيب المرشحين للوحة الشرف وأفضل موظف (بحسب المهام حصراً)
+ * ترتيب المرشحين للوحة الشرف وأفضل موظف (بحسب المهام فقط)
+ * التراتبية:
+ * 1. عدد المهام المنجزة الفعلية
+ * 2. في حال التساوي، يتصدر الموظف بناءً على نسبة إنجاز المهام (نسبة الإتمام من إجمالي المكلف به)
+ * 3. درجة جودة وإنجاز المهام الإجمالية
  */
 export function rank(scores: PerformerScore[]) {
   if (!scores || scores.length === 0) return [];
@@ -288,16 +292,22 @@ export function rank(scores: PerformerScore[]) {
   const targetList = pool.length > 0 ? pool : scores;
 
   return [...targetList].sort((a, b) => {
-    // 1. الأهلية (إنجاز مهام مستوفية للشروط)
+    // 1. الأهلية (إنجاز مهام مستوفية للشروط أولاً)
     if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
-    // 2. درجة إنجاز المهام الإجمالية (100%)
-    if (b.score !== a.score) return b.score - a.score;
-    // 3. عدد المهام المنجزة الفعلية (حجم الإنتاجية)
+
+    // 2. عدد المهام المنجزة الفعلية
     if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
-    // 4. إجمالي المهام المسندة
-    if (b.totalTasks !== a.totalTasks) return b.totalTasks - a.totalTasks;
-    // 5. درجة الجودة
-    return b.tasksScore - a.tasksScore;
+
+    // 3. في حال تساوي عدد المهام المنجزة، يتصدر الموظف بناءً على نسبة إنجاز المهام
+    const rateA = a.totalTasks > 0 ? (a.completedTasks / a.totalTasks) * 100 : 0;
+    const rateB = b.totalTasks > 0 ? (b.completedTasks / b.totalTasks) * 100 : 0;
+    if (rateB !== rateA) return rateB - rateA;
+
+    // 4. درجة إنجاز المهام الإجمالية
+    if (b.score !== a.score) return b.score - a.score;
+
+    // 5. إجمالي المهام المسندة
+    return b.totalTasks - a.totalTasks;
   });
 }
 

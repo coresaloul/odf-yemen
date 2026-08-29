@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award } from "lucide-react";
 import {
@@ -56,6 +56,9 @@ export function LeaderboardTable({
           <CardTitle className="text-base font-semibold">{title}</CardTitle>
           <span className="text-xs text-muted-foreground">أفضل {shown.length}</span>
         </div>
+        <CardDescription className="text-xs text-muted-foreground">
+          الترتيب وفقاً لـ: عدد المهام المنجزة فعلية • وفي حال التساوي يتصدر بناءً على نسبة إنجاز المهام • ثم درجة المهام الإجمالية
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-6 sm:pt-0">
         {shown.length === 0 ? (

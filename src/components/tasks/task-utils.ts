@@ -4,6 +4,13 @@ export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskStatus = Database["public"]["Enums"]["task_status"];
 export type TaskPriority = Database["public"]["Enums"]["task_priority"];
 
+export interface GroupedTask extends TaskRow {
+  isShared: boolean;
+  assignee_ids: string[];
+  siblingTasks: TaskRow[];
+  averageProgress: number;
+}
+
 export type SubtaskLite = {
   is_done?: boolean | null;
 };
@@ -91,4 +98,65 @@ export function nextRecurrenceDates(
 
 export function todayIso() {
   return new Date().toISOString().slice(0, 10);
+}
+
+export function groupSharedTasks(tasks: TaskRow[]): GroupedTask[] {
+  const groups: Map<string, TaskRow[]> = new Map();
+
+  for (const task of tasks) {
+    const createdPrefix = task.created_at ? task.created_at.slice(0, 16) : "";
+    const key = [
+      (task.title || "").trim().toLowerCase(),
+      (task.description || "").trim().toLowerCase(),
+      task.start_date || "",
+      task.due_date || "",
+      task.assigned_by || "",
+      task.supervisor_id || "",
+      createdPrefix,
+    ].join("||");
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(task);
+  }
+
+  const result: GroupedTask[] = [];
+
+  for (const [, group] of groups.entries()) {
+    if (group.length === 1) {
+      const single = group[0]!;
+      result.push({
+        ...single,
+        isShared: false,
+        assignee_ids: [single.assignee_id],
+        siblingTasks: group,
+        averageProgress: Number(single.progress ?? 0),
+      });
+    } else {
+      const primary = group[0]!;
+      const totalProgress = group.reduce((acc, t) => acc + (Number(t.progress) || 0), 0);
+      const averageProgress = Math.round(totalProgress / group.length);
+      const assignee_ids = Array.from(new Set(group.map((t) => t.assignee_id)));
+
+      let overallStatus: TaskStatus = primary.status;
+      if (group.every((t) => t.status === "completed")) {
+        overallStatus = "completed";
+      } else if (group.some((t) => t.status === "in_progress" || t.status === "pending_approval")) {
+        overallStatus = "in_progress";
+      }
+
+      result.push({
+        ...primary,
+        status: overallStatus,
+        progress: averageProgress,
+        isShared: true,
+        assignee_ids,
+        siblingTasks: group,
+        averageProgress,
+      });
+    }
+  }
+
+  return result;
 }

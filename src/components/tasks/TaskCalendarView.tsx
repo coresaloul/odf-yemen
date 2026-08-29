@@ -11,11 +11,12 @@ import { TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import {
   PRIORITY_RANK,
   isOverdue,
+  type GroupedTask,
   type TaskRow,
 } from "@/components/tasks/task-utils";
 
 interface TaskCalendarViewProps {
-  tasks: TaskRow[];
+  tasks: (TaskRow | GroupedTask)[];
   onOpenTask: (task: TaskRow) => void;
 }
 

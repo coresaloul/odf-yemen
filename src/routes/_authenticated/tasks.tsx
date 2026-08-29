@@ -37,13 +37,16 @@ import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { TaskDeleteDialog } from "@/components/tasks/TaskDeleteDialog";
 import {
+import {
   PRIORITY_RANK,
   isOverdue,
   nextRecurrenceDates,
   progressForStatus,
   statusForProgress,
   todayIso,
+  groupSharedTasks,
   type EmployeeLite,
+  type GroupedTask,
   type TaskRow,
   type TaskStatus,
 } from "@/components/tasks/task-utils";
@@ -85,7 +88,7 @@ function TasksPage() {
   const [viaVoice, setViaVoice] = useState(false);
   const [deleteTask, setDeleteTask] = useState<TaskRow | null>(null);
   const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
-  const [scope, setScope] = useState<"all" | "mine" | "assigned">("all");
+  const [scope, setScope] = useState<"all" | "mine" | "supervised" | "assigned">("all");
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
 
   const { data, isLoading } = useQuery({
@@ -135,6 +138,7 @@ function TasksPage() {
     const q = filters.search.trim().toLowerCase();
     let list = tasks.filter((t) => {
       if (scope === "mine" && t.assignee_id !== employee?.id) return false;
+      if (scope === "supervised" && t.supervisor_id !== employee?.id) return false;
       if (scope === "assigned" && t.assigned_by !== employee?.id) return false;
       if (q && !`${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)) return false;
       if (filters.status !== "all" && t.status !== filters.status) return false;
@@ -159,7 +163,7 @@ function TasksPage() {
       }
       return b.created_at.localeCompare(a.created_at);
     });
-    return list;
+    return groupSharedTasks(list);
   }, [tasks, employees, filters, scope, employee?.id]);
 
   const stats = useMemo(() => {
@@ -394,8 +398,16 @@ function TasksPage() {
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tasks").delete().eq("id", id);
+    mutationFn: async (taskOrId: string | TaskRow | GroupedTask) => {
+      let ids: string[] = [];
+      if (typeof taskOrId === "string") {
+        ids = [taskOrId];
+      } else if ("siblingTasks" in taskOrId && taskOrId.siblingTasks?.length) {
+        ids = taskOrId.siblingTasks.map((t) => t.id);
+      } else {
+        ids = [taskOrId.id];
+      }
+      const { error } = await supabase.from("tasks").delete().in("id", ids);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -418,15 +430,23 @@ function TasksPage() {
     sections: [
       {
         table: {
-          columns: ["العنوان", "المكلّف", "الأولوية", "الحالة", "الاستحقاق", "الإنجاز"],
-          rows: filtered.map((t) => [
-            t.title,
-            nameOf(t.assignee_id),
-            PRIORITY_LABELS[t.priority] ?? t.priority,
-            TASK_STATUS_LABELS[t.status] ?? t.status,
-            formatDate(t.due_date),
-            `${t.progress}%`,
-          ]),
+          columns: ["العنوان", "المكلّفون", "المشرف", "الأولوية", "الحالة", "الاستحقاق", "الإنجاز"],
+          rows: filtered.map((t) => {
+            const isGrouped = "isShared" in t && (t as GroupedTask).isShared;
+            const assigneeIds = "assignee_ids" in t && (t as GroupedTask).assignee_ids
+              ? (t as GroupedTask).assignee_ids
+              : [t.assignee_id];
+            const assigneeNames = assigneeIds.map(nameOf).join("، ");
+            return [
+              t.title + (isGrouped ? " (مشتركة)" : ""),
+              assigneeNames,
+              t.supervisor_id ? nameOf(t.supervisor_id) : "—",
+              PRIORITY_LABELS[t.priority] ?? t.priority,
+              TASK_STATUS_LABELS[t.status] ?? t.status,
+              formatDate(t.due_date),
+              `${t.progress}%`,
+            ];
+          }),
         },
       },
     ],
@@ -496,6 +516,7 @@ function TasksPage() {
           <TabsList>
             <TabsTrigger value="all">كل المهام</TabsTrigger>
             <TabsTrigger value="mine">مهامي</TabsTrigger>
+            <TabsTrigger value="supervised">تحت إشرافي</TabsTrigger>
             <TabsTrigger value="assigned">كلّفت بها</TabsTrigger>
           </TabsList>
         </Tabs>

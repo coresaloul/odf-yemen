@@ -1,8 +1,8 @@
 import { TaskCard } from "./TaskCard";
-import type { EmployeeLite, TaskRow } from "./task-utils";
+import type { EmployeeLite, GroupedTask, TaskRow } from "./task-utils";
 
 interface TaskListViewProps {
-  tasks: TaskRow[];
+  tasks: (TaskRow | GroupedTask)[];
   employees: EmployeeLite[];
   canManageTask: (t: TaskRow) => boolean;
   canUpdateProgress: (t: TaskRow) => boolean;
@@ -27,22 +27,32 @@ export function TaskListView({
 
   return (
     <div className="space-y-3">
-      {tasks.map((t) => (
-        <TaskCard
-          key={t.id}
-          task={t}
-          assigneeName={nameOf(t.assignee_id)}
-          assignerName={nameOf(t.assigned_by)}
-          supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
-          canManage={canManageTask(t)}
-          canUpdateProgress={canUpdateProgress(t)}
-          assigneePhone={phoneOf(t.assignee_id)}
-          onOpen={() => onOpen(t)}
-          onEdit={() => onEdit(t)}
-          onDelete={() => onDelete(t)}
-          onProgress={(progress) => onProgress(t.id, progress)}
-        />
-      ))}
+      {tasks.map((t) => {
+        const isGrouped = "isShared" in t && (t as GroupedTask).isShared;
+        const assigneeIds = "assignee_ids" in t && (t as GroupedTask).assignee_ids
+          ? (t as GroupedTask).assignee_ids
+          : [t.assignee_id];
+        const assigneeNames = assigneeIds.map(nameOf);
+
+        return (
+          <TaskCard
+            key={t.id}
+            task={t}
+            assigneeName={nameOf(t.assignee_id)}
+            assigneeNames={assigneeNames}
+            assignerName={nameOf(t.assigned_by)}
+            supervisorName={t.supervisor_id ? nameOf(t.supervisor_id) : null}
+            isShared={isGrouped}
+            canManage={canManageTask(t)}
+            canUpdateProgress={canUpdateProgress(t)}
+            assigneePhone={phoneOf(t.assignee_id)}
+            onOpen={() => onOpen(t)}
+            onEdit={() => onEdit(t)}
+            onDelete={() => onDelete(t)}
+            onProgress={(progress) => onProgress(t.id, progress)}
+          />
+        );
+      })}
     </div>
   );
 }

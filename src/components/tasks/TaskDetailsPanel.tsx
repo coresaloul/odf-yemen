@@ -1,6 +1,6 @@
-﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, FileDown, Loader2, Pencil, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { Download, FileDown, Loader2, Pencil, Plus, Printer, Send, Trash2, Upload, Users, ShieldCheck, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { submitTaskForApproval } from "@/lib/approvals.functions";
@@ -21,6 +22,7 @@ import {
   progressFromSubtasks,
   RECURRENCE_LABELS,
   statusFromSubtasks,
+  type EmployeeLite,
 } from "./task-utils";
 import type { TaskRow } from "./task-utils";
 
@@ -32,6 +34,9 @@ type TaskDetailsPanelProps = {
   canManage: boolean;
   canUpdateProgress: boolean;
   onProgress: (progress: number) => void;
+  siblingTasks?: TaskRow[];
+  employees?: EmployeeLite[];
+  onSiblingProgress?: (id: string, progress: number) => void;
 };
 
 export function TaskDetailsPanel({
@@ -42,6 +47,9 @@ export function TaskDetailsPanel({
   canManage,
   canUpdateProgress,
   onProgress,
+  siblingTasks,
+  employees = [],
+  onSiblingProgress,
 }: TaskDetailsPanelProps) {
   const { user, employee } = useAuth();
   const qc = useQueryClient();
@@ -54,6 +62,8 @@ export function TaskDetailsPanel({
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  const getEmpName = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
 
   const detail = useQuery({
     queryKey: ["task-detail", taskId],
@@ -526,7 +536,91 @@ export function TaskDetailsPanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="space-y-3 pt-4 text-right" dir="rtl">
+        <TabsContent value="details" className="space-y-4 pt-4 text-right" dir="rtl">
+          {supervisorName && (
+            <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex size-9 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    المشرف على المهمة
+                  </span>
+                  <span className="block text-sm font-medium text-foreground">{supervisorName}</span>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
+                متابعة وإشراف
+              </Badge>
+            </div>
+          )}
+
+          {siblingTasks && siblingTasks.length > 1 && (
+            <div className="rounded-lg border border-primary/20 bg-card p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-primary" />
+                  <h4 className="font-semibold text-sm text-foreground">
+                    فريق العمل المشترك ({siblingTasks.length} موظفين)
+                  </h4>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  مهمة جماعية
+                </Badge>
+              </div>
+
+              <div className="divide-y rounded-md border bg-muted/20">
+                {siblingTasks.map((s) => {
+                  const empName = getEmpName(s.assignee_id);
+                  const isCurrent = s.id === task.id;
+                  const canEditThis = canManage || s.assignee_id === employee?.id;
+
+                  return (
+                    <div key={s.id} className={`p-3 space-y-2 ${isCurrent ? "bg-primary/5" : ""}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="size-4 text-muted-foreground" />
+                          <span className="font-medium text-sm text-foreground">
+                            {empName}
+                            {isCurrent && (
+                              <span className="mr-1.5 text-xs text-primary font-normal">(المهمة الحالية)</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">
+                            {TASK_STATUS_LABELS[s.status]}
+                          </Badge>
+                          <span className="text-xs font-semibold">{s.progress}%</span>
+                        </div>
+                      </div>
+
+                      <Progress value={s.progress} className="h-1.5" />
+
+                      {canEditThis && onSiblingProgress && (
+                        <div className="flex items-center justify-end gap-1 pt-1">
+                          <span className="text-[11px] text-muted-foreground ml-2">تحديث الإنجاز:</span>
+                          {[0, 25, 50, 75, 100].map((val) => (
+                            <Button
+                              key={val}
+                              size="sm"
+                              variant={s.progress === val ? "default" : "ghost"}
+                              className="h-6 px-2 text-[10px]"
+                              onClick={() => onSiblingProgress(s.id, val)}
+                            >
+                              {val}%
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {task.description && (
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="mb-1 text-xs font-semibold text-muted-foreground">الوصف</p>

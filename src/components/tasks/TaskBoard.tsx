@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
-import { isOverdue, STATUS_ORDER, type TaskRow, type TaskStatus } from "./task-utils";
+import { isOverdue, STATUS_ORDER, type GroupedTask, type TaskRow, type TaskStatus } from "./task-utils";
+import { Users, ShieldCheck } from "lucide-react";
 
 export function TaskBoard({
   tasks,
@@ -9,7 +10,7 @@ export function TaskBoard({
   onStatusChange,
   onOpen,
 }: {
-  tasks: TaskRow[];
+  tasks: (TaskRow | GroupedTask)[];
   nameOf: (id: string | null) => string;
   canManage: boolean;
   onStatusChange: (task: TaskRow, status: TaskStatus) => void;
@@ -39,23 +40,39 @@ export function TaskBoard({
             </div>
             <div className="space-y-2">
               {column.map((t) => {
+                const isGrouped = "isShared" in t && (t as GroupedTask).isShared;
+                const assigneeIds = "assignee_ids" in t && (t as GroupedTask).assignee_ids
+                  ? (t as GroupedTask).assignee_ids
+                  : [t.assignee_id];
+                const assigneeNames = assigneeIds.map(nameOf);
                 const supervisorName = t.supervisor_id ? nameOf(t.supervisor_id) : null;
+
                 return (
                   <div
                     key={t.id}
                     draggable={canManage}
                     onDragStart={(e) => e.dataTransfer.setData("text/task-id", t.id)}
                     onClick={() => onOpen?.(t)}
-                    className={`cursor-pointer w-full rounded-md border bg-card p-2 text-right text-sm shadow-sm transition ${
-                      isOverdue(t) ? "border-destructive/50" : ""
+                    className={`cursor-pointer w-full rounded-md border bg-card p-2.5 text-right text-sm shadow-xs transition hover:border-primary/40 ${
+                      isOverdue(t) ? "border-destructive/50" : isGrouped ? "border-primary/30 bg-primary/[0.01]" : ""
                     }`}
                   >
-                    <span className="block font-medium">{t.title}</span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {nameOf(t.assignee_id)} — {formatDate(t.due_date)}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="block font-medium truncate">{t.title}</span>
+                      {isGrouped && (
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/10 text-primary shrink-0">
+                          <Users className="size-2.5 mr-0.5" /> {assigneeNames.length}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <span className="mt-1 block text-xs text-muted-foreground truncate">
+                      {assigneeNames.join("، ")} — {formatDate(t.due_date)}
                     </span>
+                    
                     {supervisorName && (
-                      <span className="mt-1 block text-[11px] font-medium text-primary">
+                      <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-sm">
+                        <ShieldCheck className="size-3" />
                         المشرف: {supervisorName}
                       </span>
                     )}

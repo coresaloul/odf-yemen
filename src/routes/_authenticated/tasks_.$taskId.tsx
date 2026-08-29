@@ -43,25 +43,55 @@ function TaskDetailsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["task-page", taskId],
     queryFn: async () => {
-      const [task, employees] = await Promise.all([
+      const [taskRes, employeesRes] = await Promise.all([
         supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
         supabase
           .from("employees")
           .select("id, full_name, department_id, section_id, phone")
           .order("full_name"),
       ]);
+
+      const currentTask = (taskRes.data ?? null) as TaskRow | null;
+      let siblingTasks: TaskRow[] = [];
+
+      if (currentTask) {
+        const { data: siblings } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("title", currentTask.title)
+          .eq("start_date", currentTask.start_date);
+
+        if (siblings && siblings.length > 1) {
+          const currentPrefix = currentTask.created_at ? currentTask.created_at.slice(0, 16) : "";
+          siblingTasks = siblings.filter((s) => {
+            const sPrefix = s.created_at ? s.created_at.slice(0, 16) : "";
+            return (
+              (s.description || "").trim().toLowerCase() === (currentTask.description || "").trim().toLowerCase() &&
+              s.supervisor_id === currentTask.supervisor_id &&
+              s.assigned_by === currentTask.assigned_by &&
+              sPrefix === currentPrefix
+            );
+          });
+        }
+      }
+
       return {
-        task: (task.data ?? null) as TaskRow | null,
-        employees: (employees.data ?? []) as EmployeeLite[],
+        task: currentTask,
+        employees: (employeesRes.data ?? []) as EmployeeLite[],
+        siblingTasks,
       };
     },
   });
 
   const task = data?.task ?? null;
   const employees = data?.employees ?? [];
+  const siblingTasks = data?.siblingTasks ?? [];
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
 
-  const applyProgress = useApplyTaskProgress(() => task ?? undefined);
+  const applyProgress = useApplyTaskProgress((id?: string) => {
+    if (!id || id === task?.id) return task ?? undefined;
+    return siblingTasks.find((s) => s.id === id);
+  });
 
   const assigneePhone = employees.find((e) => e.id === task?.assignee_id)?.phone ?? null;
   const whatsappHref = task
@@ -124,6 +154,9 @@ function TaskDetailsPage() {
               canManage={canManage}
               canUpdateProgress={canUpdateProgress}
               onProgress={(progress) => applyProgress.mutate({ id: task.id, progress })}
+              siblingTasks={siblingTasks}
+              employees={employees}
+              onSiblingProgress={(id, progress) => applyProgress.mutate({ id, progress })}
             />
           </CardContent>
         </Card>

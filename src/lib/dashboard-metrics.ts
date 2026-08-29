@@ -1,4 +1,4 @@
-/** حسابات لوحة المعلومات: درجات الأداء وترتيب الموظفين والوحدات وفق المعايير المعتمدة (المهام 60% + الدوام 30% + المواعيد 10%) */
+/** حسابات لوحة المعلومات: درجات الأداء وترتيب الموظفين ولوحة الشرف معتمدة حصرياً على المهام بنسبة 100% */
 
 import { gradeFor } from "./hr";
 
@@ -64,10 +64,10 @@ const PRIORITY_FACTORS: Record<string, number> = {
 };
 
 /**
- * احتساب درجة المهام والإنتاجية (الوزن الأكبر 60%)
+ * احتساب درجة المهام والإنتاجية (المعيار النهائي والحصري بنسبة 100%)
  * يراعي: أوزان المهام، الأولويات، نسبة الإنجاز، وحجم الإنتاجية الفعلي
  */
-function tasksScoreOf(tasks: MetricTask[]) {
+export function tasksScoreOf(tasks: MetricTask[]) {
   if (!tasks || tasks.length === 0) return 0;
 
   let totalWeight = 0;
@@ -94,19 +94,18 @@ function tasksScoreOf(tasks: MetricTask[]) {
   const weightedProgressRate = (progressWeight / totalWeight) * 100;
   const weightedCompletionRate = (completedWeight / totalWeight) * 100;
 
-  // بونص تصاعدي لحجم الإنتاجية العالية (حتى +10 نقاط للموظفين الأكثر إنجازاً)
+  // بونص تصاعدي لحجم الإنتاجية الفعلي للموظفين الأكثر إنجازاً
   const volumeBonus =
     completedCount >= 15 ? 10 :
     completedCount >= 10 ? 7 :
     completedCount >= 5 ? 4 :
     completedCount >= 2 ? 2 : 0;
 
-  return pct((weightedCompletionRate * 0.65) + (weightedProgressRate * 0.35) + volumeBonus);
+  return pct((weightedCompletionRate * 0.70) + (weightedProgressRate * 0.30) + volumeBonus);
 }
 
 /**
- * احتساب درجة الانضباط وساعات العمل (30%)
- * يراعي: نسبة الحضور الفعلي، مهلة التأخير، خصم الغياب، ومكافأة الساعات الإضافية
+ * احتساب درجة الانضباط وساعات العمل (لأغراض الإحصاءات العامة فقط)
  */
 function attendanceScoreOf(att: MetricAttendance[], totalPeriodDays: number = 0) {
   if (!att || att.length === 0) return 0;
@@ -119,25 +118,19 @@ function attendanceScoreOf(att: MetricAttendance[], totalPeriodDays: number = 0)
   const totalEarly = att.reduce((s, a) => s + (a.early_leave_minutes ?? 0), 0);
   const totalOvertime = att.reduce((s, a) => s + (a.overtime_minutes ?? 0), 0);
 
-  // إجمالي الأيام المسجلة
   const recordedDays = Math.max(att.length, totalPeriodDays || 1);
   const presenceRatio = ((presentDays + leaveDays) / recordedDays) * 100;
 
-  // خصم التأخير بعد مهلة سماح 15 دقيقة (1 نقطة لكل 20 دقيقة)
   const latePenalty = Math.max(0, totalLate - 15) / 20;
   const earlyPenalty = totalEarly / 20;
-
-  // خصم الغياب غير المبرر (10 نقاط عن كل يوم)
   const absentPenalty = absentDays * 10;
-
-  // مكافأة الساعات الإضافية المعتمدة (حتى +5 نقاط)
   const overtimeBonus = Math.min(5, Math.floor(totalOvertime / 60) * 1);
 
   return pct(presenceRatio - latePenalty - earlyPenalty - absentPenalty + overtimeBonus);
 }
 
 /**
- * احتساب درجة الالتزام بالمواعيد النهائية (10%)
+ * احتساب درجة الالتزام بالمواعيد النهائية للمهام
  */
 function punctualityScoreOf(tasks: MetricTask[]) {
   if (!tasks || tasks.length === 0) return 0;
@@ -170,21 +163,14 @@ function punctualityScoreOf(tasks: MetricTask[]) {
 }
 
 /**
- * المعادلة المعتمدة لحساب درجة الأداء:
- * 60% لإنجاز المهام + 30% للانضباط والدوام + 10% للالتزام بالمواعيد
- * مع شرط عدم استحقاق أي موظف لم ينجز مهام فعلية
+ * دمج الدرجات: اعتماد معيار المهام بنسبة 100% للوحة الشرف وأفضل موظف
  */
-function combine(tasksScore: number, attendanceScore: number, punctualityScore: number, completedTasksCount: number) {
-  // إذا لم يكن لدى الموظف مهام منجزة، تُحسب درجته الإجمالية بدون مكافأة المنافسة
-  if (completedTasksCount === 0) {
-    return pct((attendanceScore * 0.30) + (tasksScore * 0.60) + (punctualityScore * 0.10));
-  }
-
-  return pct((tasksScore * 0.60) + (attendanceScore * 0.30) + (punctualityScore * 0.10));
+function combine(tasksScore: number, _attendanceScore: number, _punctualityScore: number, _completedTasksCount: number) {
+  return tasksScore;
 }
 
 /**
- * حساب درجات وأهلية الموظفين للوحة الشرف
+ * حساب درجات وأهلية الموظفين للوحة الشرف (بحسب المهام فقط)
  */
 export function scoreEmployees(
   employees: MetricEmployee[],
@@ -192,7 +178,6 @@ export function scoreEmployees(
   attendance: MetricAttendance[],
   unitNameOf: (e: MetricEmployee) => string,
 ): PerformerScore[] {
-  // حساب الحد الأقصى لأيام الحضور في الفترة لقياس نسبة الحضور بدقة
   const maxRecordedDays = Math.max(
     1,
     ...employees.map((e) => attendance.filter((a) => a.employee_id === e.id).length),
@@ -213,21 +198,15 @@ export function scoreEmployees(
     const lateMinutes = ownAtt.reduce((s, a) => s + (a.late_minutes ?? 0), 0);
     const overtimeMinutes = ownAtt.reduce((s, a) => s + (a.overtime_minutes ?? 0), 0);
 
-    const score = combine(tasksScore, attendanceScore, punctualityScore, completedTasks);
-
-    // نسبة الحضور الفعلية
-    const attendanceRate = maxRecordedDays > 0 ? (presentDays / maxRecordedDays) * 100 : 0;
+    // الدرجة الإجمالية = درجة المهام 100%
+    const score = tasksScore;
 
     /**
-     * شروط الأهلية الصارمة للمنافسة على أفضل موظف:
-     * 1. إنجاز ما لا يقل عن مهمتين فعليتين (completedTasks >= 2)
-     * 2. حضور ما لا يقل عن 70% من أيام العمل المسجلة للفترة
-     * 3. تحقيق درجة أداء عامة لا تقل عن 70%
+     * شروط الأهلية الصارمة للمنافسة على أفضل موظف ولوحة الشرف (بحسب المهام فقط):
+     * 1. إنجاز مهمة فعلية واحدة على الأقل (completedTasks >= 1)
+     * 2. تحقيق درجة مهام لا تقل عن 60%
      */
-    const isStrictlyEligible =
-      completedTasks >= 2 &&
-      attendanceRate >= 70 &&
-      score >= 70;
+    const isStrictlyEligible = completedTasks >= 1 && score >= 60;
 
     return {
       id: e.id,
@@ -250,7 +229,7 @@ export function scoreEmployees(
 }
 
 /**
- * تجميع درجات الأداء على مستوى الإدارات والأقسام
+ * تجميع درجات الأداء على مستوى الإدارات والأقسام (بحسب المهام فقط)
  */
 export function groupScores(
   scores: PerformerScore[],
@@ -273,9 +252,9 @@ export function groupScores(
     const tasksScore = avg((s) => s.tasksScore);
     const attendanceScore = avg((s) => s.attendanceScore);
     const punctualityScore = avg((s) => s.punctualityScore);
-    const score = combine(tasksScore, attendanceScore, punctualityScore, completedTasks);
+    const score = tasksScore;
 
-    const isEligible = members.length > 0 && completedTasks >= 2 && score >= 60;
+    const isEligible = members.length > 0 && completedTasks >= 1 && score >= 50;
 
     return {
       id: u.id,
@@ -298,45 +277,39 @@ export function groupScores(
 }
 
 /**
- * ترتيب المرشحين وفق تراتبية فض التعادل الصارمة
+ * ترتيب المرشحين للوحة الشرف وأفضل موظف (بحسب المهام حصراً)
  */
 export function rank(scores: PerformerScore[]) {
   if (!scores || scores.length === 0) return [];
 
-  // إعطاء الأولوية التامة للمؤهلين الذين حققوا الشروط (إنجاز >= 2 مهام + حضور >= 70%)
+  // إعطاء الأولوية التامة للمؤهلين الذين حققوا شروط المهام
   const eligibleScores = scores.filter((s) => s.eligible);
   const pool = eligibleScores.length > 0 ? eligibleScores : scores.filter((s) => s.completedTasks >= 1);
   const targetList = pool.length > 0 ? pool : scores;
 
   return [...targetList].sort((a, b) => {
-    // 1. الأهلية الصارمة أولاً
+    // 1. الأهلية (إنجاز مهام مستوفية للشروط)
     if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
-    // 2. الدرجة الإجمالية (60% مهام + 30% دوام + 10% مواعيد)
+    // 2. درجة إنجاز المهام الإجمالية (100%)
     if (b.score !== a.score) return b.score - a.score;
     // 3. عدد المهام المنجزة الفعلية (حجم الإنتاجية)
     if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
-    // 4. درجة جودة المهام الموزونة
-    if (b.tasksScore !== a.tasksScore) return b.tasksScore - a.tasksScore;
-    // 5. درجة الانضباط والدوام
-    if (b.attendanceScore !== a.attendanceScore) return b.attendanceScore - a.attendanceScore;
-    // 6. درجة الالتزام بالمواعيد
-    if (b.punctualityScore !== a.punctualityScore) return b.punctualityScore - a.punctualityScore;
-    // 7. الأقل تأخراً بالدقائق
-    return a.lateMinutes - b.lateMinutes;
+    // 4. إجمالي المهام المسندة
+    if (b.totalTasks !== a.totalTasks) return b.totalTasks - a.totalTasks;
+    // 5. درجة الجودة
+    return b.tasksScore - a.tasksScore;
   });
 }
 
 /**
- * اختيار الفائز بلقب أفضل موظف / إدارة / قسم
- * يشترط أن يكون لديه مهام منجزة فعلية ولا يجوز فوز موظف بدون إنجاز مهام
+ * اختيار الفائز بلقب أفضل موظف / إدارة / قسم (بحسب المهام فقط)
+ * يشترط أن يكون لديه مهام منجزة فعلية
  */
 export function topOf(scores: PerformerScore[]): PerformerScore | null {
   if (!scores || scores.length === 0) return null;
   const ranked = rank(scores);
-  // فحص المرشح الأول: إذا لم يكن لديه أي مهام منجزة، لا يُعرض كفائز
   const first = ranked[0];
   if (!first || first.completedTasks === 0) {
-    // محاولة إيجاد أول موظف لديه مهام منجزة
     const withCompleted = ranked.find((s) => s.completedTasks >= 1);
     return withCompleted ?? null;
   }

@@ -182,11 +182,11 @@ export function EmployeeDashboardView({
         <Card className="lg:col-span-1">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">تقييم أدائي العام</CardTitle>
+              <CardTitle className="text-base font-semibold">تقييم أدائي للمهام</CardTitle>
               {myScore && <Badge variant="secondary">{myScore.grade}</Badge>}
             </div>
             <CardDescription className="text-xs">
-              مؤشر مجمع لإنجاز المهام والالتزام بالمواعيد والدوام
+              مؤشر أداء لوحة الشرف المعتمد حصرياً على إنجاز المهام
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -194,22 +194,26 @@ export function EmployeeDashboardView({
               <span className="font-display text-4xl font-extrabold text-primary">
                 {myScore?.score ?? 0}%
               </span>
-              <span className="text-xs text-muted-foreground">الدرجة الإجمالية</span>
+              <span className="text-xs text-muted-foreground">درجة إنجاز المهام</span>
             </div>
             <Progress value={myScore?.score ?? 0} className="h-2.5" />
 
             <div className="space-y-2.5 pt-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">إنجاز المهام والإنتاجية (٦٠٪):</span>
-                <span className="font-semibold">{myScore?.tasksScore ?? 0}%</span>
+                <span className="text-muted-foreground">المهام المنجزة:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {myScore?.completedTasks ?? 0} مهمة
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">الانضباط والدوام (٣٠٪):</span>
-                <span className="font-semibold">{myScore?.attendanceScore ?? 0}%</span>
+                <span className="text-muted-foreground">إجمالي المهام المسندة:</span>
+                <span className="font-semibold">{myScore?.totalTasks ?? 0} مهمة</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">الالتزام بالمواعيد (١٠٪):</span>
-                <span className="font-semibold">{myScore?.punctualityScore ?? 0}%</span>
+                <span className="text-muted-foreground">الأهلية للوحة الشرف:</span>
+                <span className="font-semibold text-primary">
+                  {myScore?.eligible ? "مؤهل للمنافسة" : "يلزم إنجاز مهام"}
+                </span>
               </div>
             </div>
           </CardContent>

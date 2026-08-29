@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Clock, CalendarCheck, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ListTodo, ShieldCheck, Award } from "lucide-react";
 import type { PerformerScore } from "@/lib/dashboard-metrics";
 
 export function TopPerformerCard({
@@ -15,6 +15,10 @@ export function TopPerformerCard({
   performer: PerformerScore | null;
   emptyText?: string;
 }) {
+  const completionRate = performer && performer.totalTasks > 0
+    ? Math.round((performer.completedTasks / performer.totalTasks) * 100)
+    : 0;
+
   return (
     <Card className="overflow-hidden border-accent/40 bg-gradient-to-b from-card to-card/90 shadow-xs transition-shadow hover:shadow-md">
       <CardContent className="space-y-3 p-4 sm:p-5">
@@ -45,7 +49,7 @@ export function TopPerformerCard({
           <div className="py-4 text-center">
             <p className="text-sm font-medium text-muted-foreground">{emptyText}</p>
             <p className="mt-1 text-[11px] text-muted-foreground/80">
-              (يشترط إنجاز مهام وحضور ٧٠٪ على الأقل للترشح للقب)
+              (يعتمد احتساب أفضل موظف ولوحة الشرف حصرياً على إنجاز وجودة المهام)
             </p>
           </div>
         ) : (
@@ -59,7 +63,7 @@ export function TopPerformerCard({
               <span className="font-display text-3xl font-extrabold text-primary sm:text-4xl">
                 {performer.score}%
               </span>
-              <span className="text-xs text-muted-foreground">درجة الأداء والإنتاجية</span>
+              <span className="text-xs text-muted-foreground">درجة إنجاز وجودة المهام</span>
             </div>
 
             <Progress value={performer.score} className="h-2" />
@@ -67,34 +71,34 @@ export function TopPerformerCard({
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/40 p-2 text-center text-[11px]">
               <div>
                 <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                  <CheckCircle2 className="size-3 text-primary" />
-                  <span>المهام (٦٠٪)</span>
+                  <CheckCircle2 className="size-3 text-emerald-500" />
+                  <span>المنجزة</span>
                 </div>
-                <span className="font-bold text-foreground">{performer.tasksScore}%</span>
+                <span className="font-bold text-foreground">{performer.completedTasks}</span>
               </div>
 
               <div>
                 <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                  <CalendarCheck className="size-3 text-emerald-500" />
-                  <span>الدوام (٣٠٪)</span>
+                  <ListTodo className="size-3 text-primary" />
+                  <span>إجمالي المهام</span>
                 </div>
-                <span className="font-bold text-foreground">{performer.attendanceScore}%</span>
+                <span className="font-bold text-foreground">{performer.totalTasks}</span>
               </div>
 
               <div>
                 <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                  <Clock className="size-3 text-amber-500" />
-                  <span>المواعيد (١٠٪)</span>
+                  <Award className="size-3 text-amber-500" />
+                  <span>نسبة الإتمام</span>
                 </div>
-                <span className="font-bold text-foreground">{performer.punctualityScore}%</span>
+                <span className="font-bold text-foreground">{completionRate}%</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
               <span className="font-medium text-foreground">
-                أنجز {performer.completedTasks} من {performer.totalTasks} مهمة
+                أنجز {performer.completedTasks} من أصل {performer.totalTasks} مهمة
               </span>
-              <span>حضور {performer.presentDays} يوم</span>
+              <span className="text-primary font-medium">معيار المهام فقط ١٠٠٪</span>
             </div>
           </>
         )}

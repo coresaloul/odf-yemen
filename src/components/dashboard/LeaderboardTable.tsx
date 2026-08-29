@@ -71,7 +71,7 @@ export function LeaderboardTable({
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-sm text-foreground">{r.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {r.completedTasks} مهمة منجزة · حضور {r.presentDays} يوم
+                        {r.completedTasks} من {r.totalTasks} مهمة منجزة
                       </p>
                     </div>
                   </div>
@@ -92,38 +92,40 @@ export function LeaderboardTable({
                   <TableRow className="bg-muted/40">
                     <TableHead className="w-12 text-center">الترتيب</TableHead>
                     <TableHead>{entityLabel}</TableHead>
-                    <TableHead className="text-center">المهام المنجزة</TableHead>
-                    <TableHead className="text-center">درجة المهام</TableHead>
-                    <TableHead className="text-center">الانضباط والدوام</TableHead>
-                    <TableHead className="text-center">المواعيد</TableHead>
-                    <TableHead className="text-center">الدرجة الإجمالية</TableHead>
+                    <TableHead className="text-center">المهام (المنجزة / الإجمالي)</TableHead>
+                    <TableHead className="text-center">نسبة الإتمام</TableHead>
+                    <TableHead className="text-center">درجة المهام والإنتاجية</TableHead>
                     <TableHead className="text-center">التقدير</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {shown.map((r, i) => (
-                    <TableRow key={r.id} className="hover:bg-muted/30">
-                      <TableCell className="text-center">{rankBadge(i)}</TableCell>
-                      <TableCell>
-                        <p className="font-semibold text-foreground">{r.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{r.subtitle}</p>
-                      </TableCell>
-                      <TableCell className="text-center font-medium">
-                        {r.completedTasks} / {r.totalTasks}
-                      </TableCell>
-                      <TableCell className="text-center">{r.tasksScore}%</TableCell>
-                      <TableCell className="text-center">{r.attendanceScore}%</TableCell>
-                      <TableCell className="text-center">{r.punctualityScore}%</TableCell>
-                      <TableCell className="text-center font-bold text-primary text-base">
-                        {r.score}%
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={i === 0 ? "default" : "outline"} className="font-medium">
-                          {r.grade}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {shown.map((r, i) => {
+                    const completionPct = r.totalTasks > 0
+                      ? Math.round((r.completedTasks / r.totalTasks) * 100)
+                      : 0;
+
+                    return (
+                      <TableRow key={r.id} className="hover:bg-muted/30">
+                        <TableCell className="text-center">{rankBadge(i)}</TableCell>
+                        <TableCell>
+                          <p className="font-semibold text-foreground">{r.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">{r.subtitle}</p>
+                        </TableCell>
+                        <TableCell className="text-center font-medium">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{r.completedTasks}</span> / {r.totalTasks}
+                        </TableCell>
+                        <TableCell className="text-center font-medium">{completionPct}%</TableCell>
+                        <TableCell className="text-center font-bold text-primary text-base">
+                          {r.score}%
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={i === 0 ? "default" : "outline"} className="font-medium">
+                            {r.grade}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

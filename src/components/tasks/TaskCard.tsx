@@ -23,12 +23,13 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
-import { isOverdue, type TaskRow } from "./task-utils";
+import { isOverdue, type SubtaskItem, type TaskRow } from "./task-utils";
 import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
 import { PRIORITY_LABELS as PRIORITIES } from "@/lib/hr";
 
 export function TaskCard({
   task,
+  subtasks = [],
   assigneeName,
   assigneeNames,
   assignerName,
@@ -43,6 +44,7 @@ export function TaskCard({
   onProgress,
 }: {
   task: TaskRow;
+  subtasks?: SubtaskItem[];
   assigneeName?: string;
   assigneeNames?: string[];
   assignerName: string;

@@ -137,17 +137,19 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
-          {WEEKDAYS.map((weekday, idx) => (
+        {/* عناوين الأيام تظهر فقط في الشاشات الكبيرة */}
+        <div className="hidden sm:grid sm:grid-cols-7 sm:gap-2 mb-2">
+          {WEEKDAYS.map((weekday) => (
             <div
               key={weekday}
-              className="rounded-md bg-muted/60 px-0.5 py-1.5 text-center text-[9px] font-semibold text-muted-foreground sm:px-2 sm:py-2 sm:text-[11px]"
+              className="rounded-md bg-muted/60 px-2 py-2 text-center text-[11px] font-semibold text-muted-foreground"
             >
-              <span className="sm:hidden">{WEEKDAYS_SHORT[idx]}</span>
-              <span className="hidden sm:inline">{weekday}</span>
+              {weekday}
             </div>
           ))}
+        </div>
 
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-7">
           {calendarDays.map((day) => {
             const dayTasks = tasksForDay(day);
             const isCurrentMonth = isMobile || day.getMonth() === referenceDate.getMonth();
@@ -158,24 +160,39 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
                 key={day.toISOString()}
                 onClick={() => setSelectedDay(day)}
                 className={[
-                  "min-h-[80px] cursor-pointer rounded-md border p-1 pb-1.5 text-right transition-colors sm:min-h-[130px] sm:rounded-lg sm:p-2",
+                  "flex flex-col sm:block cursor-pointer rounded-lg border p-2 text-right transition-colors sm:min-h-[130px]",
+                  isMobile ? "min-h-[80px]" : "",
                   isCurrentMonth ? "border-border bg-background" : "border-muted bg-muted/20",
                   isToday ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background" : "",
                 ].join(" ")}
               >
-                <span
-                  className={[
-                    "mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold sm:mb-2 sm:h-7 sm:w-7 sm:text-[11px]",
-                    isToday
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
-                  ].join(" ")}
-                >
-                  {day.getDate()}
-                </span>
+                <div className="flex items-center justify-between sm:block sm:mb-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={[
+                        "inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[11px] font-semibold",
+                        isToday
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground",
+                      ].join(" ")}
+                    >
+                      {day.getDate()}
+                    </span>
+                    {isMobile && (
+                      <span className="text-xs font-semibold text-foreground">
+                        {WEEKDAYS[day.getDay()]}
+                      </span>
+                    )}
+                  </div>
+                  {isMobile && dayTasks.length > 0 && (
+                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                      {dayTasks.length} مهام
+                    </span>
+                  )}
+                </div>
 
-                {/* عرض المهام - متجاوب مع الموبايل */}
-                <div className="mt-0.5 flex flex-col gap-1 sm:mt-1">
+                {/* عرض المهام */}
+                <div className="flex flex-col gap-1.5 sm:gap-1">
                   {dayTasks.slice(0, 3).map((task) => (
                     <button
                       key={task.id}
@@ -185,7 +202,7 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
                         onOpenTask(task);
                       }}
                       className={[
-                        "w-full rounded-[3px] border px-1 py-0.5 text-right text-[8px] leading-[1.1] shadow-sm transition hover:opacity-90 sm:rounded-md sm:px-2 sm:py-1.5 sm:text-[10px]",
+                        "w-full rounded-md border px-2 py-1.5 text-right text-[10px] leading-tight shadow-sm transition hover:opacity-90",
                         taskCalendarTone(task),
                       ].join(" ")}
                       title={`${task.title} (${formatDate(task.start_date)} - ${formatDate(task.due_date)})`}
@@ -204,7 +221,7 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
                         e.stopPropagation();
                         setSelectedDay(day);
                       }}
-                      className="w-full rounded-[3px] px-1 py-0.5 text-right text-[8px] font-medium text-muted-foreground transition hover:bg-muted/80 hover:text-foreground sm:rounded-md sm:py-1 sm:text-[10px]"
+                      className="w-full rounded-md px-2 py-1 text-right text-[10px] font-medium text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
                     >
                       +{dayTasks.length - 3} إضافية
                     </button>

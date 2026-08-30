@@ -10,6 +10,9 @@ import {
   Users,
   ShieldCheck,
   UserCheck,
+  ListChecks,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,12 +26,13 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
-import { isOverdue, type TaskRow } from "./task-utils";
+import { isOverdue, type SubtaskItem, type TaskRow } from "./task-utils";
 import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
 import { PRIORITY_LABELS as PRIORITIES } from "@/lib/hr";
 
 export function TaskCard({
   task,
+  subtasks = [],
   assigneeName,
   assigneeNames,
   assignerName,
@@ -43,6 +47,7 @@ export function TaskCard({
   onProgress,
 }: {
   task: TaskRow;
+  subtasks?: SubtaskItem[];
   assigneeName?: string;
   assigneeNames?: string[];
   assignerName: string;
@@ -58,6 +63,8 @@ export function TaskCard({
 }) {
   const overdue = isOverdue(task);
   const progressValue = Number(task.progress ?? 0);
+  const doneSubtasks = subtasks.filter((s) => s.is_done);
+  const pendingSubtasks = subtasks.filter((s) => !s.is_done);
   
   const names = assigneeNames && assigneeNames.length > 0 
     ? assigneeNames 
@@ -190,6 +197,39 @@ export function TaskCard({
           </div>
           <Progress value={progressValue} className="h-2" />
         </div>
+
+        {subtasks.length > 0 && (
+          <div className="rounded-md border bg-muted/30 p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 font-medium">
+                <ListChecks className="size-3.5 text-primary" />
+                المهام الفرعية
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Badge variant="secondary" className="gap-1 text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                  <CheckCircle2 className="size-3" /> منجز: {doneSubtasks.length}
+                </Badge>
+                <Badge variant="secondary" className="gap-1 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+                  <Circle className="size-3" /> غير منجز: {pendingSubtasks.length}
+                </Badge>
+              </span>
+            </div>
+            <ul className="space-y-1">
+              {subtasks.map((sub) => (
+                <li key={sub.id} className="flex items-center gap-1.5 text-xs">
+                  {sub.is_done ? (
+                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
+                  ) : (
+                    <Circle className="size-3.5 shrink-0 text-amber-500" />
+                  )}
+                  <span className={sub.is_done ? "text-muted-foreground line-through" : "text-foreground"}>
+                    {sub.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="flex justify-end gap-1">
           {whatsappHref && (

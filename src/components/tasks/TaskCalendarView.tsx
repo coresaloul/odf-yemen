@@ -46,6 +46,7 @@ const taskCalendarTone = (task: TaskRow) => {
 };
 
 const WEEKDAYS = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const WEEKDAYS_SHORT = ["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"];
 
 export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);

@@ -10,6 +10,9 @@ import {
   Users,
   ShieldCheck,
   UserCheck,
+  ListChecks,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +63,8 @@ export function TaskCard({
 }) {
   const overdue = isOverdue(task);
   const progressValue = Number(task.progress ?? 0);
+  const doneSubtasks = subtasks.filter((s) => s.is_done);
+  const pendingSubtasks = subtasks.filter((s) => !s.is_done);
   
   const names = assigneeNames && assigneeNames.length > 0 
     ? assigneeNames 

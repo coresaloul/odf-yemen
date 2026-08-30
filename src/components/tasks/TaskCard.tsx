@@ -85,122 +85,144 @@ export function TaskCard({
   };
 
   return (
-    <Card className={`transition hover:shadow-md ${overdue ? "border-destructive/50" : isMultiple ? "border-primary/30 bg-primary/[0.02]" : ""}`}>
-      <CardContent className="space-y-3 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={onOpen}
-                className="text-right font-semibold text-primary hover:underline"
-              >
-                {task.title}
-              </button>
-              {isMultiple && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 text-[11px] font-normal py-0 px-2">
-                  <Users className="size-3" /> مهمة مشتركة ({names.length})
-                </Badge>
-              )}
-              {task.created_via_voice && (
-                <Mic className="inline size-3.5 text-accent" aria-label="أُضيفت صوتياً" />
-              )}
-              {task.recurrence && task.recurrence !== "none" && (
-                <Repeat className="inline size-3.5 text-muted-foreground" aria-label="مهمة متكررة" />
-              )}
-            </div>
-
-            {/* تفاصيل المنفذين والمشرف */}
-            <div className="mt-2.5 space-y-1.5">
-              {/* قائمة الموظفين المنفذين */}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/80">المكلفون:</span>
-                <div className="flex items-center -space-x-1.5 space-x-reverse overflow-hidden py-0.5">
-                  {names.slice(0, 4).map((name, idx) => (
-                    <div
-                      key={idx}
-                      title={name}
-                      className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground border border-background shadow-xs"
-                    >
-                      <UserCheck className="size-3 text-muted-foreground" />
-                      <span>{name}</span>
-                    </div>
-                  ))}
-                  {names.length > 4 && (
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                      +{names.length - 4}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* المشرف وتواريخ المهمة */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>المكلِّف: {assignerName}</span>
-                <span>•</span>
-                <span>الاستحقاق: {formatDate(task.due_date)}</span>
-                
-                {supervisorName && (
-                  <>
-                    <span>•</span>
-                    <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-sm">
-                      <ShieldCheck className="size-3.5" />
-                      المشرف: {supervisorName}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {overdue && (
-              <Badge variant="destructive" className="gap-1">
-                <AlertTriangle className="size-3" /> متأخرة
-              </Badge>
+    <Card className={`transition-all hover:shadow-md ${overdue ? "border-destructive/50" : isMultiple ? "border-primary/30 bg-primary/[0.02]" : ""}`}>
+      <CardContent className="space-y-4 p-4 sm:p-5">
+        {/* Header Section: Title and Menu */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2 flex-1 pt-0.5">
+            <button
+              type="button"
+              onClick={onOpen}
+              className="text-right text-base sm:text-lg font-semibold text-primary hover:underline line-clamp-2"
+            >
+              {task.title}
+            </button>
+            {task.created_via_voice && (
+              <Mic className="inline size-3.5 sm:size-4 text-accent" aria-label="أُضيفت صوتياً" />
             )}
-            <Badge variant="outline">{PRIORITY_LABELS[task.priority]}</Badge>
-            <Badge variant={task.status === "completed" ? "default" : "secondary"}>
-              {TASK_STATUS_LABELS[task.status]}
+            {task.recurrence && task.recurrence !== "none" && (
+              <Repeat className="inline size-3.5 sm:size-4 text-muted-foreground" aria-label="مهمة متكررة" />
+            )}
+          </div>
+          {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" className="-mt-1.5 -me-1.5 shrink-0 h-8 w-8 text-muted-foreground" aria-label="خيارات المهمة">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+                  <Pencil className="size-4 ms-2" /> تعديل
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="size-4 ms-2" /> حذف
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* Badges Section */}
+        <div className="flex flex-wrap items-center gap-2">
+          {overdue && (
+            <Badge variant="destructive" className="gap-1 px-2 py-0.5 text-[11px] sm:text-xs">
+              <AlertTriangle className="size-3 sm:size-3.5" /> متأخرة
             </Badge>
-            {canManage && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label="خيارات المهمة">
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="size-4" /> تعديل
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                    <Trash2 className="size-4" /> حذف
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          )}
+          <Badge variant="outline" className="px-2 py-0.5 text-[11px] sm:text-xs">{PRIORITY_LABELS[task.priority]}</Badge>
+          <Badge variant={task.status === "completed" ? "default" : "secondary"} className="px-2 py-0.5 text-[11px] sm:text-xs">
+            {TASK_STATUS_LABELS[task.status]}
+          </Badge>
+          {isMultiple && (
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 px-2 py-0.5 text-[11px] sm:text-xs">
+              <Users className="size-3 sm:size-3.5" /> مهمة مشتركة ({names.length})
+            </Badge>
+          )}
+        </div>
+
+        {/* Details Section */}
+        <div className="space-y-3 rounded-xl bg-muted/40 p-3 sm:p-4 text-xs sm:text-sm">
+          {/* Assignees */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <span className="font-medium text-foreground/80 shrink-0 flex items-center gap-1.5">
+              <Users className="size-3.5 opacity-70" />
+              المكلفون:
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {names.slice(0, 4).map((name, idx) => (
+                <div
+                  key={idx}
+                  title={name}
+                  className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[11px] sm:text-xs font-medium text-secondary-foreground border shadow-sm transition-colors hover:bg-secondary/50"
+                >
+                  <UserCheck className="size-3 text-muted-foreground" />
+                  <span className="truncate max-w-[120px]">{name}</span>
+                </div>
+              ))}
+              {names.length > 4 && (
+                <span className="rounded-md bg-muted px-2 py-1 text-[11px] sm:text-xs font-semibold text-muted-foreground border">
+                  +{names.length - 4}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Dates and Supervisor */}
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="text-foreground/70">المكلِّف:</span>
+                <span className="font-medium text-foreground/90">{assignerName}</span>
+              </span>
+              <span className="hidden sm:inline opacity-30">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-foreground/70">الاستحقاق:</span>
+                <span className="font-medium text-foreground/90">{formatDate(task.due_date)}</span>
+              </span>
+            </div>
+            
+            {supervisorName && (
+              <div className="inline-flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1.5 rounded-md border border-amber-500/20 w-fit mt-1 text-[11px] sm:text-xs">
+                <ShieldCheck className="size-3.5 sm:size-4" />
+                المشرف: {supervisorName}
+              </div>
             )}
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>{isMultiple ? "متوسط نسبة الإنجاز الكلية" : "نسبة الإنجاز"}</span>
-            <span className="font-semibold text-foreground">{progressValue}%</span>
+        {/* Progress Section */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground font-medium">
+            <span>{isMultiple ? "متوسط نسبة الإنجاز" : "نسبة الإنجاز"}</span>
+            <span className="font-bold text-primary">{progressValue}%</span>
           </div>
-          <Progress value={progressValue} className="h-2" />
+          <Progress value={progressValue} className="h-2 bg-secondary" />
         </div>
 
-        <div className="flex justify-end gap-1">
+        {/* Actions Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-3 border-t mt-4">
           {whatsappHref && (
-            <Button size="sm" variant="ghost" asChild>
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="size-4" /> واتساب
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="w-full sm:w-auto h-9 bg-green-50/50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:hover:bg-green-900/40 dark:border-green-900/50 transition-colors shadow-sm" 
+              asChild
+            >
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                <MessageCircle className="size-4 ms-2" /> إرسال للمتابعة (واتساب)
               </a>
             </Button>
           )}
-          <Button size="sm" variant="ghost" type="button" onClick={onOpen} disabled={!onOpen}>
-            <Paperclip className="size-4" /> التفاصيل
+          <Button 
+            size="sm" 
+            variant="default" 
+            className="w-full sm:w-auto h-9 shadow-sm" 
+            type="button" 
+            onClick={onOpen} 
+            disabled={!onOpen}
+          >
+            <Paperclip className="size-4 ms-2" /> عرض التفاصيل
           </Button>
         </div>
       </CardContent>

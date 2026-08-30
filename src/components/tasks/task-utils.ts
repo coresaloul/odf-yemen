@@ -15,6 +15,24 @@ export type SubtaskLite = {
   is_done?: boolean | null;
 };
 
+export type SubtaskItem = {
+  id: string;
+  task_id: string;
+  title: string;
+  is_done: boolean | null;
+};
+
+/** ملخص المهام الفرعية لمجموعة مهام (تشمل الأشقاء في المهمة المشتركة) */
+export function subtasksForTask(
+  subtasks: SubtaskItem[],
+  taskIds: string[],
+): { items: SubtaskItem[]; done: number; total: number } {
+  const ids = new Set(taskIds);
+  const items = subtasks.filter((s) => ids.has(s.task_id));
+  const done = items.filter((s) => s.is_done).length;
+  return { items, done, total: items.length };
+}
+
 export type EmployeeLite = {
   id: string;
   full_name: string;

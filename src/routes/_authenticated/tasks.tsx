@@ -581,6 +581,7 @@ function TasksPage() {
         <TaskListView
           tasks={filtered}
           employees={employees}
+          subtasks={data?.subtasks ?? []}
           canManageTask={canManageTask}
           canUpdateProgress={canUpdateProgress}
           onOpen={openTask}

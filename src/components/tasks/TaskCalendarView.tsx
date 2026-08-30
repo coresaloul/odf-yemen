@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   PRIORITY_RANK,
   isOverdue,
@@ -49,24 +50,50 @@ const WEEKDAYS = ["الأحد", "الإثنين", "الثلاثاء", "الأر�
 const WEEKDAYS_SHORT = ["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"];
 
 export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
+  const isMobile = useIsMobile();
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const current = new Date();
-    return new Date(current.getFullYear(), current.getMonth(), 1);
-  });
+  const [referenceDate, setReferenceDate] = useState(() => new Date());
 
   const calendarDays = useMemo(() => {
-    const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
-    const start = new Date(firstDay);
-    start.setDate(start.getDate() - firstDay.getDay());
     const cells: Date[] = [];
-    for (let index = 0; index < 42; index += 1) {
-      const cell = new Date(start);
-      cell.setDate(start.getDate() + index);
-      cells.push(cell);
+    if (isMobile) {
+      const start = new Date(referenceDate);
+      start.setDate(start.getDate() - start.getDay());
+      for (let index = 0; index < 7; index += 1) {
+        const cell = new Date(start);
+        cell.setDate(start.getDate() + index);
+        cells.push(cell);
+      }
+    } else {
+      const firstDay = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+      const start = new Date(firstDay);
+      start.setDate(start.getDate() - firstDay.getDay());
+      for (let index = 0; index < 42; index += 1) {
+        const cell = new Date(start);
+        cell.setDate(start.getDate() + index);
+        cells.push(cell);
+      }
     }
     return cells;
-  }, [calendarMonth]);
+  }, [referenceDate, isMobile]);
+
+  const navigatePrevious = () => {
+    setReferenceDate((prev) => {
+      const next = new Date(prev);
+      if (isMobile) next.setDate(prev.getDate() - 7);
+      else { next.setMonth(prev.getMonth() - 1); next.setDate(1); }
+      return next;
+    });
+  };
+
+  const navigateNext = () => {
+    setReferenceDate((prev) => {
+      const next = new Date(prev);
+      if (isMobile) next.setDate(prev.getDate() + 7);
+      else { next.setMonth(prev.getMonth() + 1); next.setDate(1); }
+      return next;
+    });
+  };
 
   const tasksForDay = (day: Date) => {
     const target = new Date(day.getFullYear(), day.getMonth(), day.getDate());
@@ -89,28 +116,22 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
             size="sm"
             variant="outline"
             className="h-9 px-2.5 sm:px-3"
-            onClick={() =>
-              setCalendarMonth(
-                new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
-              )
-            }
+            onClick={navigatePrevious}
           >
             السابق
           </Button>
           <div className="truncate text-center text-xs font-semibold text-foreground sm:text-sm">
-            {new Intl.DateTimeFormat("ar-EG", { month: "long", year: "numeric" }).format(
-              calendarMonth,
+            {isMobile && calendarDays.length > 0 ? (
+              `${new Intl.DateTimeFormat("ar-EG", { month: "short", day: "numeric" }).format(calendarDays[0])} - ${new Intl.DateTimeFormat("ar-EG", { month: "short", day: "numeric" }).format(calendarDays[6])}`
+            ) : (
+              new Intl.DateTimeFormat("ar-EG", { month: "long", year: "numeric" }).format(referenceDate)
             )}
           </div>
           <Button
             size="sm"
             variant="outline"
             className="h-9 px-2.5 sm:px-3"
-            onClick={() =>
-              setCalendarMonth(
-                new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1),
-              )
-            }
+            onClick={navigateNext}
           >
             التالي
           </Button>
@@ -129,7 +150,7 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
 
           {calendarDays.map((day) => {
             const dayTasks = tasksForDay(day);
-            const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
+            const isCurrentMonth = isMobile || day.getMonth() === referenceDate.getMonth();
             const isToday = day.toDateString() === new Date().toDateString();
 
             return (

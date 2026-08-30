@@ -46,6 +46,7 @@ import {
   groupSharedTasks,
   type EmployeeLite,
   type GroupedTask,
+  type SubtaskItem,
   type TaskRow,
   type TaskStatus,
 } from "@/components/tasks/task-utils";
@@ -93,18 +94,20 @@ function TasksPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["tasks-page"],
     queryFn: async () => {
-      const [tasks, employees, departments] = await Promise.all([
+      const [tasks, employees, departments, subtasks] = await Promise.all([
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
         supabase
           .from("employees")
           .select("id, full_name, department_id, section_id, phone")
           .order("full_name"),
         supabase.from("departments").select("id, name").order("name"),
+        supabase.from("task_subtasks").select("id, task_id, title, is_done").order("created_at"),
       ]);
       return {
         tasks: (tasks.data ?? []) as TaskRow[],
         employees: (employees.data ?? []) as EmployeeLite[],
         departments: departments.data ?? [],
+        subtasks: (subtasks.data ?? []) as SubtaskItem[],
       };
     },
   });

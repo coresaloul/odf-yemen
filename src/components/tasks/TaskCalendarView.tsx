@@ -135,31 +135,49 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
             return (
               <div
                 key={day.toISOString()}
+                onClick={() => setSelectedDay(day)}
                 className={[
-                  "min-h-[150px] rounded-lg border p-2 text-right transition-colors",
+                  "min-h-[64px] cursor-pointer rounded-md border p-1 text-right transition-colors sm:min-h-[150px] sm:rounded-lg sm:p-2",
                   isCurrentMonth ? "border-border bg-background" : "border-muted bg-muted/20",
                   isToday ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background" : "",
                 ].join(" ")}
               >
-                <button
-                  type="button"
-                  onClick={() => setSelectedDay(day)}
+                <span
                   className={[
-                    "mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold transition hover:scale-105",
+                    "mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold sm:mb-2 sm:h-7 sm:w-7 sm:text-[11px]",
                     isToday
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground",
                   ].join(" ")}
                 >
                   {day.getDate()}
-                </button>
+                </span>
 
-                <div className="space-y-1.5">
+                {/* مؤشرات مضغوطة على الموبايل */}
+                {dayTasks.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 sm:hidden">
+                    {dayTasks.slice(0, 4).map((task) => (
+                      <span
+                        key={task.id}
+                        className={["h-2 w-2 rounded-full border", taskCalendarTone(task)].join(" ")}
+                      />
+                    ))}
+                    <span className="text-[9px] font-semibold text-muted-foreground">
+                      {dayTasks.length}
+                    </span>
+                  </div>
+                )}
+
+                {/* بطاقات المهام على الشاشات الأكبر */}
+                <div className="hidden space-y-1.5 sm:block">
                   {dayTasks.slice(0, 3).map((task) => (
                     <button
                       key={task.id}
                       type="button"
-                      onClick={() => onOpenTask(task)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenTask(task);
+                      }}
                       className={[
                         "w-full rounded-md border px-2 py-1.5 text-right text-[10px] shadow-sm transition hover:opacity-90",
                         taskCalendarTone(task),
@@ -176,7 +194,10 @@ export function TaskCalendarView({ tasks, onOpenTask }: TaskCalendarViewProps) {
                   {dayTasks.length > 3 && (
                     <button
                       type="button"
-                      onClick={() => setSelectedDay(day)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDay(day);
+                      }}
                       className="w-full rounded-md px-1 py-1 text-right text-[10px] text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
                     >
                       +{dayTasks.length - 3} مهام إضافية

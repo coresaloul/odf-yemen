@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/mider-logo.jpg.asset.json";
+import logoAsset from "@/assets/mudeer-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 
 export function Logo({ className }: { className?: string }) {

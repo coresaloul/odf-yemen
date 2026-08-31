@@ -15,15 +15,15 @@ import { Logo } from "@/components/Logo";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "تسجيل الدخول | نظام الموارد البشرية" },
+      { title: "تسجيل الدخول | مدير" },
       {
         name: "description",
-        content: "تسجيل الدخول إلى نظام إدارة الموارد البشرية الخاص بمؤسسة اليتيم التنموية.",
+        content: "تسجيل الدخول إلى مدير — نظام الموارد البشرية والتخطيط والتقارير.",
       },
-      { property: "og:title", content: "تسجيل الدخول | نظام الموارد البشرية" },
+      { property: "og:title", content: "تسجيل الدخول | مدير" },
       {
         property: "og:description",
-        content: "بوابة دخول موظفي ومديري مؤسسة اليتيم التنموية إلى نظام الموارد البشرية.",
+        content: "بوابة دخول موظفي ومديري النظام إلى مدير — نظام الموارد البشرية والتخطيط والتقارير.",
       },
     ],
   }),
@@ -80,7 +80,7 @@ function AuthPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="items-center text-center">
             <Logo className="mb-2 h-20 w-auto lg:hidden" />
-            <CardTitle className="font-display text-2xl">نظام الموارد البشرية</CardTitle>
+            <CardTitle className="font-display text-2xl">مدير</CardTitle>
             <CardDescription>سجّل الدخول للمتابعة إلى لوحة العمل</CardDescription>
           </CardHeader>
           <CardContent>

@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/users")({
   component: UsersAdminPage,
   head: () => ({
     meta: [
-      { title: "إدارة المستخدمين والصلاحيات | نظام الموارد البشرية" },
+      { title: "إدارة المستخدمين والصلاحيات | مدير" },
       {
         name: "description",
         content:

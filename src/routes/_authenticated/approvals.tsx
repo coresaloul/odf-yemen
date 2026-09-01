@@ -147,7 +147,13 @@ function ApprovalsPage() {
                             {waitingLabel(item.since)}
                           </span>
                         </div>
-                        <p className="truncate font-semibold">{item.title}</p>
+                        <button
+                          type="button"
+                          className="truncate text-right font-semibold hover:underline focus:outline-none"
+                          onClick={() => setSelected(item)}
+                        >
+                          {item.title}
+                        </button>
                         <p className="truncate text-sm text-muted-foreground">
                           {item.employeeName} — {item.departmentName} · {item.summary}
                         </p>

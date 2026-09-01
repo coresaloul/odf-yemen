@@ -64,13 +64,13 @@ export const Route = createFileRoute("/_authenticated/custody")({
   component: CustodyPage,
   head: () => ({
     meta: [
-      { title: "إدارة العهد | نظام الموارد البشرية" },
+      { title: "إدارة العهد | مدير" },
       {
         name: "description",
         content:
           "إدارة تفصيلية لعهد الموظفين: الأصول والأجهزة والمركبات والوثائق والعهد المالية مع الاعتماد والتسليم والإرجاع.",
       },
-      { property: "og:title", content: "إدارة العهد | نظام الموارد البشرية" },
+      { property: "og:title", content: "إدارة العهد | مدير" },
       {
         property: "og:description",
         content: "سجل عهد الموظفين، اعتمادها، تسليمها وإرجاعها مع تقارير قابلة للتصدير.",

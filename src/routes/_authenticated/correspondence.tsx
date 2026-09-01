@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/correspondence")({
   component: CorrespondencePage,
   head: () => ({
     meta: [
-      { title: "الصادر والوارد | نظام الموارد البشرية" },
+      { title: "الصادر والوارد | مدير" },
       { name: "description", content: "تسجيل ومتابعة وأرشفة المراسلات الواردة والصادرة." },
     ],
   }),

@@ -151,7 +151,7 @@ export function AppSidebar() {
               <p className="truncate font-display text-sm font-bold leading-tight text-sidebar-foreground">
                 {ORG_NAME}
               </p>
-              <p className="mt-0.5 truncate text-xs text-sidebar-primary">نظام الموارد البشرية</p>
+              <p className="mt-0.5 truncate text-xs text-sidebar-primary">نظام الموارد البشرية والتخطيط والتقارير</p>
             </div>
           )}
         </div>

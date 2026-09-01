@@ -34,7 +34,7 @@ const Email = ({
     <Preview>{`مهمة جديدة: ${taskTitle ?? 'تكليف جديد'}`}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>مؤسسة اليتيم التنموية</Text>
+        <Text style={brand}>مدير | نظام الموارد البشرية والتخطيط والتقارير</Text>
         <Heading style={heading}>تم تكليفك بمهمة جديدة</Heading>
         <Text style={text}>{employeeName ? `مرحباً ${employeeName}،` : 'مرحباً،'}</Text>
         <Section style={card}>
@@ -69,17 +69,17 @@ export const template = {
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Tahoma, Arial, sans-serif' }
 const container = { padding: '24px', maxWidth: '560px' }
-const brand = { color: '#1f7a52', fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }
-const heading = { fontSize: '20px', color: '#12352a', margin: '0 0 16px' }
+const brand = { color: '#1B4B8C', fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }
+const heading = { fontSize: '20px', color: '#16345E', margin: '0 0 16px' }
 const text = { fontSize: '14px', color: '#333333', lineHeight: '22px', margin: '0 0 8px' }
 const card = {
-  backgroundColor: '#f5f9f7',
-  borderRight: '4px solid #1f7a52',
+  backgroundColor: '#F2F6FB',
+  borderRight: '4px solid #1B4B8C',
   borderRadius: '8px',
   padding: '16px 18px',
   margin: '16px 0',
 }
-const taskTitleStyle = { fontSize: '16px', fontWeight: 700, color: '#12352a', margin: '0 0 8px' }
-const meta = { fontSize: '13px', color: '#4b5f57', margin: '0 0 4px' }
-const hr = { borderColor: '#dbe7e1', margin: '12px 0' }
-const footer = { fontSize: '12px', color: '#6b7c75', marginTop: '16px' }
+const taskTitleStyle = { fontSize: '16px', fontWeight: 700, color: '#16345E', margin: '0 0 8px' }
+const meta = { fontSize: '13px', color: '#45566B', margin: '0 0 4px' }
+const hr = { borderColor: '#D8E2EE', margin: '12px 0' }
+const footer = { fontSize: '12px', color: '#64748B', marginTop: '16px' }

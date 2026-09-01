@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
         content: "سجل الموظفين وبياناتهم الشخصية والصحية والوثائق الرسمية والبيانات التعاقدية.",
       },
       { property: "og:title", content: "الموظفون | الموارد البشرية" },
-      { property: "og:description", content: "إدارة ملفات الموظفين في مؤسسة اليتيم التنموية." },
+      { property: "og:description", content: "إدارة ملفات الموظفين في نظام مدير." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

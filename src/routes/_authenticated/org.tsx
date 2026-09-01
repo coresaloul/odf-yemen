@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/org")({
       { title: "المخطط التنظيمي | الموارد البشرية" },
       {
         name: "description",
-        content: "إدارة الهيكل التنظيمي والإدارات والأقسام في مؤسسة اليتيم التنموية.",
+        content: "إدارة الهيكل التنظيمي والإدارات والأقسام في نظام مدير.",
       },
       { property: "og:title", content: "المخطط التنظيمي | الموارد البشرية" },
       {

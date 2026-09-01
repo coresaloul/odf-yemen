@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/leaves")({
       { property: "og:title", content: "الإجازات والأذونات | الموارد البشرية" },
       {
         property: "og:description",
-        content: "إدارة إجازات موظفي مؤسسة اليتيم التنموية واعتمادها على ثلاث مراحل.",
+        content: "إدارة إجازات موظفي نظام مدير واعتمادها على ثلاث مراحل.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

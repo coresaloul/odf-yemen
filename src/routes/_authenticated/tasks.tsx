@@ -476,35 +476,33 @@ function TasksPage() {
               <Printer className="size-4" /> PDF
             </Button>
             {isManager && (
-              <>
-                <VoiceTaskButton
-                  employees={employees}
-                  onParsed={(p) => {
-                    setEditing(null);
-                    setInitialForm({
-                      title: p.title,
-                      description: p.description ?? "",
-                      assignee_ids: p.assignee_id ? [p.assignee_id] : [],
-                      priority: p.priority,
-                      due_date: p.due_date ?? "",
-                    });
-                    setViaVoice(true);
-                    setFormOpen(true);
-                  }}
-                />
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditing(null);
-                    setInitialForm(undefined);
-                    setViaVoice(false);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Plus className="size-4" /> مهمة جديدة
-                </Button>
-              </>
+              <VoiceTaskButton
+                employees={employees}
+                onParsed={(p) => {
+                  setEditing(null);
+                  setInitialForm({
+                    title: p.title,
+                    description: p.description ?? "",
+                    assignee_ids: p.assignee_id ? [p.assignee_id] : [],
+                    priority: p.priority,
+                    due_date: p.due_date ?? "",
+                  });
+                  setViaVoice(true);
+                  setFormOpen(true);
+                }}
+              />
             )}
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditing(null);
+                setInitialForm(undefined);
+                setViaVoice(false);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="size-4" /> مهمة جديدة
+            </Button>
           </>
         }
       />

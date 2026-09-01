@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrandingSettings } from "@/components/settings/BrandingSettings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -198,6 +199,8 @@ function SettingsPage() {
           اختر القنوات وأنواع الإشعارات التي تريد استلامها.
         </p>
       </div>
+
+      <BrandingSettings />
 
       <DeviceNotificationsCard />
 

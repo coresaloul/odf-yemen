@@ -22,8 +22,9 @@ import {
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ORG_NAME, ROLE_LABELS } from "@/lib/hr";
+import { ROLE_LABELS } from "@/lib/hr";
 import { Logo } from "@/components/Logo";
+import { useBranding } from "@/hooks/useBranding";
 import {
   Sidebar,
   SidebarContent,
@@ -126,6 +127,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 ];
 
 export function AppSidebar() {
+  const branding = useBranding();
   const { user, roles, employee, signOut, isDirector, isHR } = useAuth();
   const navigate = useNavigate();
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -149,9 +151,9 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate font-display text-sm font-bold leading-tight text-sidebar-foreground">
-                {ORG_NAME}
+                {branding.org_name}
               </p>
-              <p className="mt-0.5 truncate text-xs text-sidebar-primary">نظام الموارد البشرية والتخطيط والتقارير</p>
+              <p className="mt-0.5 truncate text-xs text-sidebar-primary">{branding.system_name}</p>
             </div>
           )}
         </div>
@@ -213,6 +215,11 @@ export function AppSidebar() {
           <LogOut className="size-4 shrink-0" />
           {!collapsed && "تسجيل الخروج"}
         </Button>
+        {!collapsed && branding.copyright && (
+          <div className="mt-2 px-2 pb-2 text-[10px] text-sidebar-foreground/50 text-center">
+            {branding.copyright}
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

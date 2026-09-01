@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { useBranding } from "@/hooks/useBranding";
 import { toast } from "sonner";
 import {
   CalendarRange,
@@ -72,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 function TasksPage() {
+  const branding = useBranding();
   const { isManager, employee, user } = useAuth();
   const requestApproval = useServerFn(submitTaskForApproval);
   const needsApproval = (task?: TaskRow | null) =>
@@ -452,6 +454,7 @@ function TasksPage() {
         },
       },
     ],
+    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
   });
 
   return (

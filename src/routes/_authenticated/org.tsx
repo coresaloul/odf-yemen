@@ -28,6 +28,8 @@ import { ORG_NAME } from "@/lib/hr";
 import { UnitDialog, type UnitRecord } from "@/components/org/UnitDialog";
 import { MoveEmployeesDialog } from "@/components/org/MoveEmployeesDialog";
 import { deleteDepartment, deleteSection, getOrgStats } from "@/lib/org.functions";
+import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
+import { useBranding } from "@/hooks/useBranding";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 
 export const Route = createFileRoute("/_authenticated/org")({
@@ -62,7 +64,8 @@ type Emp = {
 };
 
 function OrgPage() {
-  const { isDirector, isHR } = useAuth();
+  const branding = useBranding();
+  const { isDirector, isHR, roles } = useAuth();
   const canManage = isDirector || isHR;
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -147,7 +150,8 @@ function OrgPage() {
 
   const buildDoc = (): ReportDoc => ({
     title: "المخطط التنظيمي",
-    subtitle: ORG_NAME,
+    subtitle: branding.org_name,
+    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
     meta: [
       { label: "عدد الإدارات", value: String(departments.length) },
       { label: "عدد الأقسام", value: String(sections.length) },
@@ -183,7 +187,7 @@ function OrgPage() {
     <div className="space-y-6">
       <PageHeader
         title="المخطط التنظيمي"
-        description={`الهيكل الإداري لـ${ORG_NAME}`}
+        description={`الهيكل الإداري لـ${branding.org_name}`}
         action={
           <>
             <Button

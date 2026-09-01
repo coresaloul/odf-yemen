@@ -36,8 +36,10 @@ import {
   monthLabel,
   monthValue,
 } from "@/lib/payroll";
+import { useBranding } from "@/hooks/useBranding";
 
 export function PayrollRuns() {
+  const branding = useBranding();
   const qc = useQueryClient();
   const { isDirector, isHR } = useAuth();
   const listRunsFn = useServerFn(listRuns);
@@ -144,8 +146,9 @@ export function PayrollRuns() {
           },
         },
       ],
+      branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
     };
-  }, [detail, currency]);
+  }, [detail, currency, branding]);
 
   const payslipDoc = (itemId: string): ReportDoc | null => {
     const item = (detail?.items ?? []).find((i) => i.id === itemId);
@@ -180,6 +183,7 @@ export function PayrollRuns() {
           ],
         },
       ],
+      branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
     };
   };
 

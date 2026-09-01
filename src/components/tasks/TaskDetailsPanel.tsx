@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, FileDown, Loader2, Pencil, Plus, Printer, Send, Trash2, Upload, Users, ShieldCheck, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useBranding, useRefreshBranding } from "@/hooks/useBranding";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,6 +52,7 @@ export function TaskDetailsPanel({
   employees = [],
   onSiblingProgress,
 }: TaskDetailsPanelProps) {
+  const branding = useBranding();
   const { user, employee } = useAuth();
   const qc = useQueryClient();
   const requestApproval = useServerFn(submitTaskForApproval);
@@ -434,6 +436,7 @@ export function TaskDetailsPanel({
         { label: "الوزن", value: String(task.weight ?? 0) },
         { label: "التكرار", value: RECURRENCE_LABELS[task.recurrence ?? "none"] ?? "بدون تكرار" },
       ],
+      branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
       sections: [
         {
           heading: "الوصف",
@@ -467,14 +470,15 @@ export function TaskDetailsPanel({
     };
   };
 
-  const exportTask = (type: "word" | "pdf") => {
+  const exportTask = async (type: "word" | "pdf") => {
     const doc = buildTaskReport();
     const fileName = `مهمة-${task.title}`.replace(/[^-\uFFFF\w\u0600-\u06FF\s-]/g, "").trim();
     if (type === "word") {
-      exportWord(doc, fileName || "مهمة");
+      await exportWord(doc, fileName || "مهمة");
       return;
     }
-    if (!exportPdf(doc)) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
+    const success = await exportPdf(doc);
+    if (!success) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
   };
 
   const canSubmitForApproval =

@@ -16,6 +16,11 @@ export type ReportDoc = {
   periodLabel?: string;
   meta?: { label: string; value: string }[];
   sections: ReportSection[];
+  branding?: {
+    org_name: string;
+    system_name: string;
+    logoUrl: string | null;
+  };
 };
 
 function esc(v: unknown) {
@@ -26,6 +31,9 @@ function esc(v: unknown) {
 }
 
 export function buildReportHtml(doc: ReportDoc) {
+  const orgName = doc.branding?.org_name ?? ORG_NAME;
+  const logo = doc.branding?.logoUrl ?? LOGO_URL;
+  const systemName = doc.branding?.system_name ?? "مدير";
   const issued = new Date().toLocaleString("ar-EG-u-nu-latn");
   const meta = (doc.meta ?? [])
     .map((m) => `<span class="meta-item"><b>${esc(m.label)}:</b> ${esc(m.value)}</span>`)
@@ -70,8 +78,8 @@ export function buildReportHtml(doc: ReportDoc) {
 </style></head>
 <body>
   <div class="header">
-    <img class="logo" src="${LOGO_URL}" alt="شعار مؤسسة اليتيم التنموية" />
-    <div class="org">${esc(ORG_NAME)}</div>
+    <img class="logo" src="${logo}" alt="شعار ${esc(orgName)}" />
+    <div class="org">${esc(orgName)}</div>
     <h1>${esc(doc.title)}</h1>
     <div class="sub">${esc(doc.subtitle ?? "")}</div>
   </div>
@@ -81,7 +89,7 @@ export function buildReportHtml(doc: ReportDoc) {
     ${meta}
   </div>
   ${sections}
-  <div class="footer">تم إصدار هذا التقرير آلياً من نظام إدارة الموارد البشرية — ${esc(ORG_NAME)}</div>
+  <div class="footer">تم إصدار هذا التقرير آلياً من نظام ${esc(systemName)} — ${esc(orgName)}</div>
 </body></html>`;
 }
 

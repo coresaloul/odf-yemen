@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ORG_NAME } from "@/lib/hr";
+import { useBranding } from "@/hooks/useBranding";
 import { PasswordField } from "@/components/PasswordField";
 import { Logo } from "@/components/Logo";
 
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { next } = useSearch({ from: "/auth" });
+  const branding = useBranding();
   const { user, loading } = useAuth();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
@@ -67,7 +68,7 @@ function AuthPage() {
           <div className="mb-8 inline-flex rounded-2xl bg-background/95 p-5">
             <Logo className="h-32 w-auto" />
           </div>
-          <h1 className="font-display text-4xl leading-snug font-bold">{ORG_NAME}</h1>
+          <h1 className="font-display text-4xl leading-snug font-bold">{branding.org_name}</h1>
           <p className="mt-4 max-w-md text-sidebar-foreground/80">
             منصة موحّدة لإدارة الهيكل التنظيمي والموظفين والمهام والدوام والتقييم، مع تقارير إنجاز
             قابلة للتصدير.
@@ -80,7 +81,7 @@ function AuthPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="items-center text-center">
             <Logo className="mb-2 h-20 w-auto lg:hidden" />
-            <CardTitle className="font-display text-2xl">مدير</CardTitle>
+            <CardTitle className="font-display text-2xl">{branding.system_name}</CardTitle>
             <CardDescription>سجّل الدخول للمتابعة إلى لوحة العمل</CardDescription>
           </CardHeader>
           <CardContent>

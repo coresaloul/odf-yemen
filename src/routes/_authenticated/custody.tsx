@@ -58,6 +58,8 @@ import {
   saveCustodyAssignment,
 } from "@/lib/custody.functions";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
+import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
+import { useBranding } from "@/hooks/useBranding";
 import { formatDate } from "@/lib/hr";
 
 export const Route = createFileRoute("/_authenticated/custody")({
@@ -100,6 +102,7 @@ const emptyItem = (): ItemDraft => ({
 });
 
 function CustodyPage() {
+  const branding = useBranding();
   const { employee, isDirector, isHR } = useAuth();
   const canManage = isDirector || isHR;
   const qc = useQueryClient();
@@ -404,6 +407,7 @@ function CustodyPage() {
         },
       },
     ],
+    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
   });
 
   const employees = refs.data?.employees ?? [];

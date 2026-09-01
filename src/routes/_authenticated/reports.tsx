@@ -25,6 +25,7 @@ import {
 } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 import { STAGE_LABELS, type ApprovalStage } from "@/lib/evaluation-approval";
+import { useBranding } from "@/hooks/useBranding";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -54,6 +55,7 @@ const SCOPE_LABELS: Record<Scope, string> = {
 };
 
 function ReportsPage() {
+  const branding = useBranding();
   const [kind, setKind] = useState<ReportKind>("achievement");
   const [scope, setScope] = useState<Scope>("employee");
   const [targetId, setTargetId] = useState("");
@@ -262,6 +264,7 @@ function ReportsPage() {
         },
       },
     ],
+    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
   });
 
   const buildAchievementDoc = (): ReportDoc => ({
@@ -316,6 +319,7 @@ function ReportsPage() {
         },
       },
     ],
+    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
   });
 
   const buildDoc = (): ReportDoc =>
@@ -342,8 +346,8 @@ function ReportsPage() {
               variant="outline"
               size="sm"
               disabled={!targetId}
-              onClick={() => {
-                exportWord(buildDoc(), fileName);
+              onClick={async () => {
+                await exportWord(buildDoc(), fileName);
                 toast.success("تم تصدير ملف Word");
               }}
             >
@@ -352,8 +356,9 @@ function ReportsPage() {
             <Button
               size="sm"
               disabled={!targetId}
-              onClick={() => {
-                if (!exportPdf(buildDoc())) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
+              onClick={async () => {
+                const success = await exportPdf(buildDoc());
+                if (!success) toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
               }}
             >
               <Printer className="size-4" /> تصدير PDF

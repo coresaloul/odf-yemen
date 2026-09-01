@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
 import { getMyPayslips } from "@/lib/payroll.functions";
 import { LINE_SOURCE_LABELS, formatMoney, monthLabel } from "@/lib/payroll";
+import { useBranding } from "@/hooks/useBranding";
 
 export function MyPayslips() {
+  const branding = useBranding();
   const fetchFn = useServerFn(getMyPayslips);
   const { data, isLoading } = useQuery({ queryKey: ["my-payslips"], queryFn: () => fetchFn() });
 
@@ -39,6 +41,7 @@ export function MyPayslips() {
           },
         },
       ],
+      branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
     };
   };
 

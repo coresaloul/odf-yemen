@@ -75,7 +75,6 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 function TasksPage() {
   const branding = useBranding();
   const { isManager, isHR, isDirector, employee, user } = useAuth();
-  const canAssignToOthers = isManager || isHR || isDirector;
   const requestApproval = useServerFn(submitTaskForApproval);
   const needsApproval = (task?: TaskRow | null) =>
     !!task && !isManager && task.assigned_by !== employee?.id;
@@ -118,6 +117,10 @@ function TasksPage() {
   const tasks = data?.tasks ?? [];
   const employees = data?.employees ?? [];
   const departments = data?.departments ?? [];
+
+  const isDirectManager = employees.some((e) => e.manager_id === employee?.id);
+  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager;
+
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
   const phoneOf = (id: string | null) => employees.find((e) => e.id === id)?.phone ?? null;
 

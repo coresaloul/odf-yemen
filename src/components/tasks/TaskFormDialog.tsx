@@ -71,11 +71,12 @@ export function TaskFormDialog({
   
   const { employee, isManager, isHR, isDirector } = useAuth();
   
-  const canAssignToOthers = isManager || isHR || isDirector;
+  const isDirectManager = employees.some(e => e.manager_id === employee?.id);
+  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager;
   
   const selectableEmployees = employees.filter(e => {
     if (isDirector || isHR) return true;
-    if (isManager) return e.id === employee?.id || e.manager_id === employee?.id;
+    if (isManager || isDirectManager) return e.id === employee?.id || e.manager_id === employee?.id;
     return e.id === employee?.id;
   });
 
@@ -97,12 +98,11 @@ export function TaskFormDialog({
       });
     } else {
       const defaultAssignees = canAssignToOthers ? [] : (employee ? [employee.id] : []);
-      const defaultSupervisor = canAssignToOthers ? "" : (employee?.manager_id || "");
 
       setForm({ 
         ...EMPTY_TASK_FORM, 
         assignee_ids: defaultAssignees,
-        supervisor_id: defaultSupervisor,
+        supervisor_id: "",
         ...initial 
       });
     }
@@ -209,7 +209,7 @@ export function TaskFormDialog({
               <SelectContent>
                 <SelectItem value="none">بدون مشرف</SelectItem>
                 {employees
-                  .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id || e.id === employee?.manager_id)
+                  .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id)
                   .map((e) => (
                     <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
                   ))}

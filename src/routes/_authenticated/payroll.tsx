@@ -12,13 +12,13 @@ import { MyPayslips } from "@/components/payroll/MyPayslips";
 export const Route = createFileRoute("/_authenticated/payroll")({
   head: () => ({
     meta: [
-      { title: "إدارة الرواتب | مؤسسة اليتيم التنموية" },
+      { title: "إدارة الرواتب | مدير" },
       {
         name: "description",
         content:
           "مسيرات الرواتب الشهرية للموظفين والعاملين والاستشاريين والمتطوعين، مع البدلات والاستقطاعات والسلف والتعديلات واعتماد المسير.",
       },
-      { property: "og:title", content: "إدارة الرواتب | مؤسسة اليتيم التنموية" },
+      { property: "og:title", content: "إدارة الرواتب | مدير" },
       {
         property: "og:description",
         content: "احتساب واعتماد الرواتب وتصدير القسائم وكشوفات الصرف.",

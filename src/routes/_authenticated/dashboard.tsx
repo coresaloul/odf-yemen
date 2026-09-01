@@ -58,13 +58,13 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "لوحة المعلومات | مؤسسة اليتيم التنموية" },
+      { title: "لوحة المعلومات | مدير" },
       {
         name: "description",
         content:
           "لوحة قيادة مخصصة حسب الأدوار والصلاحيات: الموظف، المدير المباشر، الموارد البشرية، السكرتارية والمدير التنفيذي.",
       },
-      { property: "og:title", content: "لوحة المعلومات | مؤسسة اليتيم التنموية" },
+      { property: "og:title", content: "لوحة المعلومات | مدير" },
       {
         property: "og:description",
         content: "مؤشرات الأداء، الحضور، الإنجاز، والموافقات والتنبيهات المخصصة لحظياً.",

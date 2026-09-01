@@ -74,7 +74,8 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 function TasksPage() {
   const branding = useBranding();
-  const { isManager, employee, user } = useAuth();
+  const { isManager, isHR, isDirector, employee, user } = useAuth();
+  const canAssignToOthers = isManager || isHR || isDirector;
   const requestApproval = useServerFn(submitTaskForApproval);
   const needsApproval = (task?: TaskRow | null) =>
     !!task && !isManager && task.assigned_by !== employee?.id;
@@ -100,7 +101,7 @@ function TasksPage() {
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
         supabase
           .from("employees")
-          .select("id, full_name, department_id, section_id, phone")
+          .select("id, full_name, department_id, section_id, phone, manager_id")
           .order("full_name"),
         supabase.from("departments").select("id, name").order("name"),
         supabase.from("task_subtasks").select("id, task_id, title, is_done").order("created_at"),
@@ -246,7 +247,7 @@ function TasksPage() {
         due_date: v.due_date || null,
         weight: Number(v.weight) || 1,
         recurrence: v.recurrence === "none" ? null : v.recurrence,
-        assigned_by: employee?.id ?? null,
+        assigned_by: (!canAssignToOthers && employee?.manager_id) ? employee.manager_id : (employee?.id ?? null),
         supervisor_id: v.supervisor_id || null,
         created_via_voice: viaVoice,
       }));

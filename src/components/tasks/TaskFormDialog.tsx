@@ -14,6 +14,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/hr";
 import { RECURRENCE_LABELS, todayIso, type EmployeeLite, type TaskRow } from "./task-utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export type TaskFormValues = {
   title: string;
@@ -67,6 +68,16 @@ export function TaskFormDialog({
 }) {
   const [form, setForm] = useState<TaskFormValues>({ ...EMPTY_TASK_FORM });
   const [error, setError] = useState<string | null>(null);
+  
+  const { employee, isManager, isHR, isDirector } = useAuth();
+  
+  const canAssignToOthers = isManager || isHR || isDirector;
+  
+  const selectableEmployees = employees.filter(e => {
+    if (isDirector || isHR) return true;
+    if (isManager) return e.id === employee?.id || e.manager_id === employee?.id;
+    return e.id === employee?.id;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +96,15 @@ export function TaskFormDialog({
         supervisor_id: editing.supervisor_id ?? "",
       });
     } else {
-      setForm({ ...EMPTY_TASK_FORM, ...initial });
+      const defaultAssignees = canAssignToOthers ? [] : (employee ? [employee.id] : []);
+      const defaultSupervisor = canAssignToOthers ? "" : (employee?.manager_id || "");
+
+      setForm({ 
+        ...EMPTY_TASK_FORM, 
+        assignee_ids: defaultAssignees,
+        supervisor_id: defaultSupervisor,
+        ...initial 
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing?.id]);
@@ -156,23 +175,24 @@ export function TaskFormDialog({
               >
                 <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
                 <SelectContent>
-                  {employees.map((e) => (
+                  {selectableEmployees.map((e) => (
                     <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
               <div className="max-h-44 space-y-2 overflow-y-auto rounded-md border p-3">
-                {employees.map((e) => (
+                {selectableEmployees.map((e) => (
                   <label key={e.id} className="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox
                       checked={form.assignee_ids.includes(e.id)}
                       onCheckedChange={() => toggleAssignee(e.id)}
+                      disabled={!canAssignToOthers && e.id === employee?.id}
                     />
                     {e.full_name}
                   </label>
                 ))}
-                {employees.length === 0 && (
+                {selectableEmployees.length === 0 && (
                   <p className="text-xs text-muted-foreground">لا يوجد موظفون.</p>
                 )}
               </div>
@@ -189,7 +209,7 @@ export function TaskFormDialog({
               <SelectContent>
                 <SelectItem value="none">بدون مشرف</SelectItem>
                 {employees
-                  .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id)
+                  .filter((e) => form.assignee_ids.includes(e.id) || e.id === form.supervisor_id || e.id === employee?.manager_id)
                   .map((e) => (
                     <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
                   ))}

@@ -11,6 +11,7 @@ export type EmployeeLite = {
   job_title: string | null;
   department_id: string | null;
   section_id: string | null;
+  manager_id: string | null;
 } | null;
 
 type AuthState = {
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("employees")
-        .select("id, full_name, employee_no, job_title, department_id, section_id")
+        .select("id, full_name, employee_no, job_title, department_id, section_id, manager_id")
         .eq("user_id", uid)
         .maybeSingle(),
     ]);

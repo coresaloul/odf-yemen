@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/attendance")({
       { property: "og:title", content: "الدوام والحضور | الموارد البشرية" },
       {
         property: "og:description",
-        content: "سجلات الدوام اليومية والشهرية وإدارة الورديات لموظفي مؤسسة اليتيم التنموية.",
+        content: "سجلات الدوام اليومية والشهرية وإدارة الورديات لموظفي نظام مدير.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

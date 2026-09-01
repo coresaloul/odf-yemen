@@ -34,7 +34,7 @@ const Email = ({
     <Preview>{`مهمة جديدة: ${taskTitle ?? 'تكليف جديد'}`}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>مؤسسة اليتيم التنموية</Text>
+        <Text style={brand}>مدير | نظام الموارد البشرية والتخطيط والتقارير</Text>
         <Heading style={heading}>تم تكليفك بمهمة جديدة</Heading>
         <Text style={text}>{employeeName ? `مرحباً ${employeeName}،` : 'مرحباً،'}</Text>
         <Section style={card}>

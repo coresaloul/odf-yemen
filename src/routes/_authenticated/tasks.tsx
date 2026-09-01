@@ -62,7 +62,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
       { property: "og:title", content: "المهام | الموارد البشرية" },
       {
         property: "og:description",
-        content: "إدارة مهام الموظفين ومتابعة الإنجاز في مؤسسة اليتيم التنموية.",
+        content: "إدارة مهام الموظفين ومتابعة الإنجاز في نظام مدير.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

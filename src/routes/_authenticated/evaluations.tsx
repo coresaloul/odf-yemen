@@ -33,13 +33,13 @@ import { EmptyState } from "@/components/EmptyState";
 export const Route = createFileRoute("/_authenticated/evaluations")({
   head: () => ({
     meta: [
-      { title: "تقييم الأداء | مؤسسة اليتيم التنموية" },
+      { title: "تقييم الأداء | مدير" },
       {
         name: "description",
         content:
           "تقييم أداء شهري وربعي ونصف سنوي وسنوي يجمع إنجاز المهام والالتزام بالدوام والمعايير السلوكية مع مسار اعتماد متكامل.",
       },
-      { property: "og:title", content: "تقييم الأداء | مؤسسة اليتيم التنموية" },
+      { property: "og:title", content: "تقييم الأداء | مدير" },
       {
         property: "og:description",
         content: "درجات أداء تلقائية من المهام والدوام مع معايير سلوكية وخطط تحسين واعتماد إداري.",

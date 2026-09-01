@@ -45,13 +45,13 @@ export const Route = createFileRoute("/_authenticated/discipline")({
   component: DisciplinePage,
   head: () => ({
     meta: [
-      { title: "التكريم والجزاءات | نظام الموارد البشرية" },
+      { title: "التكريم والجزاءات | مدير" },
       {
         name: "description",
         content:
           "إدارة التكريم والمكافآت والإنذارات والجزاءات التأديبية وفق قانون العمل اليمني مع مسار اعتماد وتظلّم ومحو تلقائي.",
       },
-      { property: "og:title", content: "التكريم والجزاءات | نظام الموارد البشرية" },
+      { property: "og:title", content: "التكريم والجزاءات | مدير" },
       {
         property: "og:description",
         content: "سجل تأديبي متدرّج وتكريم للموظفين مع اعتماد إلكتروني وربط بالرواتب.",

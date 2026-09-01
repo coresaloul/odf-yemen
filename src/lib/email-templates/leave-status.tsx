@@ -25,7 +25,7 @@ const Email = ({ recipientName, leaveType, period, status, note }: Props) => (
     <Preview>{`تحديث على طلب الإجازة: ${leaveType ?? ''}`}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>مؤسسة اليتيم التنموية</Text>
+        <Text style={brand}>مدير | نظام الموارد البشرية والتخطيط والتقارير</Text>
         <Heading style={heading}>تحديث على طلب إجازة</Heading>
         <Text style={text}>{recipientName ? `مرحباً ${recipientName}،` : 'مرحباً،'}</Text>
         <Section style={card}>

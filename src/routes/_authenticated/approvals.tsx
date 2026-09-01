@@ -21,13 +21,13 @@ export const Route = createFileRoute("/_authenticated/approvals")({
   component: ApprovalsPage,
   head: () => ({
     meta: [
-      { title: "مركز الموافقات | نظام الموارد البشرية" },
+      { title: "مركز الموافقات | مدير" },
       {
         name: "description",
         content:
           "مركز موحّد لاعتماد طلبات الإجازات وتقارير التقييم والمهام المنجزة وطلبات تصحيح الحضور في مؤسسة اليتيم التنموية.",
       },
-      { property: "og:title", content: "مركز الموافقات | نظام الموارد البشرية" },
+      { property: "og:title", content: "مركز الموافقات | مدير" },
       {
         property: "og:description",
         content: "اعتماد الطلبات المعلّقة: إجازات، تقييم أداء، مهام منجزة، وتصحيح حضور.",

@@ -58,13 +58,13 @@ export const Route = createFileRoute("/_authenticated/lifecycle")({
   component: LifecyclePage,
   head: () => ({
     meta: [
-      { title: "دورة حياة الموظف | نظام الموارد البشرية" },
+      { title: "دورة حياة الموظف | مدير" },
       {
         name: "description",
         content:
           "متابعة رحلة الموظف من التعيين والتهيئة وفترة التجربة والحركات الوظيفية حتى إنهاء الخدمة وإخلاء الطرف.",
       },
-      { property: "og:title", content: "دورة حياة الموظف | نظام الموارد البشرية" },
+      { property: "og:title", content: "دورة حياة الموظف | مدير" },
       {
         property: "og:description",
         content: "قوائم تهيئة وإخلاء طرف، حركات وظيفية، وخط زمني كامل لكل موظف.",

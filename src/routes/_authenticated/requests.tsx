@@ -30,13 +30,13 @@ export const Route = createFileRoute("/_authenticated/requests")({
   component: RequestsPage,
   head: () => ({
     meta: [
-      { title: "الطلبات والنماذج | نظام الموارد البشرية" },
+      { title: "الطلبات والنماذج | مدير" },
       {
         name: "description",
         content:
           "تقديم ومتابعة طلبات الموارد البشرية: صيانة، مهمة ميدانية، شهادة تعريف، شكوى، مقترح وغيرها في مؤسسة اليتيم التنموية.",
       },
-      { property: "og:title", content: "الطلبات والنماذج | نظام الموارد البشرية" },
+      { property: "og:title", content: "الطلبات والنماذج | مدير" },
       {
         property: "og:description",
         content: "نماذج إلكترونية لطلبات الموظفين مع مسار اعتماد واضح ومتابعة فورية.",

@@ -2814,6 +2814,36 @@ export type Database = {
           },
         ]
       }
+      org_branding: {
+        Row: {
+          copyright: string
+          id: boolean
+          logo_path: string | null
+          org_name: string
+          system_name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          copyright?: string
+          id?: boolean
+          logo_path?: string | null
+          org_name?: string
+          system_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          copyright?: string
+          id?: boolean
+          logo_path?: string | null
+          org_name?: string
+          system_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       payroll_adjustments: {
         Row: {
           amount: number

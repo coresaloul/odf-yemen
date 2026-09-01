@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ClipboardCheck, Plus, RefreshCw } from "lucide-react";
@@ -147,13 +147,23 @@ function ApprovalsPage() {
                             {waitingLabel(item.since)}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          className="truncate text-right font-semibold hover:underline focus:outline-none"
-                          onClick={() => setSelected(item)}
-                        >
-                          {item.title}
-                        </button>
+                        {item.kind === "task" ? (
+                          <Link
+                            to="/tasks/$taskId"
+                            params={{ taskId: item.id }}
+                            className="truncate text-right font-semibold hover:underline focus:outline-none text-primary"
+                          >
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="truncate text-right font-semibold hover:underline focus:outline-none"
+                            onClick={() => setSelected(item)}
+                          >
+                            {item.title}
+                          </button>
+                        )}
                         <p className="truncate text-sm text-muted-foreground">
                           {item.employeeName} — {item.departmentName} · {item.summary}
                         </p>

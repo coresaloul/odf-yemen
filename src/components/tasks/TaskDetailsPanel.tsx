@@ -485,10 +485,11 @@ export function TaskDetailsPanel({
     task.status === "in_progress" &&
     (canManage || task.assignee_id === employee?.id || task.supervisor_id === employee?.id);
 
-  const currentProgress = detail.data
-    ? progressFromSubtasks(detail.data.subtasks)
+  const hasSubtasks = (detail.data?.subtasks?.length ?? 0) > 0;
+  const currentProgress = hasSubtasks
+    ? progressFromSubtasks(detail.data!.subtasks)
     : Number(task.progress ?? 0);
-  const currentStatus = statusFromSubtasks(currentProgress);
+  const currentStatus = hasSubtasks ? statusFromSubtasks(currentProgress) : task.status;
 
   return (
     <div className="space-y-4" dir="rtl">

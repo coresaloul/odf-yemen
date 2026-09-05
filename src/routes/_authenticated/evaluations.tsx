@@ -1,3 +1,5 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,9 +56,9 @@ export const Route = createFileRoute("/_authenticated/evaluations")({
 function EvaluationsPage() {
   const { isManager, isHR, isDirector, employee } = useAuth();
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [stageFilter, setStageFilter] = useState("all");
+  const [search, setSearch] = usePersistentState("search", "");
+  const [periodFilter, setPeriodFilter] = usePersistentState("period", "all");
+  const [stageFilter, setStageFilter] = usePersistentState("stage", "all");
 
   const { data } = useQuery({
     queryKey: ["evaluations-page"],
@@ -140,7 +142,15 @@ function EvaluationsPage() {
         description="فترات شهرية وربعية ونصف سنوية وسنوية — إنجاز المهام والدوام يُحتسبان تلقائياً وتُضاف إليهما المعايير السلوكية"
       />
 
-      <Tabs defaultValue={isManager || isHR ? "new" : "mine"}>
+      <PersistentTabs
+        storageKey="evaluations"
+        defaultValue={isManager || isHR ? "new" : "mine"}
+        allowed={
+          isManager || isHR
+            ? ["new", "records", "mine", "self", "criteria"]
+            : ["records", "mine", "self", "criteria"]
+        }
+      >
         <TabsList className="flex-wrap">
           {(isManager || isHR) && <TabsTrigger value="new">تقييم جديد</TabsTrigger>}
           <TabsTrigger value="records">سجل التقييمات</TabsTrigger>
@@ -223,7 +233,7 @@ function EvaluationsPage() {
         <TabsContent value="criteria" className="mt-4">
           <CriteriaTemplatesTab canEdit={isDirector || isHR} />
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
     </div>
   );
 }

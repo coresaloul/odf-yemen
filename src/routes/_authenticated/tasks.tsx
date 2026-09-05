@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -89,9 +90,14 @@ function TasksPage() {
   const [initialForm, setInitialForm] = useState<Partial<TaskFormValues> | undefined>(undefined);
   const [viaVoice, setViaVoice] = useState(false);
   const [deleteTask, setDeleteTask] = useState<TaskRow | null>(null);
-  const [filters, setFilters] = useState<TaskFiltersState>({ ...EMPTY_FILTERS });
-  const [scope, setScope] = useState<"all" | "mine" | "supervised" | "assigned">("all");
-  const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const [filters, setFilters] = usePersistentState<TaskFiltersState>("filters", {
+    ...EMPTY_FILTERS,
+  });
+  const [scope, setScope] = usePersistentState<"all" | "mine" | "supervised" | "assigned">(
+    "scope",
+    "all",
+  );
+  const [view, setView] = usePersistentState<"list" | "board" | "calendar">("view", "list");
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks-page"],

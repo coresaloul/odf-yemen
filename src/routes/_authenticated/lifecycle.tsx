@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -92,7 +93,7 @@ function LifecyclePage() {
   const load = useServerFn(listLifecycleData);
   const { data, isLoading } = useQuery({ queryKey: ["lifecycle"], queryFn: () => load() });
   const [selected, setSelected] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = usePersistentState("filter", "all");
 
   if (isLoading) return <ListSkeleton />;
   if (selected)

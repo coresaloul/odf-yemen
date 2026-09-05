@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -64,7 +65,7 @@ type CorrectionRow = {
 function ApprovalsPage() {
   const { data = [], isFetching, refetch } = usePendingApprovals();
   const [selected, setSelected] = useState<PendingApproval | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = usePersistentState("search", "");
   const [newRequest, setNewRequest] = useState(false);
 
   const fetchCorrections = useServerFn(listCorrectionRequests);

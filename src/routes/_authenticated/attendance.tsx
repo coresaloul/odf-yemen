@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -112,8 +113,8 @@ function AttendancePage() {
   const isAdmin = isDirector || isHR;
   const qc = useQueryClient();
 
-  const [date, setDate] = useState(today());
-  const [month, setMonth] = useState(today().slice(0, 7));
+  const [date, setDate] = usePersistentState("date", today());
+  const [month, setMonth] = usePersistentState("month", today().slice(0, 7));
 
   const { data: baseData } = useQuery({
     queryKey: ["attendance-base-data"],

@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/EmptyState";
@@ -139,8 +140,8 @@ function UsersAdminPage() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [query, setQuery] = usePersistentState("query", "");
+  const [roleFilter, setRoleFilter] = usePersistentState("role", "all");
   const [rolesTarget, setRolesTarget] = useState<AdminUserRow | null>(null);
   const [draftRoles, setDraftRoles] = useState<RoleValue[]>([]);
   const [pwTarget, setPwTarget] = useState<AdminUserRow | null>(null);

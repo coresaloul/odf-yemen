@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,11 +41,11 @@ export const Route = createFileRoute("/_authenticated/employees")({
 function EmployeesPage() {
   const { isManager, isDirector, isHR } = useAuth();
   const qc = useQueryClient();
-  const [q, setQ] = useState("");
-  const [deptFilter, setDeptFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [accountFilter, setAccountFilter] = useState("all");
-  const [view, setView] = useState<"cards" | "table">("table");
+  const [q, setQ] = usePersistentState("q", "");
+  const [deptFilter, setDeptFilter] = usePersistentState("dept", "all");
+  const [statusFilter, setStatusFilter] = usePersistentState("status", "all");
+  const [accountFilter, setAccountFilter] = usePersistentState("account", "all");
+  const [view, setView] = usePersistentState<"cards" | "table">("view", "table");
   const [editing, setEditing] = useState<Employee | null>(null);
   const [profile, setProfile] = useState<Employee | null>(null);
 

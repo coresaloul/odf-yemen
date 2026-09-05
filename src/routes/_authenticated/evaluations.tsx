@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -55,9 +56,9 @@ export const Route = createFileRoute("/_authenticated/evaluations")({
 function EvaluationsPage() {
   const { isManager, isHR, isDirector, employee } = useAuth();
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [stageFilter, setStageFilter] = useState("all");
+  const [search, setSearch] = usePersistentState("search", "");
+  const [periodFilter, setPeriodFilter] = usePersistentState("period", "all");
+  const [stageFilter, setStageFilter] = usePersistentState("stage", "all");
 
   const { data } = useQuery({
     queryKey: ["evaluations-page"],

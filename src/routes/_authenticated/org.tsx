@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -69,7 +70,7 @@ function OrgPage() {
   const { isDirector, isHR, roles } = useAuth();
   const canManage = isDirector || isHR;
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = usePersistentState("search", "");
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [deptDialog, setDeptDialog] = useState<{ open: boolean; unit: UnitRecord | null }>({
     open: false,

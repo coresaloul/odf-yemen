@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,8 +109,8 @@ function CorrespondencePage() {
   const qc = useQueryClient();
   const [form, setForm] = useState(initialForm);
   const [editing, setEditing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<CorrespondenceDirection>("incoming");
+  const [search, setSearch] = usePersistentState("search", "");
+  const [tab, setTab] = usePersistentState<CorrespondenceDirection>("tab", "incoming");
   const [trailFor, setTrailFor] = useState<CorrespondenceRow | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const load = useServerFn(listCorrespondence);

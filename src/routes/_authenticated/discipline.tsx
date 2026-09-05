@@ -1,3 +1,4 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -101,7 +102,7 @@ function DisciplinePage() {
   const load = useServerFn(listDisciplineData);
   const { data, isLoading } = useQuery({ queryKey: ["discipline"], queryFn: () => load() });
 
-  const [tab, setTab] = useState("sanctions");
+  const [tab, setTab] = usePersistentState("tab", "sanctions");
   const [form, setForm] = useState<{ kind: DisciplineKind; record: DisciplineRecord | null } | null>(
     null,
   );

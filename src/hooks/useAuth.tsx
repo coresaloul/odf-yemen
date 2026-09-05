@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPersistentState } from "@/hooks/usePersistentState";
 
 export type AppRole = "executive_director" | "manager" | "hr" | "secretariat" | "employee";
 
@@ -92,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signOut: async () => {
         await supabase.auth.signOut();
+        clearPersistentState();
         setRoles([]);
         setEmployee(null);
       },

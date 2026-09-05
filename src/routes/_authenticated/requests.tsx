@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -224,7 +225,7 @@ function RequestsPage() {
       )}
 
       {!picking && !type && (
-        <Tabs defaultValue="mine">
+        <PersistentTabs storageKey="requests" defaultValue="mine">
           <TabsList>
             <TabsTrigger value="mine" className="gap-1.5">
               طلباتي
@@ -283,7 +284,7 @@ function RequestsPage() {
               <RequestTypesAdmin types={types} />
             </TabsContent>
           )}
-        </Tabs>
+        </PersistentTabs>
       )}
     </div>
   );

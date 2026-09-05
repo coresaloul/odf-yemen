@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -272,7 +273,7 @@ function EmployeeLifecycle({
         }
       />
 
-      <Tabs defaultValue="timeline">
+      <PersistentTabs storageKey="lifecycle" defaultValue="timeline">
         <TabsList className="flex-wrap">
           <TabsTrigger value="timeline">الخط الزمني</TabsTrigger>
           <TabsTrigger value="onboarding">التهيئة</TabsTrigger>
@@ -523,7 +524,7 @@ function EmployeeLifecycle({
             onDelete={(id) => delItemM.mutate({ id })}
           />
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
     </div>
   );
 }

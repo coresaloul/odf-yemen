@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -239,7 +240,7 @@ function MyProfilePage() {
           <CardDescription>حدّث بياناتك ثم اضغط «حفظ التعديلات».</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="personal">
+          <PersistentTabs storageKey="profile" defaultValue="personal">
             <TabsList className="flex-wrap">
               <TabsTrigger value="personal">شخصية</TabsTrigger>
               <TabsTrigger value="docs">الوثائق والمؤهلات</TabsTrigger>
@@ -271,7 +272,7 @@ function MyProfilePage() {
                 canUpload
               />
             </TabsContent>
-          </Tabs>
+          </PersistentTabs>
         </CardContent>
       </Card>
 

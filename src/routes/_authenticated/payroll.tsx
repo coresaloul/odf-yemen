@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -48,7 +49,7 @@ function PayrollPage() {
       {!isAdmin ? (
         <MyPayslips />
       ) : (
-        <Tabs defaultValue="runs" className="w-full">
+        <PersistentTabs storageKey="payroll" defaultValue="runs" className="w-full">
           <TabsList className="flex w-full flex-wrap justify-start">
             <TabsTrigger value="runs">مسيرات الرواتب</TabsTrigger>
             <TabsTrigger value="adjustments">التعديلات</TabsTrigger>
@@ -75,7 +76,7 @@ function PayrollPage() {
           <TabsContent value="mine" className="mt-4">
             <MyPayslips />
           </TabsContent>
-        </Tabs>
+        </PersistentTabs>
       )}
     </div>
   );

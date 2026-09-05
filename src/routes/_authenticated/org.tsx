@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -253,7 +254,7 @@ function OrgPage() {
         />
       </div>
 
-      <Tabs defaultValue="chart">
+      <PersistentTabs storageKey="org" defaultValue="chart">
         <TabsList>
           <TabsTrigger value="chart">الشجرة</TabsTrigger>
           <TabsTrigger value="departments">الإدارات</TabsTrigger>
@@ -439,7 +440,7 @@ function OrgPage() {
             onDelete={(id, name) => void removeSec(id, name)}
           />
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
 
       <UnitDialog
         kind="department"

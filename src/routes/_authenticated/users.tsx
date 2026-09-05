@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton, LoadingState } from "@/components/LoadingState";
@@ -261,7 +262,7 @@ function UsersAdminPage() {
         </div>
       </header>
 
-      <Tabs defaultValue="users">
+      <PersistentTabs storageKey="users" defaultValue="users">
         <TabsList>
           <TabsTrigger value="users">الحسابات</TabsTrigger>
           <TabsTrigger value="matrix">مصفوفة الصلاحيات</TabsTrigger>
@@ -491,7 +492,7 @@ function UsersAdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
 
       {/* إنشاء مستخدم */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

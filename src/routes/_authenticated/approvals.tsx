@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -108,7 +109,7 @@ function ApprovalsPage() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      <Tabs defaultValue="all">
+      <PersistentTabs storageKey="approvals" defaultValue="all">
         <TabsList>
           {KINDS.map((k) => (
             <TabsTrigger key={k} value={k} className="gap-1.5">
@@ -211,7 +212,7 @@ function ApprovalsPage() {
             ))
           )}
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
 
       <ApprovalDecisionDialog item={selected} onOpenChange={(o) => !o && setSelected(null)} />
       <CorrectionRequestDialog open={newRequest} onOpenChange={setNewRequest} />

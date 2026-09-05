@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/hr";
-import type { EmployeeLite } from "./task-utils";
+import type { EmployeeLite, SectionLite } from "./task-utils";
 
 export type TaskFiltersState = {
   search: string;
@@ -13,6 +13,7 @@ export type TaskFiltersState = {
   priority: string;
   assignee: string;
   department: string;
+  section: string;
   from: string;
   to: string;
   overdueOnly: boolean;
@@ -25,6 +26,7 @@ export const EMPTY_FILTERS: TaskFiltersState = {
   priority: "all",
   assignee: "all",
   department: "all",
+  section: "all",
   from: "",
   to: "",
   overdueOnly: false,
@@ -36,11 +38,13 @@ export function TaskFilters({
   onChange,
   employees,
   departments,
+  sections = [],
 }: {
   value: TaskFiltersState;
   onChange: (v: TaskFiltersState) => void;
   employees: EmployeeLite[];
   departments: { id: string; name: string }[];
+  sections?: SectionLite[] | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const set = <K extends keyof TaskFiltersState>(k: K, v: TaskFiltersState[K]) =>
@@ -99,7 +103,20 @@ export function TaskFilters({
               </SelectContent>
             </Select>
 
-            <Select value={value.department} onValueChange={(v) => set("department", v)}>
+            <Select
+              value={value.department}
+              onValueChange={(v) => {
+                const newDept = v;
+                if (newDept !== "all" && value.section !== "all") {
+                  const sec = sections.find((s) => s.id === value.section);
+                  if (sec && sec.department_id !== newDept) {
+                    onChange({ ...value, department: newDept, section: "all" });
+                    return;
+                  }
+                }
+                set("department", newDept);
+              }}
+            >
               <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="الإدارة" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الإدارات</SelectItem>
@@ -108,6 +125,21 @@ export function TaskFilters({
                 ))}
               </SelectContent>
             </Select>
+
+            {sections.length > 0 && (
+              <Select value={value.section} onValueChange={(v) => set("section", v)}>
+                <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="القسم" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل الأقسام</SelectItem>
+                  {(value.department === "all"
+                    ? sections
+                    : sections.filter((s) => s.department_id === value.department)
+                  ).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">

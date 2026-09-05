@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, MessageCircle } from "lucide-react";
@@ -11,7 +12,16 @@ import { EmptyState } from "@/components/EmptyState";
 import { ClipboardList } from "lucide-react";
 import { TaskDetailsPanel } from "@/components/tasks/TaskDetailsPanel";
 import { useApplyTaskProgress } from "@/components/tasks/use-task-progress";
-import type { EmployeeLite, TaskRow } from "@/components/tasks/task-utils";
+import {
+  getManagedDepartmentIds,
+  getManagedSectionIds,
+  getSupervisedEmployeeIds,
+  isTaskSupervisedBy,
+  type DepartmentLite,
+  type EmployeeLite,
+  type SectionLite,
+  type TaskRow,
+} from "@/components/tasks/task-utils";
 import { PRIORITY_LABELS } from "@/lib/hr";
 import { buildTaskAssignedMessage, waLink } from "@/lib/whatsapp";
 
@@ -38,18 +48,21 @@ export const Route = createFileRoute("/_authenticated/tasks_/$taskId")({
 function TaskDetailsPage() {
   const { taskId } = Route.useParams();
   const navigate = useNavigate();
-  const { isManager, employee } = useAuth();
+  const { isManager, isHR, isDirector, employee } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["task-page", taskId],
     queryFn: async () => {
-      const [taskRes, employeesRes] = await Promise.all([
+      const [taskRes, employeesRes, departmentsRes, sectionsRes] = await Promise.all([
         supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
         supabase
           .from("employees")
-          .select("id, full_name, department_id, section_id, phone")
+          .select("id, full_name, department_id, section_id, phone, manager_id")
           .order("full_name"),
+        supabase.from("departments").select("id, name, manager_id"),
+        supabase.from("sections").select("id, name, department_id, manager_id"),
       ]);
+
 
       const currentTask = (taskRes.data ?? null) as TaskRow | null;
       let siblingTasks: TaskRow[] = [];
@@ -78,6 +91,8 @@ function TaskDetailsPage() {
       return {
         task: currentTask,
         employees: (employeesRes.data ?? []) as EmployeeLite[],
+        departments: (departmentsRes.data ?? []) as DepartmentLite[],
+        sections: (sectionsRes.data ?? []) as SectionLite[],
         siblingTasks,
       };
     },
@@ -85,7 +100,34 @@ function TaskDetailsPage() {
 
   const task = data?.task ?? null;
   const employees = data?.employees ?? [];
+  const departments = data?.departments ?? [];
+  const sections = data?.sections ?? [];
   const siblingTasks = data?.siblingTasks ?? [];
+
+  const managedDeptIds = useMemo(() => {
+    return getManagedDepartmentIds(departments, employee, isManager, isDirector);
+  }, [departments, employee, isManager, isDirector]);
+
+  const managedSecIds = useMemo(() => {
+    return getManagedSectionIds(sections, managedDeptIds, employee?.id, isDirector);
+  }, [sections, managedDeptIds, employee?.id, isDirector]);
+
+  const supervisedEmployeeIds = useMemo(() => {
+    return getSupervisedEmployeeIds(
+      employees,
+      managedDeptIds,
+      managedSecIds,
+      employee?.id,
+      isDirector,
+      isHR,
+    );
+  }, [employees, managedDeptIds, managedSecIds, employee?.id, isDirector, isHR]);
+
+  const isSupervised = useMemo(() => {
+    if (!task) return false;
+    return isTaskSupervisedBy(task, employee?.id, supervisedEmployeeIds);
+  }, [task, employee?.id, supervisedEmployeeIds]);
+
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
 
   const applyProgress = useApplyTaskProgress((id?: string) => {
@@ -109,8 +151,11 @@ function TaskDetailsPage() {
       )
     : null;
 
-  const canManage = !!task && (isManager || task.assigned_by === employee?.id);
+  const canManage =
+    !!task &&
+    (isManager || isDirector || isHR || task.assigned_by === employee?.id || isSupervised);
   const canUpdateProgress = !!task && (canManage || task.assignee_id === employee?.id);
+
 
   return (
     <div className="space-y-5">

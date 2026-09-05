@@ -57,6 +57,7 @@ export function TaskFormDialog({
   initial,
   saving,
   onSubmit,
+  supervisedEmployeeIds,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -65,6 +66,7 @@ export function TaskFormDialog({
   initial?: Partial<TaskFormValues>;
   saving: boolean;
   onSubmit: (values: TaskFormValues) => void;
+  supervisedEmployeeIds?: Set<string> | undefined;
 }) {
   const [form, setForm] = useState<TaskFormValues>({ ...EMPTY_TASK_FORM });
   const [error, setError] = useState<string | null>(null);
@@ -72,11 +74,12 @@ export function TaskFormDialog({
   const { employee, isManager, isHR, isDirector } = useAuth();
   
   const isDirectManager = employees.some(e => e.manager_id === employee?.id);
-  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager;
+  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager || (supervisedEmployeeIds ? supervisedEmployeeIds.size > 0 : false);
   
   const selectableEmployees = employees.filter(e => {
     if (isDirector || isHR) return true;
-    if (isManager || isDirectManager) return e.id === employee?.id || e.manager_id === employee?.id;
+    if (supervisedEmployeeIds?.has(e.id)) return true;
+    if (isManager || isDirectManager) return e.id === employee?.id || e.manager_id === employee?.id || (employee?.department_id && e.department_id === employee.department_id);
     return e.id === employee?.id;
   });
 

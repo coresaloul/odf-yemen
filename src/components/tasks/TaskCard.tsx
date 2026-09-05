@@ -13,6 +13,7 @@ import {
   ListChecks,
   CheckCircle2,
   Circle,
+  Building2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function TaskCard({
   assignerName,
   supervisorName,
   assigneePhone,
+  unitLabel,
   isShared,
   canManage,
   canUpdateProgress,
@@ -53,6 +55,7 @@ export function TaskCard({
   assignerName: string;
   supervisorName?: string | null;
   assigneePhone?: string | null;
+  unitLabel?: string | null | undefined;
   isShared?: boolean;
   canManage: boolean;
   canUpdateProgress: boolean;
@@ -144,6 +147,12 @@ export function TaskCard({
           {isMultiple && (
             <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 px-2 py-0.5 text-[11px] sm:text-xs">
               <Users className="size-3 sm:size-3.5" /> مهمة مشتركة ({names.length})
+            </Badge>
+          )}
+          {unitLabel && (
+            <Badge variant="outline" className="gap-1 bg-muted/50 px-2 py-0.5 text-[11px] sm:text-xs text-muted-foreground border-muted-foreground/20">
+              <Building2 className="size-3 sm:size-3.5" />
+              <span>{unitLabel}</span>
             </Badge>
           )}
         </div>

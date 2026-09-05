@@ -12,6 +12,7 @@ import {
   List,
   Plus,
   Printer,
+  Users,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/LoadingState";
@@ -21,6 +22,7 @@ import { notifyTaskAssigned, notifyTaskStatusChanged } from "@/lib/task-emails.f
 import { submitTaskForApproval } from "@/lib/approvals.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS, formatDate } from "@/lib/hr";
 import { exportPdf, exportWord, type ReportDoc } from "@/lib/report-export";
@@ -30,6 +32,7 @@ import {
   openWhatsApp,
 } from "@/lib/whatsapp";
 import { TaskFilters, EMPTY_FILTERS, type TaskFiltersState } from "@/components/tasks/TaskFilters";
+import { TaskDepartmentSectionTabs } from "@/components/tasks/TaskDepartmentSectionTabs";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskFormDialog, type TaskFormValues } from "@/components/tasks/TaskFormDialog";
 import { TaskStats } from "@/components/tasks/TaskStats";
@@ -45,12 +48,19 @@ import {
   statusForProgress,
   todayIso,
   groupSharedTasks,
+  getManagedDepartmentIds,
+  getManagedSectionIds,
+  getSupervisedEmployeeIds,
+  isTaskSupervisedBy,
+  type DepartmentLite,
   type EmployeeLite,
   type GroupedTask,
+  type SectionLite,
   type SubtaskItem,
   type TaskRow,
   type TaskStatus,
 } from "@/components/tasks/task-utils";
+
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   head: () => ({
@@ -96,19 +106,21 @@ function TasksPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["tasks-page"],
     queryFn: async () => {
-      const [tasks, employees, departments, subtasks] = await Promise.all([
+      const [tasks, employees, departments, sections, subtasks] = await Promise.all([
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
         supabase
           .from("employees")
           .select("id, full_name, department_id, section_id, phone, manager_id")
           .order("full_name"),
-        supabase.from("departments").select("id, name").order("name"),
+        supabase.from("departments").select("id, name, manager_id").order("name"),
+        supabase.from("sections").select("id, name, department_id, manager_id").order("name"),
         supabase.from("task_subtasks").select("id, task_id, title, is_done").order("created_at"),
       ]);
       return {
         tasks: (tasks.data ?? []) as TaskRow[],
         employees: (employees.data ?? []) as EmployeeLite[],
-        departments: departments.data ?? [],
+        departments: (departments.data ?? []) as DepartmentLite[],
+        sections: (sections.data ?? []) as SectionLite[],
         subtasks: (subtasks.data ?? []) as SubtaskItem[],
       };
     },
@@ -117,9 +129,34 @@ function TasksPage() {
   const tasks = data?.tasks ?? [];
   const employees = data?.employees ?? [];
   const departments = data?.departments ?? [];
+  const sections = data?.sections ?? [];
+
+  const managedDeptIds = useMemo(() => {
+    return getManagedDepartmentIds(departments, employee, isManager, isDirector);
+  }, [departments, employee, isManager, isDirector]);
+
+  const managedSecIds = useMemo(() => {
+    return getManagedSectionIds(sections, managedDeptIds, employee?.id, isDirector);
+  }, [sections, managedDeptIds, employee?.id, isDirector]);
+
+  const supervisedEmployeeIds = useMemo(() => {
+    return getSupervisedEmployeeIds(
+      employees,
+      managedDeptIds,
+      managedSecIds,
+      employee?.id,
+      isDirector,
+      isHR,
+    );
+  }, [employees, managedDeptIds, managedSecIds, employee?.id, isDirector, isHR]);
 
   const isDirectManager = employees.some((e) => e.manager_id === employee?.id);
-  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager;
+  const isDeptManager = managedDeptIds.length > 0;
+  const canAssignToOthers = isManager || isHR || isDirector || isDirectManager || isDeptManager;
+
+  const supervisedTasksCount = useMemo(() => {
+    return tasks.filter((t) => isTaskSupervisedBy(t, employee?.id, supervisedEmployeeIds)).length;
+  }, [tasks, employee?.id, supervisedEmployeeIds]);
 
   const nameOf = (id: string | null) => employees.find((e) => e.id === id)?.full_name ?? "—";
   const phoneOf = (id: string | null) => employees.find((e) => e.id === id)?.phone ?? null;
@@ -146,7 +183,9 @@ function TasksPage() {
     const q = filters.search.trim().toLowerCase();
     let list = tasks.filter((t) => {
       if (scope === "mine" && t.assignee_id !== employee?.id) return false;
-      if (scope === "supervised" && t.supervisor_id !== employee?.id) return false;
+      if (scope === "supervised" && !isTaskSupervisedBy(t, employee?.id, supervisedEmployeeIds)) {
+        return false;
+      }
       if (scope === "assigned" && t.assigned_by !== employee?.id) return false;
       if (q && !`${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)) return false;
       if (filters.status !== "all" && t.status !== filters.status) return false;
@@ -155,6 +194,10 @@ function TasksPage() {
       if (filters.department !== "all") {
         const emp = employees.find((e) => e.id === t.assignee_id);
         if (emp?.department_id !== filters.department) return false;
+      }
+      if (filters.section !== "all") {
+        const emp = employees.find((e) => e.id === t.assignee_id);
+        if (emp?.section_id !== filters.section) return false;
       }
       if (filters.from && (!t.due_date || t.due_date < filters.from)) return false;
       if (filters.to && (!t.due_date || t.due_date > filters.to)) return false;
@@ -172,7 +215,7 @@ function TasksPage() {
       return b.created_at.localeCompare(a.created_at);
     });
     return groupSharedTasks(list);
-  }, [tasks, employees, filters, scope, employee?.id]);
+  }, [tasks, employees, filters, scope, employee?.id, supervisedEmployeeIds]);
 
   const stats = useMemo(() => {
     const total = filtered.length;
@@ -189,8 +232,14 @@ function TasksPage() {
     void qc.invalidateQueries({ queryKey: ["pending-approvals"] });
   };
 
-  const canManageTask = (t: TaskRow) => isManager || t.assigned_by === employee?.id;
+  const canManageTask = (t: TaskRow) =>
+    isManager ||
+    isDirector ||
+    isHR ||
+    t.assigned_by === employee?.id ||
+    isTaskSupervisedBy(t, employee?.id, supervisedEmployeeIds);
   const canUpdateProgress = (t: TaskRow) => canManageTask(t) || t.assignee_id === employee?.id;
+
 
   const save = useMutation({
     mutationFn: async (v: TaskFormValues) => {
@@ -426,40 +475,68 @@ function TasksPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const reportDoc = (): ReportDoc => ({
-    title: "تقرير المهام",
-    subtitle: "قائمة المهام حسب الفلاتر المحددة",
-    meta: [
+  const reportDoc = (): ReportDoc => {
+    const currentDeptName = departments.find((d) => d.id === filters.department)?.name;
+    const currentSecName = sections.find((s) => s.id === filters.section)?.name;
+    let subtitle = "قائمة المهام حسب الفلاتر المحددة";
+    if (currentDeptName && currentSecName) {
+      subtitle = `مهام: ${currentDeptName} — قسم: ${currentSecName}`;
+    } else if (currentDeptName) {
+      subtitle = `مهام: ${currentDeptName}`;
+    } else if (currentSecName) {
+      subtitle = `مهام قسم: ${currentSecName}`;
+    } else if (scope === "supervised") {
+      subtitle = "مهام الفريق المشرف عليهم";
+    }
+
+    const reportMeta = [
       { label: "عدد المهام", value: String(stats.total) },
       { label: "المنجزة", value: String(stats.done) },
       { label: "المتأخرة", value: String(stats.late) },
       { label: "متوسط الإنجاز", value: `${stats.avg}%` },
-    ],
-    sections: [
-      {
-        table: {
-          columns: ["العنوان", "المكلّفون", "المشرف", "الأولوية", "الحالة", "الاستحقاق", "الإنجاز"],
-          rows: filtered.map((t) => {
-            const isGrouped = "isShared" in t && (t as GroupedTask).isShared;
-            const assigneeIds = "assignee_ids" in t && (t as GroupedTask).assignee_ids
-              ? (t as GroupedTask).assignee_ids
-              : [t.assignee_id];
-            const assigneeNames = assigneeIds.map(nameOf).join("، ");
-            return [
-              t.title + (isGrouped ? " (مشتركة)" : ""),
-              assigneeNames,
-              t.supervisor_id ? nameOf(t.supervisor_id) : "—",
-              PRIORITY_LABELS[t.priority] ?? t.priority,
-              TASK_STATUS_LABELS[t.status] ?? t.status,
-              formatDate(t.due_date),
-              `${t.progress}%`,
-            ];
-          }),
+    ];
+    if (currentDeptName) {
+      reportMeta.push({ label: "الإدارة", value: currentDeptName });
+    }
+    if (currentSecName) {
+      reportMeta.push({ label: "القسم", value: currentSecName });
+    }
+
+    return {
+      title: "تقرير المهام",
+      subtitle,
+      meta: reportMeta,
+      sections: [
+        {
+          table: {
+            columns: ["العنوان", "المكلّفون", "المشرف", "الأولوية", "الحالة", "الاستحقاق", "الإنجاز"],
+            rows: filtered.map((t) => {
+              const isGrouped = "isShared" in t && (t as GroupedTask).isShared;
+              const assigneeIds =
+                "assignee_ids" in t && (t as GroupedTask).assignee_ids
+                  ? (t as GroupedTask).assignee_ids
+                  : [t.assignee_id];
+              const assigneeNames = assigneeIds.map(nameOf).join("، ");
+              return [
+                t.title + (isGrouped ? " (مشتركة)" : ""),
+                assigneeNames,
+                t.supervisor_id ? nameOf(t.supervisor_id) : "—",
+                PRIORITY_LABELS[t.priority] ?? t.priority,
+                TASK_STATUS_LABELS[t.status] ?? t.status,
+                formatDate(t.due_date),
+                `${t.progress}%`,
+              ];
+            }),
+          },
         },
+      ],
+      branding: {
+        org_name: branding.org_name,
+        system_name: branding.system_name,
+        logoUrl: branding.logoUrl,
       },
-    ],
-    branding: { org_name: branding.org_name, system_name: branding.system_name, logoUrl: branding.logoUrl },
-  });
+    };
+  };
 
   return (
     <div className="space-y-6">
@@ -523,7 +600,15 @@ function TasksPage() {
           <TabsList>
             <TabsTrigger value="all">كل المهام</TabsTrigger>
             <TabsTrigger value="mine">مهامي</TabsTrigger>
-            <TabsTrigger value="supervised">تحت إشرافي</TabsTrigger>
+            <TabsTrigger value="supervised" className="gap-1.5">
+              <Users className="size-3.5" />
+              <span>مهام فريقي المشرف عليهم</span>
+              {supervisedTasksCount > 0 && (
+                <Badge variant="secondary" className="h-4.5 px-1.5 text-[10px]">
+                  {supervisedTasksCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="assigned">كلّفت بها</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -552,11 +637,28 @@ function TasksPage() {
         </div>
       </div>
 
+      {/* تبويبات الإدارات والأقسام لظهور المهام بحسب الإدارة أو القسم */}
+      <TaskDepartmentSectionTabs
+        departments={departments}
+        sections={sections}
+        employees={employees}
+        tasks={tasks}
+        selectedDepartment={filters.department}
+        onSelectDepartment={(deptId) =>
+          setFilters((f) => ({ ...f, department: deptId, section: "all" }))
+        }
+        selectedSection={filters.section}
+        onSelectSection={(secId) => setFilters((f) => ({ ...f, section: secId }))}
+        managedDepartmentIds={managedDeptIds}
+        currentEmployeeDepartmentId={employee?.department_id}
+      />
+
       <TaskFilters
         value={filters}
         onChange={setFilters}
         employees={employees}
         departments={departments}
+        sections={sections}
       />
 
       {isLoading && <ListSkeleton rows={4} />}
@@ -572,7 +674,7 @@ function TasksPage() {
         <TaskBoard
           tasks={filtered}
           nameOf={nameOf}
-          canManage={isManager}
+          canManage={isManager || isDeptManager}
           onOpen={openTask}
           onStatusChange={(task, status) => changeStatus.mutate({ task, status })}
         />
@@ -586,6 +688,8 @@ function TasksPage() {
         <TaskListView
           tasks={filtered}
           employees={employees}
+          departments={departments}
+          sections={sections}
           subtasks={data?.subtasks ?? []}
           canManageTask={canManageTask}
           canUpdateProgress={canUpdateProgress}
@@ -610,7 +714,9 @@ function TasksPage() {
         {...(initialForm ? { initial: initialForm } : {})}
         saving={save.isPending}
         onSubmit={(values) => save.mutate(values)}
+        supervisedEmployeeIds={supervisedEmployeeIds}
       />
+
 
       <TaskDeleteDialog
         task={deleteTask}

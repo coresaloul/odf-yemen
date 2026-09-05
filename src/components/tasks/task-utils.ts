@@ -42,6 +42,22 @@ export type EmployeeLite = {
   phone?: string | null;
 };
 
+export type DepartmentLite = {
+  id: string;
+  name: string;
+  manager_id?: string | null;
+  description?: string | null;
+};
+
+export type SectionLite = {
+  id: string;
+  name: string;
+  department_id: string;
+  manager_id?: string | null;
+  description?: string | null;
+};
+
+
 export const STATUS_ORDER: TaskStatus[] = [
   "new",
   "in_progress",
@@ -179,3 +195,81 @@ export function groupSharedTasks(tasks: TaskRow[]): GroupedTask[] {
 
   return result;
 }
+
+export function getManagedDepartmentIds(
+  departments: DepartmentLite[],
+  currentEmployee: { id: string; department_id?: string | null } | null | undefined,
+  isManager: boolean,
+  isDirector: boolean,
+): string[] {
+  if (isDirector) {
+    return departments.map((d) => d.id);
+  }
+  if (!currentEmployee) return [];
+  return departments
+    .filter(
+      (d) =>
+        d.manager_id === currentEmployee.id ||
+        (isManager && d.id === currentEmployee.department_id),
+    )
+    .map((d) => d.id);
+}
+
+export function getManagedSectionIds(
+  sections: SectionLite[],
+  managedDeptIds: string[],
+  currentEmployeeId: string | null | undefined,
+  isDirector: boolean,
+): string[] {
+  if (isDirector) {
+    return sections.map((s) => s.id);
+  }
+  return sections
+    .filter(
+      (s) =>
+        managedDeptIds.includes(s.department_id) ||
+        (currentEmployeeId && s.manager_id === currentEmployeeId),
+    )
+    .map((s) => s.id);
+}
+
+export function getSupervisedEmployeeIds(
+  employees: EmployeeLite[],
+  managedDeptIds: string[],
+  managedSectionIds: string[],
+  currentEmployeeId: string | null | undefined,
+  isDirector: boolean,
+  isHR: boolean,
+): Set<string> {
+  if (isDirector || isHR) {
+    return new Set(employees.map((e) => e.id));
+  }
+  const set = new Set<string>();
+  if (!currentEmployeeId) return set;
+  for (const emp of employees) {
+    if (emp.manager_id === currentEmployeeId) {
+      set.add(emp.id);
+    } else if (emp.department_id && managedDeptIds.includes(emp.department_id)) {
+      set.add(emp.id);
+    } else if (emp.section_id && managedSectionIds.includes(emp.section_id)) {
+      set.add(emp.id);
+    }
+  }
+  return set;
+}
+
+export function isTaskSupervisedBy(
+  task: TaskRow | GroupedTask,
+  currentEmployeeId: string | null | undefined,
+  supervisedEmployeeIds: Set<string>,
+): boolean {
+  if (!currentEmployeeId) return false;
+  if (task.supervisor_id === currentEmployeeId) return true;
+  if (task.assigned_by === currentEmployeeId) return true;
+  if (supervisedEmployeeIds.has(task.assignee_id)) return true;
+  if ("assignee_ids" in task && Array.isArray(task.assignee_ids)) {
+    return task.assignee_ids.some((id) => supervisedEmployeeIds.has(id));
+  }
+  return false;
+}
+

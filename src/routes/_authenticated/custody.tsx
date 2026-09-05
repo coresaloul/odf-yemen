@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1016,7 +1017,15 @@ function CustodyPage() {
         ))}
       </div>
 
-      <Tabs defaultValue={canManage ? "active" : "mine"}>
+      <PersistentTabs
+        storageKey="custody"
+        defaultValue={canManage ? "active" : "mine"}
+        allowed={
+          canManage
+            ? ["mine", "active", "all", "assets", "reports"]
+            : ["mine", "active", "all", "reports"]
+        }
+      >
         <TabsList className="flex-wrap">
           <TabsTrigger value="mine">عهدي المستلمة</TabsTrigger>
           <TabsTrigger value="active">العهد النشطة</TabsTrigger>
@@ -1311,7 +1320,7 @@ function CustodyPage() {
             </Card>
           ))}
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
     </div>
   );
 }

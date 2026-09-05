@@ -1,3 +1,4 @@
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -170,7 +171,7 @@ function LeavesPage() {
         }
       />
 
-      <Tabs defaultValue="mine" className="space-y-4">
+      <PersistentTabs storageKey="leaves" defaultValue="mine" className="space-y-4">
         <TabsList>
           <TabsTrigger value="mine">طلباتي</TabsTrigger>
           <TabsTrigger value="pending">
@@ -249,7 +250,7 @@ function LeavesPage() {
             />
           </TabsContent>
         )}
-      </Tabs>
+      </PersistentTabs>
 
       <RequestDialog
         open={open}

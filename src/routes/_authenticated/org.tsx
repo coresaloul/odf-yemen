@@ -1,3 +1,5 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,7 +70,7 @@ function OrgPage() {
   const { isDirector, isHR, roles } = useAuth();
   const canManage = isDirector || isHR;
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = usePersistentState("search", "");
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [deptDialog, setDeptDialog] = useState<{ open: boolean; unit: UnitRecord | null }>({
     open: false,
@@ -253,7 +255,7 @@ function OrgPage() {
         />
       </div>
 
-      <Tabs defaultValue="chart">
+      <PersistentTabs storageKey="org" defaultValue="chart">
         <TabsList>
           <TabsTrigger value="chart">الشجرة</TabsTrigger>
           <TabsTrigger value="departments">الإدارات</TabsTrigger>
@@ -439,7 +441,7 @@ function OrgPage() {
             onDelete={(id, name) => void removeSec(id, name)}
           />
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
 
       <UnitDialog
         kind="department"

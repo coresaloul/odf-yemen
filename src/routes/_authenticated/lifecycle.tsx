@@ -1,3 +1,5 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,7 +93,7 @@ function LifecyclePage() {
   const load = useServerFn(listLifecycleData);
   const { data, isLoading } = useQuery({ queryKey: ["lifecycle"], queryFn: () => load() });
   const [selected, setSelected] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = usePersistentState("filter", "all");
 
   if (isLoading) return <ListSkeleton />;
   if (selected)
@@ -272,7 +274,7 @@ function EmployeeLifecycle({
         }
       />
 
-      <Tabs defaultValue="timeline">
+      <PersistentTabs storageKey="lifecycle" defaultValue="timeline">
         <TabsList className="flex-wrap">
           <TabsTrigger value="timeline">الخط الزمني</TabsTrigger>
           <TabsTrigger value="onboarding">التهيئة</TabsTrigger>
@@ -523,7 +525,7 @@ function EmployeeLifecycle({
             onDelete={(id) => delItemM.mutate({ id })}
           />
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
     </div>
   );
 }

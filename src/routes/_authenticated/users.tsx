@@ -1,3 +1,5 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton, LoadingState } from "@/components/LoadingState";
@@ -138,8 +140,8 @@ function UsersAdminPage() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [query, setQuery] = usePersistentState("query", "");
+  const [roleFilter, setRoleFilter] = usePersistentState("role", "all");
   const [rolesTarget, setRolesTarget] = useState<AdminUserRow | null>(null);
   const [draftRoles, setDraftRoles] = useState<RoleValue[]>([]);
   const [pwTarget, setPwTarget] = useState<AdminUserRow | null>(null);
@@ -261,7 +263,7 @@ function UsersAdminPage() {
         </div>
       </header>
 
-      <Tabs defaultValue="users">
+      <PersistentTabs storageKey="users" defaultValue="users">
         <TabsList>
           <TabsTrigger value="users">الحسابات</TabsTrigger>
           <TabsTrigger value="matrix">مصفوفة الصلاحيات</TabsTrigger>
@@ -491,7 +493,7 @@ function UsersAdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </PersistentTabs>
 
       {/* إنشاء مستخدم */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

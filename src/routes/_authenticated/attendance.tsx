@@ -1,3 +1,5 @@
+import { usePersistentState } from "@/hooks/usePersistentState";
+import { PersistentTabs } from "@/components/PersistentTabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -111,8 +113,8 @@ function AttendancePage() {
   const isAdmin = isDirector || isHR;
   const qc = useQueryClient();
 
-  const [date, setDate] = useState(today());
-  const [month, setMonth] = useState(today().slice(0, 7));
+  const [date, setDate] = usePersistentState("date", today());
+  const [month, setMonth] = usePersistentState("month", today().slice(0, 7));
 
   const { data: baseData } = useQuery({
     queryKey: ["attendance-base-data"],
@@ -282,7 +284,16 @@ function AttendancePage() {
         description="سجلات الحضور اليومية والشهرية، إدارة الورديات والجداول المرنة، استيراد البصمة، وحساب الإضافي"
       />
 
-      <Tabs defaultValue={isAdmin ? "daily" : "my-attendance"} className="space-y-4">
+      <PersistentTabs
+        storageKey="attendance"
+        defaultValue={isAdmin ? "daily" : "my-attendance"}
+        allowed={
+          isAdmin
+            ? ["my-attendance", "daily", "monthly", "shifts", "import", "devices", "settings"]
+            : ["my-attendance", "daily", "monthly"]
+        }
+        className="space-y-4"
+      >
         <TabsList className="flex-wrap">
           <TabsTrigger value="my-attendance">دوامي الشخصي</TabsTrigger>
           <TabsTrigger value="daily">اليومي</TabsTrigger>
@@ -733,7 +744,7 @@ function AttendancePage() {
             <AttendanceSettings />
           </TabsContent>
         )}
-      </Tabs>
+      </PersistentTabs>
     </div>
   );
 }

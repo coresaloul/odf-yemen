@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION private.can_supervise(uuid) FROM PUBLIC, anon, authenticated;

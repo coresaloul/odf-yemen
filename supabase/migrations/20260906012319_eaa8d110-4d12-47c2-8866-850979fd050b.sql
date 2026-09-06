@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION private.can_supervise(uuid) FROM anon, authenticated;

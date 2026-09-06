@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION private.can_supervise(uuid) TO authenticated;

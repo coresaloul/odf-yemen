@@ -54,7 +54,7 @@ export function AgreementDialog({
   onOpenChange: (open: boolean) => void;
   partners: PartnerRow[];
   employees: { id: string; full_name: string }[];
-  agreement?: AgreementRow | null;
+  agreement?: AgreementRow | null | undefined;
   saving: boolean;
   onSubmit: (values: AgreementFormValues) => Promise<void>;
 }) {

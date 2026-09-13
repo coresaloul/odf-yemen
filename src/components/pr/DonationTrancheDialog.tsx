@@ -63,7 +63,7 @@ export function DonationTrancheDialog({
   partners: PartnerRow[];
   agreements: AgreementRow[];
   employees: { id: string; full_name: string }[];
-  preselectedPartnerId?: string;
+  preselectedPartnerId?: string | undefined;
   initialKind?: "donation" | "tranche";
   saving: boolean;
   onSubmit: (values: DonationFormValues) => Promise<void>;

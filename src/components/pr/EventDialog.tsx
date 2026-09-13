@@ -51,7 +51,7 @@ export function EventDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employees: { id: string; full_name: string }[];
-  eventItem?: EventRow | null;
+  eventItem?: EventRow | null | undefined;
   saving: boolean;
   onSubmit: (values: EventFormValues) => Promise<void>;
 }) {

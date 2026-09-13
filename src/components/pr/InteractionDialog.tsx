@@ -52,7 +52,7 @@ export function InteractionDialog({
   onOpenChange: (open: boolean) => void;
   partners: PartnerRow[];
   employees: { id: string; full_name: string }[];
-  preselectedPartnerId?: string;
+  preselectedPartnerId?: string | undefined;
   saving: boolean;
   onSubmit: (values: InteractionFormValues) => Promise<void>;
 }) {

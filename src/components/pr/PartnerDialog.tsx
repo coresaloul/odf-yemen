@@ -66,7 +66,7 @@ export function PartnerDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  partner?: PartnerRow | null;
+  partner?: PartnerRow | null | undefined;
   employees: { id: string; full_name: string }[];
   saving: boolean;
   onSubmit: (values: PartnerFormValues) => Promise<void>;

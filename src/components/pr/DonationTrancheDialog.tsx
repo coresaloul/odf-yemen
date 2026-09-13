@@ -29,7 +29,7 @@ import {
 export type DonationFormValues = {
   kind: "donation" | "tranche";
   partner_id: string;
-  agreement_id?: string;
+  agreement_id: string;
   // Donation fields
   donation_type: DonationType;
   amount: number;
@@ -63,7 +63,7 @@ export function DonationTrancheDialog({
   partners: PartnerRow[];
   agreements: AgreementRow[];
   employees: { id: string; full_name: string }[];
-  preselectedPartnerId?: string;
+  preselectedPartnerId?: string | undefined;
   initialKind?: "donation" | "tranche";
   saving: boolean;
   onSubmit: (values: DonationFormValues) => Promise<void>;
@@ -78,12 +78,12 @@ export function DonationTrancheDialog({
     currency: "USD",
     in_kind_description: "",
     target_project: "كفالة ورعاية وتعليم الأيتام",
-    received_date: new Date().toISOString().split("T")[0],
+    received_date: new Date().toISOString().slice(0, 10),
     receipt_no: "",
     auto_thank_you_task: true,
     responsible_employee_id: employees[0]?.id || "",
     tranche_number: 1,
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     condition_milestone: "إنجاز المرحلة الأولى ورفع التقرير الفني",
     auto_report_task: true,
   });

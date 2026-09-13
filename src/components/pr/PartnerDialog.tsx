@@ -66,7 +66,7 @@ export function PartnerDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  partner?: PartnerRow | null;
+  partner?: PartnerRow | null | undefined;
   employees: { id: string; full_name: string }[];
   saving: boolean;
   onSubmit: (values: PartnerFormValues) => Promise<void>;
@@ -236,7 +236,7 @@ export function PartnerDialog({
                 min={1}
                 max={5}
                 step={1}
-                onValueChange={([val]) => setForm({ ...form, interest_level: val })}
+                onValueChange={([val]) => setForm({ ...form, interest_level: val ?? 3 })}
               />
             </div>
             <div className="space-y-2">
@@ -249,7 +249,7 @@ export function PartnerDialog({
                 min={1}
                 max={5}
                 step={1}
-                onValueChange={([val]) => setForm({ ...form, influence_level: val })}
+                onValueChange={([val]) => setForm({ ...form, influence_level: val ?? 3 })}
               />
             </div>
           </div>

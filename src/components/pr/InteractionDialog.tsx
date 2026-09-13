@@ -60,7 +60,7 @@ export function InteractionDialog({
     partner_id: preselectedPartnerId || "",
     interaction_type: "meeting",
     title: "",
-    interaction_date: new Date().toISOString().split("T")[0],
+    interaction_date: new Date().toISOString().slice(0, 10),
     location: "مقر المؤسسة ومراكز التدريب",
     summary: "",
     minutes: "",
@@ -75,7 +75,7 @@ export function InteractionDialog({
       setForm((prev) => ({
         ...prev,
         partner_id: preselectedPartnerId || partners[0]?.id || "",
-        interaction_date: new Date().toISOString().split("T")[0],
+        interaction_date: new Date().toISOString().slice(0, 10),
       }));
     }
   }, [open, preselectedPartnerId, partners]);

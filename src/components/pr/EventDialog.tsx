@@ -58,7 +58,7 @@ export function EventDialog({
   const [form, setForm] = useState<EventFormValues>({
     title: "",
     event_type: "workshop_exhibition",
-    event_date: new Date().toISOString().split("T")[0],
+    event_date: new Date().toISOString().slice(0, 10),
     location: "قاعة مؤسسة اليتيم الكبرى",
     budget: 0,
     target_audience: "المانحون، ممثلو المنظمات، رجال الأعمال",
@@ -88,7 +88,7 @@ export function EventDialog({
       setForm({
         title: "",
         event_type: "workshop_exhibition",
-        event_date: new Date().toISOString().split("T")[0],
+        event_date: new Date().toISOString().slice(0, 10),
         location: "قاعة مؤسسة اليتيم الكبرى",
         budget: 0,
         target_audience: "المانحون، ممثلو المنظمات، رجال الأعمال",

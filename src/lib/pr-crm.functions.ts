@@ -36,7 +36,7 @@ export async function createPrTask(payload: CreateTaskPayload): Promise<string> 
       assignee_id: payload.assignee_id,
       priority: payload.priority || "medium",
       status: "new",
-      start_date: payload.start_date || new Date().toISOString().split("T")[0],
+      start_date: payload.start_date || new Date().toISOString().slice(0, 10),
       due_date: payload.due_date || null,
       weight: payload.weight || 1,
       progress: 0,
@@ -73,13 +73,13 @@ export async function recordDonationWithSync(
       description: `تم تسجيل تبرع جديد (${amountFormatted}) لصالح مشروع: "${donation.target_project}".\nيرجى تجهيز خطاب الشكر وسند الاستلام الرسمي وإرساله للمانح وتوثيق الأرشيف في النظام.`,
       assignee_id: responsibleEmployeeId,
       priority: "urgent",
-      due_date: dueDate.toISOString().split("T")[0],
+      due_date: dueDate.toISOString().slice(0, 10),
       weight: 2,
     });
   }
 
   const { data, error } = await supabase
-    .from("pr_donations" as any)
+    .from("pr_donations")
     .insert({
       ...donation,
       thank_you_task_id: thankYouTaskId,
@@ -106,7 +106,7 @@ export async function scheduleTrancheWithSync(
     // تاريخ استحقاق المهمة قبل موعد الدفعة بـ 7 أيام
     const trancheDate = new Date(tranche.due_date);
     trancheDate.setDate(trancheDate.getDate() - 7);
-    const taskDueDate = trancheDate.toISOString().split("T")[0];
+    const taskDueDate = trancheDate.toISOString().slice(0, 10);
 
     reportTaskId = await createPrTask({
       title: `إعداد التقرير المالي والفني للدفعة ${tranche.tranche_number} - الشريك: ${partnerName}`,
@@ -119,7 +119,7 @@ export async function scheduleTrancheWithSync(
   }
 
   const { data, error } = await supabase
-    .from("pr_payment_tranches" as any)
+    .from("pr_payment_tranches")
     .insert({
       ...tranche,
       report_task_id: reportTaskId,
@@ -156,7 +156,7 @@ export async function recordInteractionWithSync(
   }
 
   const { data, error } = await supabase
-    .from("pr_interactions" as any)
+    .from("pr_interactions")
     .insert({
       ...interaction,
       task_id: taskId,
@@ -176,11 +176,11 @@ export async function checkAndSyncExpiringAgreements(
 ): Promise<number> {
   const in30Days = new Date();
   in30Days.setDate(in30Days.getDate() + 30);
-  const in30DaysIso = in30Days.toISOString().split("T")[0];
-  const todayIso = new Date().toISOString().split("T")[0];
+  const in30DaysIso = in30Days.toISOString().slice(0, 10);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const { data: expiring, error } = await supabase
-    .from("pr_agreements" as any)
+    .from("pr_agreements")
     .select("id, title, partner_id, end_date, renewal_task_id, pr_partners(name)")
     .eq("status", "active")
     .is("renewal_task_id", null)
@@ -204,7 +204,7 @@ export async function checkAndSyncExpiringAgreements(
       });
 
       await supabase
-        .from("pr_agreements" as any)
+        .from("pr_agreements")
         .update({
           renewal_task_id: taskId,
           status: "expiring_soon",

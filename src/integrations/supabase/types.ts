@@ -3226,6 +3226,479 @@ export type Database = {
         }
         Relationships: []
       }
+      pr_agreements: {
+        Row: {
+          agreement_type: string
+          assigned_employee_id: string | null
+          created_at: string
+          currency: string
+          document_url: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          partner_id: string
+          reference_no: string | null
+          renewal_task_id: string | null
+          start_date: string
+          status: string
+          title: string
+          total_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          agreement_type?: string
+          assigned_employee_id?: string | null
+          created_at?: string
+          currency?: string
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          partner_id: string
+          reference_no?: string | null
+          renewal_task_id?: string | null
+          start_date?: string
+          status?: string
+          title: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agreement_type?: string
+          assigned_employee_id?: string | null
+          created_at?: string
+          currency?: string
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          reference_no?: string | null
+          renewal_task_id?: string | null
+          start_date?: string
+          status?: string
+          title?: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_agreements_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_agreements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "pr_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_agreements_renewal_task_id_fkey"
+            columns: ["renewal_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_donations: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          donation_type: string
+          grant_opportunity_id: string | null
+          id: string
+          in_kind_description: string | null
+          notes: string | null
+          partner_id: string
+          receipt_no: string | null
+          received_date: string
+          target_project: string
+          thank_you_task_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          donation_type?: string
+          grant_opportunity_id?: string | null
+          id?: string
+          in_kind_description?: string | null
+          notes?: string | null
+          partner_id: string
+          receipt_no?: string | null
+          received_date?: string
+          target_project: string
+          thank_you_task_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          donation_type?: string
+          grant_opportunity_id?: string | null
+          id?: string
+          in_kind_description?: string | null
+          notes?: string | null
+          partner_id?: string
+          receipt_no?: string | null
+          received_date?: string
+          target_project?: string
+          thank_you_task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_donations_grant_opportunity_id_fkey"
+            columns: ["grant_opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "pr_grant_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_donations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "pr_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_donations_thank_you_task_id_fkey"
+            columns: ["thank_you_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_events: {
+        Row: {
+          budget: number | null
+          coordinator_id: string | null
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          location: string | null
+          media_links: string | null
+          notes: string | null
+          status: string
+          target_audience: string | null
+          title: string
+        }
+        Insert: {
+          budget?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          location?: string | null
+          media_links?: string | null
+          notes?: string | null
+          status?: string
+          target_audience?: string | null
+          title: string
+        }
+        Update: {
+          budget?: number | null
+          coordinator_id?: string | null
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          location?: string | null
+          media_links?: string | null
+          notes?: string | null
+          status?: string
+          target_audience?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_events_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_grant_opportunities: {
+        Row: {
+          concept_summary: string | null
+          created_at: string
+          currency: string
+          decision_date: string | null
+          estimated_amount: number | null
+          id: string
+          lead_writer_id: string | null
+          notes: string | null
+          partner_id: string
+          project_title: string
+          stage: string
+          submission_deadline: string | null
+          target_sector: string
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          concept_summary?: string | null
+          created_at?: string
+          currency?: string
+          decision_date?: string | null
+          estimated_amount?: number | null
+          id?: string
+          lead_writer_id?: string | null
+          notes?: string | null
+          partner_id: string
+          project_title: string
+          stage?: string
+          submission_deadline?: string | null
+          target_sector?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          concept_summary?: string | null
+          created_at?: string
+          currency?: string
+          decision_date?: string | null
+          estimated_amount?: number | null
+          id?: string
+          lead_writer_id?: string | null
+          notes?: string | null
+          partner_id?: string
+          project_title?: string
+          stage?: string
+          submission_deadline?: string | null
+          target_sector?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_grant_opportunities_lead_writer_id_fkey"
+            columns: ["lead_writer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_grant_opportunities_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "pr_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_grant_opportunities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_interactions: {
+        Row: {
+          attendees: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          interaction_date: string
+          interaction_type: string
+          location: string | null
+          minutes: string | null
+          next_action: string | null
+          partner_id: string
+          summary: string | null
+          task_id: string | null
+          title: string
+        }
+        Insert: {
+          attendees?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interaction_date?: string
+          interaction_type: string
+          location?: string | null
+          minutes?: string | null
+          next_action?: string | null
+          partner_id: string
+          summary?: string | null
+          task_id?: string | null
+          title: string
+        }
+        Update: {
+          attendees?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interaction_date?: string
+          interaction_type?: string
+          location?: string | null
+          minutes?: string | null
+          next_action?: string | null
+          partner_id?: string
+          summary?: string | null
+          task_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_interactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "pr_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_interactions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_partners: {
+        Row: {
+          address: string | null
+          assigned_employee_id: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          influence_level: number
+          interest_level: number
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          type: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          assigned_employee_id?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          influence_level?: number
+          interest_level?: number
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          assigned_employee_id?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          influence_level?: number
+          interest_level?: number
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_partners_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_payment_tranches: {
+        Row: {
+          agreement_id: string | null
+          amount: number
+          condition_milestone: string | null
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          notes: string | null
+          partner_id: string
+          report_task_id: string | null
+          status: string
+          tranche_number: number
+        }
+        Insert: {
+          agreement_id?: string | null
+          amount?: number
+          condition_milestone?: string | null
+          created_at?: string
+          currency?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          report_task_id?: string | null
+          status?: string
+          tranche_number?: number
+        }
+        Update: {
+          agreement_id?: string | null
+          amount?: number
+          condition_milestone?: string | null
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          report_task_id?: string | null
+          status?: string
+          tranche_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_payment_tranches_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pr_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_payment_tranches_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "pr_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pr_payment_tranches_report_task_id_fkey"
+            columns: ["report_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

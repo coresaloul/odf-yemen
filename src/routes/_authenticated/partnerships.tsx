@@ -27,9 +27,10 @@ import {
   Search,
   Sparkles,
   TrendingUp,
-  UserCheck,
-  Users,
   AlertCircle,
+  Eye,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -84,6 +85,11 @@ import { GrantOpportunityDialog, type GrantFormValues } from "@/components/pr/Gr
 import { DonationTrancheDialog, type DonationFormValues } from "@/components/pr/DonationTrancheDialog";
 import { AgreementDialog, type AgreementFormValues } from "@/components/pr/AgreementDialog";
 import { EventDialog, type EventFormValues } from "@/components/pr/EventDialog";
+import { PartnerProfileDialog } from "@/components/pr/PartnerProfileDialog";
+import { PartnerDeleteDialog } from "@/components/pr/PartnerDeleteDialog";
+import { ProjectPitchCatalogDialog } from "@/components/pr/ProjectPitchCatalogDialog";
+import { PartnerTableView } from "@/components/pr/PartnerTableView";
+import type { ProjectPitchItem } from "@/lib/pr-catalog";
 
 export const Route = createFileRoute("/_authenticated/partnerships")({
   head: () => ({
@@ -106,9 +112,28 @@ function PartnershipsPage() {
   const [partnerSearch, setPartnerSearch] = useState("");
   const [partnerTypeFilter, setPartnerTypeFilter] = useState("all");
   const [partnerStatusFilter, setPartnerStatusFilter] = useState("all");
+  const [partnerViewMode, setPartnerViewMode] = useState<"cards" | "table">("cards");
 
   // Dialogs
   const [partnerDialog, setPartnerDialog] = useState<{ open: boolean; partner?: PartnerRow | null }>({
+    open: false,
+  });
+  const [partnerProfileDialog, setPartnerProfileDialog] = useState<{
+    open: boolean;
+    partner?: PartnerRow | null;
+  }>({
+    open: false,
+  });
+  const [partnerDeleteDialog, setPartnerDeleteDialog] = useState<{
+    open: boolean;
+    partner?: PartnerRow | null;
+  }>({
+    open: false,
+  });
+  const [catalogDialog, setCatalogDialog] = useState<{
+    open: boolean;
+    partner?: PartnerRow | null;
+  }>({
     open: false,
   });
   const [interactionDialog, setInteractionDialog] = useState<{ open: boolean; partnerId?: string }>({
@@ -300,6 +325,43 @@ function PartnershipsPage() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const partnerDeleteMutation = useMutation({
+    mutationFn: async (partnerId: string) => {
+      const { error } = await supabase.from("pr_partners" as any).delete().eq("id", partnerId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف الشريك وكافة السجلات المرتبطة به بنجاح");
+      setPartnerDeleteDialog({ open: false });
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const handleSelectPitch = (pitch: ProjectPitchItem) => {
+    setGrantDialog({
+      open: true,
+      opportunity: {
+        id: "",
+        partner_id: catalogDialog.partner?.id || partners[0]?.id || "",
+        partner_name: catalogDialog.partner?.name || "",
+        project_title: pitch.title,
+        target_sector: pitch.sector,
+        stage: "opportunity",
+        estimated_amount: pitch.estimatedAmount,
+        currency: pitch.currency,
+        submission_deadline: null,
+        decision_date: null,
+        lead_writer_id: null,
+        task_id: null,
+        concept_summary: `${pitch.summary}\n\nأبرز المخرجات المتوقعة:\n- ${pitch.keyOutcomes.join("\n- ")}`,
+        notes: `المستفيدون المستهدفون: ${pitch.targetBeneficiaries} | المدة الزمنية: ${pitch.durationMonths} أشهر`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    });
+  };
 
   const interactionMutation = useMutation({
     mutationFn: async (v: InteractionFormValues) => {
@@ -958,9 +1020,9 @@ function PartnershipsPage() {
                 className="pr-9"
               />
             </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <Select value={partnerTypeFilter} onValueChange={setPartnerTypeFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[170px]">
                   <SelectValue placeholder="نوع الجهة" />
                 </SelectTrigger>
                 <SelectContent>
@@ -974,7 +1036,7 @@ function PartnershipsPage() {
               </Select>
 
               <Select value={partnerStatusFilter} onValueChange={setPartnerStatusFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="الحالة" />
                 </SelectTrigger>
                 <SelectContent>
@@ -986,6 +1048,38 @@ function PartnershipsPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs h-9"
+                onClick={() => setCatalogDialog({ open: true })}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                كتالوج المشاريع
+              </Button>
+
+              {/* مبدل نمط العرض: بطاقات / جدول */}
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border">
+                <Button
+                  variant={partnerViewMode === "cards" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setPartnerViewMode("cards")}
+                  title="عرض البطاقات"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant={partnerViewMode === "table" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setPartnerViewMode("table")}
+                  title="عرض الجدول"
+                >
+                  <TableIcon className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -998,6 +1092,20 @@ function PartnershipsPage() {
               actionLabel="إضافة شريك جديد"
               onAction={() => setPartnerDialog({ open: true })}
             />
+          ) : partnerViewMode === "table" ? (
+            <PartnerTableView
+              partners={filteredPartners}
+              interactions={interactions}
+              onViewProfile={(p) => setPartnerProfileDialog({ open: true, partner: p })}
+              onEdit={(p) => setPartnerDialog({ open: true, partner: p })}
+              onDelete={(p) => setPartnerDeleteDialog({ open: true, partner: p })}
+              onAddDonation={(pId) =>
+                setDonationDialog({ open: true, kind: "donation", partnerId: pId })
+              }
+              onAddInteraction={(pId) =>
+                setInteractionDialog({ open: true, partnerId: pId })
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPartners.map((p) => {
@@ -1008,9 +1116,12 @@ function PartnershipsPage() {
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                          <CardTitle className="text-base font-bold text-foreground">
+                          <button
+                            onClick={() => setPartnerProfileDialog({ open: true, partner: p })}
+                            className="text-base font-bold text-foreground hover:text-primary transition-colors text-right block"
+                          >
                             {p.name}
-                          </CardTitle>
+                          </button>
                           <Badge variant="outline" className="text-xs">
                             {PARTNER_TYPE_LABELS[p.type]}
                           </Badge>
@@ -1032,8 +1143,8 @@ function PartnershipsPage() {
                       <div className="space-y-1 text-xs text-muted-foreground">
                         {p.contact_person && (
                           <div className="flex items-center gap-1.5">
-                            <UserCheck className="w-3.5 h-3.5 text-primary" />
-                            <span>المسؤول: {p.contact_person}</span>
+                            <span className="font-semibold text-foreground">ضابط الاتصال:</span>
+                            <span>{p.contact_person}</span>
                           </div>
                         )}
                         {p.phone && (
@@ -1061,32 +1172,62 @@ function PartnershipsPage() {
                       </div>
 
                       {/* أزرار الإجراءات السريعة */}
-                      <div className="flex items-center gap-2 pt-2 border-t">
+                      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 text-xs h-8"
-                          onClick={() => setInteractionDialog({ open: true, partnerId: p.id })}
+                          className="flex-1 text-xs h-8 gap-1"
+                          onClick={() => setPartnerProfileDialog({ open: true, partner: p })}
                         >
-                          + لقاء / زيارة
+                          <Eye className="w-3.5 h-3.5 text-primary" />
+                          الملف الشامل
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 text-xs h-8"
+                          className="h-8 text-xs px-2"
+                          title="توثيق لقاء / زيارة"
+                          onClick={() => setInteractionDialog({ open: true, partnerId: p.id })}
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs px-2 text-emerald-600"
+                          title="تسجيل تبرع"
                           onClick={() =>
                             setDonationDialog({ open: true, kind: "donation", partnerId: p.id })
                           }
                         >
-                          + تبرع
+                          <Coins className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs px-2 text-primary"
+                          title="كتالوج المشاريع"
+                          onClick={() => setCatalogDialog({ open: true, partner: p })}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 px-2"
+                          title="تعديل"
                           onClick={() => setPartnerDialog({ open: true, partner: p })}
                         >
-                          تعديل
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-destructive hover:bg-destructive/10"
+                          title="حذف"
+                          onClick={() => setPartnerDeleteDialog({ open: true, partner: p })}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </CardContent>
@@ -1611,6 +1752,52 @@ function PartnershipsPage() {
         onSubmit={async (vals) => {
           await eventMutation.mutateAsync(vals);
         }}
+      />
+
+      {/* نافذة الملف التعريفي الشامل للشريك وتصدير تقرير الأثر */}
+      <PartnerProfileDialog
+        open={partnerProfileDialog.open}
+        onOpenChange={(open) => setPartnerProfileDialog({ open })}
+        partner={partnerProfileDialog.partner}
+        donations={donations}
+        agreements={agreements}
+        grants={grants}
+        interactions={interactions}
+        onEdit={(p) => setPartnerDialog({ open: true, partner: p })}
+        onDelete={(p) => setPartnerDeleteDialog({ open: true, partner: p })}
+        onAddDonation={(pId) =>
+          setDonationDialog({ open: true, kind: "donation", partnerId: pId })
+        }
+        onAddInteraction={(pId) =>
+          setInteractionDialog({ open: true, partnerId: pId })
+        }
+        onAddGrant={(pId) =>
+          setGrantDialog({ open: true })
+        }
+        onOpenCatalog={(p) =>
+          setCatalogDialog({ open: true, partner: p })
+        }
+      />
+
+      {/* نافذة الحذف الآمن للشريك */}
+      <PartnerDeleteDialog
+        open={partnerDeleteDialog.open}
+        onOpenChange={(open) => setPartnerDeleteDialog({ open })}
+        partner={partnerDeleteDialog.partner}
+        isDeleting={partnerDeleteMutation.isPending}
+        onConfirm={async () => {
+          if (partnerDeleteDialog.partner?.id) {
+            await partnerDeleteMutation.mutateAsync(partnerDeleteDialog.partner.id);
+          }
+        }}
+      />
+
+      {/* نافذة كتالوج المشاريع والفرص التمويلية الجاهزة */}
+      <ProjectPitchCatalogDialog
+        open={catalogDialog.open}
+        onOpenChange={(open) => setCatalogDialog({ open })}
+        partner={catalogDialog.partner}
+        onSelectPitch={handleSelectPitch}
       />
     </div>
   );

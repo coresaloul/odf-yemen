@@ -29,7 +29,7 @@ import {
 export type DonationFormValues = {
   kind: "donation" | "tranche";
   partner_id: string;
-  agreement_id?: string;
+  agreement_id: string;
   // Donation fields
   donation_type: DonationType;
   amount: number;

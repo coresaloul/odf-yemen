@@ -78,10 +78,11 @@ export async function recordDonationWithSync(
     });
   }
 
+  const { partner_name: _donPartnerName, ...donationData } = donation;
   const { data, error } = await supabase
     .from("pr_donations")
     .insert({
-      ...donation,
+      ...donationData,
       thank_you_task_id: thankYouTaskId,
     })
     .select("id")
@@ -118,10 +119,15 @@ export async function scheduleTrancheWithSync(
     });
   }
 
+  const {
+    partner_name: _trPartnerName,
+    agreement_title: _trAgreementTitle,
+    ...trancheData
+  } = tranche;
   const { data, error } = await supabase
     .from("pr_payment_tranches")
     .insert({
-      ...tranche,
+      ...trancheData,
       report_task_id: reportTaskId,
     })
     .select("id")
@@ -155,10 +161,11 @@ export async function recordInteractionWithSync(
     });
   }
 
+  const { partner_name: _inPartnerName, ...interactionData } = interaction;
   const { data, error } = await supabase
     .from("pr_interactions")
     .insert({
-      ...interaction,
+      ...interactionData,
       task_id: taskId,
     })
     .select("id")

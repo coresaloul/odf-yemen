@@ -17,6 +17,7 @@ import {
   Package,
   Gavel,
   Archive,
+  HeartHandshake,
   Route as RouteIcon,
   LogOut,
 } from "lucide-react";
@@ -68,6 +69,16 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         label: "الصادر والوارد",
         icon: Archive,
         roles: ["secretariat", "manager", "hr", "executive_director"],
+      },
+    ],
+  },
+  {
+    label: "العلاقات وحشد الموارد",
+    items: [
+      {
+        to: "/partnerships",
+        label: "الشركاء والمانحين",
+        icon: HeartHandshake,
       },
     ],
   },

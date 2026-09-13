@@ -47,6 +47,11 @@ export const TASK_TEMPLATES: { label: string; values: Partial<TaskFormValues> }[
   { label: "اجتماع متابعة", values: { title: "حضور اجتماع المتابعة الدوري", priority: "medium", recurrence: "weekly", weight: "1" } },
   { label: "مهمة ميدانية عاجلة", values: { title: "زيارة ميدانية", priority: "urgent", weight: "3" } },
   { label: "أرشفة وثائق", values: { title: "أرشفة الوثائق والمستندات", priority: "low", weight: "1" } },
+  { label: "زيارة ميدانية لمانح", values: { title: "ترتيب وتنفيذ زيارة ميدانية لمانح لمراكز الأيتام", priority: "urgent", weight: "3" } },
+  { label: "صياغة مقترح تمويل", values: { title: "إعداد وصياغة مقترح تمويل مشروع تنموي", priority: "high", weight: "4" } },
+  { label: "تقرير أثر لمانح", values: { title: "إعداد تقرير أثر وإنجاز مالي وفني للمانح", priority: "medium", weight: "2" } },
+  { label: "خطاب شكر للمتبرع", values: { title: "إرسال خطاب شكر وسند استلام للمتبرع", priority: "urgent", weight: "2" } },
+  { label: "حملة موسمية ورعاية", values: { title: "إدارة ومتابعة مستهدفات حملة موسمية ورعايات الأيتام", priority: "urgent", weight: "5" } },
 ];
 
 export function TaskFormDialog({

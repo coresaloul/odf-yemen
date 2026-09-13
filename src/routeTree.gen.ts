@@ -23,6 +23,7 @@ import { Route as AuthenticatedEvaluationsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLeavesRouteImport } from './routes/_authenticated/leaves'
 import { Route as AuthenticatedLifecycleRouteImport } from './routes/_authenticated/lifecycle'
 import { Route as AuthenticatedOrgRouteImport } from './routes/_authenticated/org'
+import { Route as AuthenticatedPartnershipsRouteImport } from './routes/_authenticated/partnerships'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -111,6 +112,12 @@ const AuthenticatedOrgRoute = AuthenticatedOrgRouteImport.update({
   path: '/org',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPartnershipsRoute =
+  AuthenticatedPartnershipsRouteImport.update({
+    id: '/partnerships',
+    path: '/partnerships',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
   id: '/payroll',
   path: '/payroll',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/leaves': typeof AuthenticatedLeavesRoute
   '/lifecycle': typeof AuthenticatedLifecycleRoute
   '/org': typeof AuthenticatedOrgRoute
+  '/partnerships': typeof AuthenticatedPartnershipsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -240,6 +248,7 @@ export interface FileRoutesByTo {
   '/leaves': typeof AuthenticatedLeavesRoute
   '/lifecycle': typeof AuthenticatedLifecycleRoute
   '/org': typeof AuthenticatedOrgRoute
+  '/partnerships': typeof AuthenticatedPartnershipsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/leaves': typeof AuthenticatedLeavesRoute
   '/_authenticated/lifecycle': typeof AuthenticatedLifecycleRoute
   '/_authenticated/org': typeof AuthenticatedOrgRoute
+  '/_authenticated/partnerships': typeof AuthenticatedPartnershipsRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/leaves'
     | '/lifecycle'
     | '/org'
+    | '/partnerships'
     | '/payroll'
     | '/profile'
     | '/reports'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/leaves'
     | '/lifecycle'
     | '/org'
+    | '/partnerships'
     | '/payroll'
     | '/profile'
     | '/reports'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leaves'
     | '/_authenticated/lifecycle'
     | '/_authenticated/org'
+    | '/_authenticated/partnerships'
     | '/_authenticated/payroll'
     | '/_authenticated/profile'
     | '/_authenticated/reports'
@@ -501,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/partnerships': {
+      id: '/_authenticated/partnerships'
+      path: '/partnerships'
+      fullPath: '/partnerships'
+      preLoaderRoute: typeof AuthenticatedPartnershipsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/payroll': {
       id: '/_authenticated/payroll'
       path: '/payroll'
@@ -628,6 +648,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeavesRoute: typeof AuthenticatedLeavesRoute
   AuthenticatedLifecycleRoute: typeof AuthenticatedLifecycleRoute
   AuthenticatedOrgRoute: typeof AuthenticatedOrgRoute
+  AuthenticatedPartnershipsRoute: typeof AuthenticatedPartnershipsRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -650,6 +671,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeavesRoute: AuthenticatedLeavesRoute,
   AuthenticatedLifecycleRoute: AuthenticatedLifecycleRoute,
   AuthenticatedOrgRoute: AuthenticatedOrgRoute,
+  AuthenticatedPartnershipsRoute: AuthenticatedPartnershipsRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,

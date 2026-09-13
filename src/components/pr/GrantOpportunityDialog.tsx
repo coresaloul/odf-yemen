@@ -55,7 +55,7 @@ export function GrantOpportunityDialog({
   onOpenChange: (open: boolean) => void;
   partners: PartnerRow[];
   employees: { id: string; full_name: string }[];
-  opportunity?: GrantOpportunityRow | null;
+  opportunity?: GrantOpportunityRow | null | undefined;
   saving: boolean;
   onSubmit: (values: GrantFormValues) => Promise<void>;
 }) {

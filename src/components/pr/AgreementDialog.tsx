@@ -54,7 +54,7 @@ export function AgreementDialog({
   onOpenChange: (open: boolean) => void;
   partners: PartnerRow[];
   employees: { id: string; full_name: string }[];
-  agreement?: AgreementRow | null;
+  agreement?: AgreementRow | null | undefined;
   saving: boolean;
   onSubmit: (values: AgreementFormValues) => Promise<void>;
 }) {
@@ -63,8 +63,8 @@ export function AgreementDialog({
     reference_no: "",
     title: "",
     agreement_type: "mou",
-    start_date: new Date().toISOString().split("T")[0],
-    end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    start_date: new Date().toISOString().slice(0, 10),
+    end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     total_value: 0,
     currency: "USD",
     document_url: "",
@@ -95,8 +95,8 @@ export function AgreementDialog({
         reference_no: `MOU-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
         title: "",
         agreement_type: "mou",
-        start_date: new Date().toISOString().split("T")[0],
-        end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        start_date: new Date().toISOString().slice(0, 10),
+        end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
         total_value: 0,
         currency: "USD",
         document_url: "",

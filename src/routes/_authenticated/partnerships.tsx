@@ -101,6 +101,21 @@ export const Route = createFileRoute("/_authenticated/partnerships")({
       },
     ],
   }),
+  errorComponent: ({ error, reset }) => (
+    <div className="p-8 text-center space-y-4 max-w-xl mx-auto my-12" dir="rtl">
+      <div className="p-6 bg-destructive/10 border border-destructive/20 text-destructive rounded-2xl space-y-2">
+        <h2 className="text-lg font-bold text-foreground">تنبيه: يلزم تطبيق ملف الهجرة على قاعدة بيانات Supabase</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {error?.message || "يرجى التأكد من تطبيق ملف الهجرة `20260914000000_pr_resource_mobilization_suite.sql` على قاعدة بيانات المشروع في Supabase لإنشاء الجداول المخصصة."}
+        </p>
+      </div>
+      <div>
+        <Button onClick={() => reset()} variant="outline" size="sm">
+          إعادة تحميل الصفحة
+        </Button>
+      </div>
+    </div>
+  ),
   component: PartnershipsPage,
 });
 
@@ -169,111 +184,158 @@ function PartnershipsPage() {
   const { data: partners = [], isLoading: loadingPartners } = useQuery({
     queryKey: ["pr-partners"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_partners" as any)
-        .select("*, assigned_employee:employees!assigned_employee_id(full_name)")
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Failed to load partners:", error);
+      try {
+        const { data, error } = await supabase
+          .from("pr_partners" as any)
+          .select("*, assigned_employee:employees!assigned_employee_id(full_name)")
+          .order("created_at", { ascending: false });
+        if (error) {
+          // Fallback without join
+          const fb = await supabase.from("pr_partners" as any).select("*").order("created_at", { ascending: false });
+          return (fb.data || []) as PartnerRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          assigned_employee_name: row.assigned_employee?.full_name || null,
+        })) as PartnerRow[];
+      } catch {
         return [];
       }
-      return (data || []).map((row: any) => ({
-        ...row,
-        assigned_employee_name: row.assigned_employee?.full_name || null,
-      })) as PartnerRow[];
     },
   });
 
   const { data: interactions = [] } = useQuery({
     queryKey: ["pr-interactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_interactions" as any)
-        .select("*, pr_partners(name)")
-        .order("interaction_date", { ascending: false });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        partner_name: row.pr_partners?.name || "",
-      })) as InteractionRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_interactions" as any)
+          .select("*, pr_partners(name)")
+          .order("interaction_date", { ascending: false });
+        if (error) {
+          const fb = await supabase.from("pr_interactions" as any).select("*").order("interaction_date", { ascending: false });
+          return (fb.data || []) as InteractionRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          partner_name: row.pr_partners?.name || "",
+        })) as InteractionRow[];
+      } catch {
+        return [];
+      }
     },
   });
 
   const { data: agreements = [] } = useQuery({
     queryKey: ["pr-agreements"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_agreements" as any)
-        .select("*, pr_partners(name), assigned_employee:employees!assigned_employee_id(full_name)")
-        .order("start_date", { ascending: false });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        partner_name: row.pr_partners?.name || "",
-        assigned_employee_name: row.assigned_employee?.full_name || null,
-      })) as AgreementRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_agreements" as any)
+          .select("*, pr_partners(name), assigned_employee:employees!assigned_employee_id(full_name)")
+          .order("start_date", { ascending: false });
+        if (error) {
+          const fb = await supabase.from("pr_agreements" as any).select("*").order("start_date", { ascending: false });
+          return (fb.data || []) as AgreementRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          partner_name: row.pr_partners?.name || "",
+          assigned_employee_name: row.assigned_employee?.full_name || null,
+        })) as AgreementRow[];
+      } catch {
+        return [];
+      }
     },
   });
 
   const { data: grants = [] } = useQuery({
     queryKey: ["pr-grants"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_grant_opportunities" as any)
-        .select("*, pr_partners(name), lead_writer:employees!lead_writer_id(full_name)")
-        .order("created_at", { ascending: false });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        partner_name: row.pr_partners?.name || "",
-        lead_writer_name: row.lead_writer?.full_name || null,
-      })) as GrantOpportunityRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_grant_opportunities" as any)
+          .select("*, pr_partners(name), lead_writer:employees!lead_writer_id(full_name)")
+          .order("created_at", { ascending: false });
+        if (error) {
+          const fb = await supabase.from("pr_grant_opportunities" as any).select("*").order("created_at", { ascending: false });
+          return (fb.data || []) as GrantOpportunityRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          partner_name: row.pr_partners?.name || "",
+          lead_writer_name: row.lead_writer?.full_name || null,
+        })) as GrantOpportunityRow[];
+      } catch {
+        return [];
+      }
     },
   });
 
   const { data: donations = [] } = useQuery({
     queryKey: ["pr-donations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_donations" as any)
-        .select("*, pr_partners(name)")
-        .order("received_date", { ascending: false });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        partner_name: row.pr_partners?.name || "",
-      })) as DonationRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_donations" as any)
+          .select("*, pr_partners(name)")
+          .order("received_date", { ascending: false });
+        if (error) {
+          const fb = await supabase.from("pr_donations" as any).select("*").order("received_date", { ascending: false });
+          return (fb.data || []) as DonationRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          partner_name: row.pr_partners?.name || "",
+        })) as DonationRow[];
+      } catch {
+        return [];
+      }
     },
   });
 
   const { data: tranches = [] } = useQuery({
     queryKey: ["pr-tranches"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_payment_tranches" as any)
-        .select("*, pr_partners(name), pr_agreements(title)")
-        .order("due_date", { ascending: true });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        partner_name: row.pr_partners?.name || "",
-        agreement_title: row.pr_agreements?.title || "",
-      })) as PaymentTrancheRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_payment_tranches" as any)
+          .select("*, pr_partners(name), pr_agreements(title)")
+          .order("due_date", { ascending: true });
+        if (error) {
+          const fb = await supabase.from("pr_payment_tranches" as any).select("*").order("due_date", { ascending: true });
+          return (fb.data || []) as PaymentTrancheRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          partner_name: row.pr_partners?.name || "",
+          agreement_title: row.pr_agreements?.title || "",
+        })) as PaymentTrancheRow[];
+      } catch {
+        return [];
+      }
     },
   });
 
   const { data: events = [] } = useQuery({
     queryKey: ["pr-events"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pr_events" as any)
-        .select("*, coordinator:employees!coordinator_id(full_name)")
-        .order("event_date", { ascending: false });
-      if (error) return [];
-      return (data || []).map((row: any) => ({
-        ...row,
-        coordinator_name: row.coordinator?.full_name || null,
-      })) as EventRow[];
+      try {
+        const { data, error } = await supabase
+          .from("pr_events" as any)
+          .select("*, coordinator:employees!coordinator_id(full_name)")
+          .order("event_date", { ascending: false });
+        if (error) {
+          const fb = await supabase.from("pr_events" as any).select("*").order("event_date", { ascending: false });
+          return (fb.data || []) as EventRow[];
+        }
+        return (data || []).map((row: any) => ({
+          ...row,
+          coordinator_name: row.coordinator?.full_name || null,
+        })) as EventRow[];
+      } catch {
+        return [];
+      }
     },
   });
 

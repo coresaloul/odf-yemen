@@ -160,8 +160,8 @@ export function PartnerProfileDialog({
         },
       ],
       branding: {
-        org_name: branding.orgName || "مؤسسة اليتيم التنموية",
-        system_name: branding.systemName || "نظام مدير",
+        org_name: branding.org_name || "مؤسسة اليتيم التنموية",
+        system_name: branding.system_name || "نظام مدير",
         logoUrl: branding.logoUrl || null,
       },
     };
@@ -170,7 +170,7 @@ export function PartnerProfileDialog({
   const handleExportWord = () => {
     try {
       const doc = generateImpactReportDoc();
-      exportWord(doc);
+      exportWord(doc, `تقرير-أثر-${partner.name}`);
       toast.success("تم تصدير تقرير أثر المانح بصيغة Word بنجاح");
     } catch (e: any) {
       toast.error(e.message);

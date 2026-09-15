@@ -31,6 +31,9 @@ import {
   Eye,
   LayoutGrid,
   Table as TableIcon,
+  Users,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -192,7 +195,7 @@ function PartnershipsPage() {
         if (error) {
           // Fallback without join
           const fb = await supabase.from("pr_partners" as any).select("*").order("created_at", { ascending: false });
-          return (fb.data || []) as PartnerRow[];
+          return (fb.data || []) as unknown as PartnerRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -214,7 +217,7 @@ function PartnershipsPage() {
           .order("interaction_date", { ascending: false });
         if (error) {
           const fb = await supabase.from("pr_interactions" as any).select("*").order("interaction_date", { ascending: false });
-          return (fb.data || []) as InteractionRow[];
+          return (fb.data || []) as unknown as InteractionRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -236,7 +239,7 @@ function PartnershipsPage() {
           .order("start_date", { ascending: false });
         if (error) {
           const fb = await supabase.from("pr_agreements" as any).select("*").order("start_date", { ascending: false });
-          return (fb.data || []) as AgreementRow[];
+          return (fb.data || []) as unknown as AgreementRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -259,7 +262,7 @@ function PartnershipsPage() {
           .order("created_at", { ascending: false });
         if (error) {
           const fb = await supabase.from("pr_grant_opportunities" as any).select("*").order("created_at", { ascending: false });
-          return (fb.data || []) as GrantOpportunityRow[];
+          return (fb.data || []) as unknown as GrantOpportunityRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -282,7 +285,7 @@ function PartnershipsPage() {
           .order("received_date", { ascending: false });
         if (error) {
           const fb = await supabase.from("pr_donations" as any).select("*").order("received_date", { ascending: false });
-          return (fb.data || []) as DonationRow[];
+          return (fb.data || []) as unknown as DonationRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -304,7 +307,7 @@ function PartnershipsPage() {
           .order("due_date", { ascending: true });
         if (error) {
           const fb = await supabase.from("pr_payment_tranches" as any).select("*").order("due_date", { ascending: true });
-          return (fb.data || []) as PaymentTrancheRow[];
+          return (fb.data || []) as unknown as PaymentTrancheRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -327,7 +330,7 @@ function PartnershipsPage() {
           .order("event_date", { ascending: false });
         if (error) {
           const fb = await supabase.from("pr_events" as any).select("*").order("event_date", { ascending: false });
-          return (fb.data || []) as EventRow[];
+          return (fb.data || []) as unknown as EventRow[];
         }
         return (data || []).map((row: any) => ({
           ...row,
@@ -1820,7 +1823,7 @@ function PartnershipsPage() {
       <PartnerProfileDialog
         open={partnerProfileDialog.open}
         onOpenChange={(open) => setPartnerProfileDialog({ open })}
-        partner={partnerProfileDialog.partner}
+        partner={partnerProfileDialog.partner ?? null}
         donations={donations}
         agreements={agreements}
         grants={grants}
@@ -1845,7 +1848,7 @@ function PartnershipsPage() {
       <PartnerDeleteDialog
         open={partnerDeleteDialog.open}
         onOpenChange={(open) => setPartnerDeleteDialog({ open })}
-        partner={partnerDeleteDialog.partner}
+        partner={partnerDeleteDialog.partner ?? null}
         isDeleting={partnerDeleteMutation.isPending}
         onConfirm={async () => {
           if (partnerDeleteDialog.partner?.id) {
@@ -1858,7 +1861,7 @@ function PartnershipsPage() {
       <ProjectPitchCatalogDialog
         open={catalogDialog.open}
         onOpenChange={(open) => setCatalogDialog({ open })}
-        partner={catalogDialog.partner}
+        partner={catalogDialog.partner ?? null}
         onSelectPitch={handleSelectPitch}
       />
     </div>

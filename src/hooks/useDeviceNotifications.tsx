@@ -70,17 +70,18 @@ async function subscribeToPush() {
   const auth = bufferToBase64Url(sub.getKey("auth"));
   if (!p256dh || !auth) return false;
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: session.user.id,
-      endpoint: sub.endpoint,
-      p256dh,
-      auth,
-      user_agent: navigator.userAgent.slice(0, 255),
-    },
-    { onConflict: "endpoint" },
-  );
-  return !error;
+  // دالة آمنة تنقل تسجيل الجهاز للمستخدم الحالي إن كان مسجلاً سابقاً بحساب آخر
+  const { error } = await supabase.rpc("save_push_subscription", {
+    p_endpoint: sub.endpoint,
+    p_p256dh: p256dh,
+    p_auth: auth,
+    p_user_agent: navigator.userAgent.slice(0, 255),
+  });
+  if (error) {
+    console.error("تعذّر تسجيل الجهاز لاستقبال الإشعارات", error);
+    return false;
+  }
+  return true;
 }
 
 

@@ -106,10 +106,10 @@ function DeviceNotificationsCard() {
           <p className="text-sm text-muted-foreground">متصفحك الحالي لا يدعم إشعارات الجهاز.</p>
         ) : permission === "granted" ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-primary">
+            <p className={`text-sm ${pushReady ? "text-primary" : "text-destructive"}`}>
               {pushReady
                 ? "إشعارات الجهاز مفعّلة ✓ وتصلك حتى والتطبيق مغلق"
-                : "إشعارات الجهاز مفعّلة ✓ (تظهر أثناء فتح التطبيق)"}
+                : "لم يكتمل تسجيل هذا الجهاز — ستظهر التنبيهات أثناء فتح التطبيق فقط. أعد تحميل الصفحة، وإن استمرت المشكلة تواصل مع الدعم."}
             </p>
 
             <Button
